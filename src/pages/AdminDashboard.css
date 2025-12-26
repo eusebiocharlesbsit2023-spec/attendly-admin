@@ -1,0 +1,355 @@
+/* ========== Base ========== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* Page background similar to screenshot */
+.dash {
+  min-height: 100vh;
+  background: #eaf4ff;
+  color: #0f172a;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* ========== Top bar ========== */
+.dash-topbar {
+  background: #0a4e86;
+  color: #fff;
+  padding: 18px 0;
+}
+
+.dash-topbar-inner {
+  width: min(1100px, 92%);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dash-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dash-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-title {
+  font-size: clamp(20px, 2.2vw + 10px, 30px);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.dash-subtitle {
+  margin-top: 4px;
+  font-size: clamp(12px, 1vw + 9px, 14px);
+  opacity: 0.85;
+}
+
+/* Icon buttons */
+.icon-btn {
+  position: relative;
+  border: none;
+  background: transparent;
+  color: #fff;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.notif-dot {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  outline: 2px solid #0a4e86;
+}
+
+.svg {
+  display: block;
+  color: currentColor;
+}
+
+.svg.small {
+  opacity: 0.9;
+}
+
+/* ========== Main container ========== */
+.dash-main {
+  width: min(1100px, 92%);
+  margin: 18px auto 28px;
+}
+
+/* ========== Card base ========== */
+.card {
+  background: #fff;
+  border: 1px solid #e6eef7;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+/* ========== Stats grid ========== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.stat-right {
+  text-align: right;
+  min-width: 0;
+}
+
+.stat-value {
+  font-size: clamp(30px, 2.2vw + 18px, 42px);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.stat-label {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ========== Manage grid ========== */
+.manage-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.manage-card {
+  padding: 16px;
+}
+
+.manage-btn {
+  width: 100%;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 20px 10px;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+}
+
+.manage-btn:hover {
+  background: #f6fbff;
+}
+
+.manage-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+}
+
+.manage-text {
+  font-weight: 800;
+  color: #1f2a44;
+  text-align: center;
+}
+
+/* ========== Bottom panels ========== */
+.bottom-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.panel {
+  padding: 16px;
+  min-width: 0;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  font-size: 18px;
+  color: #0f172a;
+  margin-bottom: 14px;
+}
+
+.panel-title.plain {
+  gap: 0;
+}
+
+/* Recent activity */
+.activity-list {
+  display: grid;
+  gap: 12px;
+}
+
+.activity-item {
+  background: #eef3f8;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.activity-bullet {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #0f172a;
+  margin-top: 5px;
+  flex: 0 0 auto;
+}
+
+.activity-text {
+  min-width: 0;
+}
+
+.activity-main {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2a44;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.activity-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Today classes */
+.classes-list {
+  display: grid;
+  gap: 12px;
+}
+
+.class-item {
+  border: 1px solid #e6eef7;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.class-left {
+  min-width: 0;
+}
+
+.class-title {
+  font-weight: 900;
+  color: #0f172a;
+  font-size: 14px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.class-meta {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.badge {
+  white-space: nowrap;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  flex: 0 0 auto;
+}
+
+/* Footer links */
+.panel-footer {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.link-btn {
+  border: none;
+  background: transparent;
+  color: #1d4ed8;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+/* ========== Tints ========== */
+.tint-blue { background: #dbeafe; color: #1d4ed8; }
+.tint-purple { background: #ede9fe; color: #6d28d9; }
+.tint-green { background: #dcfce7; color: #15803d; }
+.tint-yellow { background: #fef3c7; color: #b45309; }
+

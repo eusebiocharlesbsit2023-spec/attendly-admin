@@ -1,0 +1,96 @@
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.login-container {
+  min-height: 100vh;
+  background: #eef7fb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-card {
+  background: #ffffff;
+  width: 380px;
+  padding: 40px 30px;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.logo {
+  width: 200px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 22px;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid #cfd9e0;
+  font-size: 14px;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #003f7f;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: #003f7f;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.login-btn:hover {
+  background: #002f5f;
+}
+
+/* ✅ PERFECT ALIGNMENT FIX */
+.info-box {
+  display: flex;
+  align-items: baseline; /* ⭐ KEY FIX */
+  gap: 8px;
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid #9fc5e8;
+  background: #f3f9ff;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.info-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.info-text {
+  font-size: 12px;
+  color: #004a8f;
+  line-height: 1.4;
+  margin: 0;
+}
