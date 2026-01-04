@@ -2,10 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AdminDashboard.css";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
+
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+
 
   const stats = [
     { label: "Total Students", value: 45, icon: "users", tint: "blue" },
@@ -137,7 +141,10 @@ export default function AdminDashboard() {
             </div>
 
             <div className="panel-footer">
-              <button className="link-btn" type="button">View All Activity</button>
+              <button className="link-btn" type="button" onClick={() => setActivityOpen(true)}>
+  View All Activity
+</button>
+
             </div>
           </div>
 
@@ -167,6 +174,12 @@ export default function AdminDashboard() {
           </div>
         </section>
       </main>
+      <ActivityHistoryModal
+  open={activityOpen}
+  onClose={() => setActivityOpen(false)}
+  items={activity}
+/>
+
     </div>
   );
 }

@@ -2,12 +2,44 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./ProfessorManagement.css";
+import AddProfessorModal from "../components/AddProfessorModal";
+import ConfirmModal from "../components/ConfirmModal";
+
+
 
 export default function ProfessorManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [q, setQ] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+const [confirmOpen, setConfirmOpen] = useState(false);
+const [pendingProf, setPendingProf] = useState(null);
+
+// open form modal
+const onAdd = () => setAddOpen(true);
+
+// when click "Add" inside form modal
+const handleAddSubmit = (payload) => {
+  setPendingProf(payload);
+
+  setAddOpen(false);     
+  setConfirmOpen(true); 
+};
+
+
+// YES confirm
+const confirmYes = () => {
+  setConfirmOpen(false);
+  setAddOpen(false);
+
+  alert(`Professor Added:\n${pendingProf?.name}\n${pendingProf?.email}\n${pendingProf?.department}`);
+  setPendingProf(null);
+};
+
+// Cancel confirm (keep form open)
+const confirmCancel = () => setConfirmOpen(false);
+
 
   const professors = useMemo(
     () => [
@@ -53,7 +85,6 @@ export default function ProfessorManagement() {
   };
 
   // demo only
-  const onAdd = () => alert("Add professor (UI only)");
   const onEdit = (name) => alert(`Edit: ${name} (UI only)`);
   const onDelete = (name) => alert(`Delete: ${name} (UI only)`);
 
@@ -172,6 +203,19 @@ export default function ProfessorManagement() {
           </div>
         </section>
       </main>
+      <AddProfessorModal
+  open={addOpen}
+  onClose={() => setAddOpen(false)}
+  onSubmit={handleAddSubmit}
+/>
+
+<ConfirmModal
+  open={confirmOpen}
+  title="Add New Professor?"
+  onYes={confirmYes}
+  onCancel={confirmCancel}
+/>
+
     </div>
   );
 }

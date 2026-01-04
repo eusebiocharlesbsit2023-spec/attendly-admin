@@ -1,0 +1,133 @@
+.cam-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+  z-index: 2000;
+}
+
+.cam-modal {
+  width: 360px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  padding: 18px 18px 16px;
+}
+
+.cam-title {
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 12px;
+  color: #0f172a;
+}
+
+.cam-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cam-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  margin-top: 4px;
+}
+
+.cam-req {
+  color: #ef4444;
+}
+
+.cam-input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  font-size: 13px;
+}
+
+.cam-input:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  background: #fff;
+}
+
+.cam-passWrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 0 6px 0 10px;
+}
+
+.cam-passWrap:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  background: #fff;
+}
+
+.cam-pass {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 13px;
+  flex: 1;
+}
+
+.cam-eye {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 8px;
+  opacity: 0.75;
+}
+.cam-eye:hover {
+  opacity: 1;
+}
+
+.cam-error {
+  font-size: 12px;
+  color: #b91c1c;
+  margin-top: -2px;
+}
+
+.err {
+  border-color: #fecaca !important;
+}
+
+.cam-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.cam-btn {
+  min-width: 110px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #9ca3af;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cam-btn.primary {
+  background: #0a4e86;
+  border-color: #0a4e86;
+  color: #fff;
+}
+
+.cam-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -23,27 +23,39 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
         </div>
 
         <nav className="sidebarV2-nav">
-          <button
-            className={`sidebarV2-item ${active === "dashboard" ? "active" : ""}`}
-            onClick={() => go("/dashboard")}
-          >
-            <span className="sidebarV2-text">Dashboard</span>
-          </button>
+  <button
+    className={`sidebarV2-item ${active === "dashboard" ? "active" : ""}`}
+    onClick={() => go("/dashboard")}
+  >
+    <span className="sidebarV2-text">Dashboard</span>
+  </button>
 
-          <button
-            className={`sidebarV2-item ${active === "attendance" ? "active" : ""}`}
-            onClick={() => go("/attendance")}
-          >
-            <span className="sidebarV2-text">Attendance Record</span>
-          </button>
+  <button
+    className={`sidebarV2-item ${active === "attendance" ? "active" : ""}`}
+    onClick={() => go("/attendance")}
+  >
+    <span className="sidebarV2-text">Attendance Record</span>
+  </button>
 
-          <button
-            className={`sidebarV2-item ${active === "maintenance" ? "active" : ""}`}
-            onClick={() => go("/maintenance")}
-          >
-            <span className="sidebarV2-text">Maintenance</span>
-          </button>
-        </nav>
+  <button
+    className={`sidebarV2-item ${active === "maintenance" ? "active" : ""}`}
+    onClick={() => go("/maintenance")}
+  >
+    <span className="sidebarV2-text">Maintenance</span>
+  </button>
+
+  {/* NEW */}
+  <button
+    className={`sidebarV2-item ${active === "manage-admin" ? "active" : ""}`}
+    onClick={() => go("/manage-admin")}
+  >
+    <span className="sidebarV2-text">Manage Admin</span>
+  </button>
+</nav>
+
+
+        
+
 
         <div className="sidebarV2-footer">
           <button className="sidebarV2-logout" onClick={() => go("/")}>

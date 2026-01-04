@@ -2,10 +2,43 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./ClassManagement.css";
+import ConfirmModal from "../components/ConfirmModal";
+import EditClassModal from "../components/EditClassModal";
+
 
 export default function ClassManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // ===== Edit Class + Apply Changes Confirm =====
+const [editOpen, setEditOpen] = useState(false);
+const [applyOpen, setApplyOpen] = useState(false);
+const [editingClass, setEditingClass] = useState(null);
+const [pendingEdit, setPendingEdit] = useState(null);
+
+const onEdit = (clazzObj) => {
+  setEditingClass(clazzObj);
+  setEditOpen(true);
+};
+
+const onEditSaveClick = (updatedClass) => {
+  setPendingEdit(updatedClass);
+  setApplyOpen(true);
+};
+
+const applyYes = () => {
+  setApplyOpen(false);
+  setEditOpen(false);
+
+  // later: update state or API
+  alert(`Applied changes: ${pendingEdit?.code} -> ${pendingEdit?.status}`);
+
+  setPendingEdit(null);
+  setEditingClass(null);
+};
+
+const applyCancel = () => setApplyOpen(false);
+
 
   // filters
   const [q, setQ] = useState("");
@@ -106,7 +139,7 @@ export default function ClassManagement() {
   };
 
   // demo only
-  const onEdit = (name) => alert(`Edit: ${name} (UI only)`);
+
   const onDelete = (name) => alert(`Delete: ${name} (UI only)`);
 
   useEffect(() => {
@@ -243,7 +276,7 @@ export default function ClassManagement() {
               </div>
 
               <div className="cm-card-actions">
-                <button className="cm-editBtn" type="button" onClick={() => onEdit(c.name)}>
+                <button className="cm-editBtn" type="button" onClick={() => onEdit(c)}>
                   <span className="cm-editIco"><Svg name="edit" /></span>
                   Edit
                 </button>
@@ -258,6 +291,21 @@ export default function ClassManagement() {
           {filtered.length === 0 && <div className="cm-empty">No classes found.</div>}
         </section>
       </main>
+      <EditClassModal
+       open={editOpen}
+       clazz={editingClass}
+       allClasses={classes}
+       onClose={() => setEditOpen(false)}
+       onSaveClick={onEditSaveClick}
+      />
+
+      <ConfirmModal
+       open={applyOpen}
+       title="Apply Changes?"
+       onYes={applyYes}
+       onCancel={applyCancel}
+      />
+
     </div>
   );
 }

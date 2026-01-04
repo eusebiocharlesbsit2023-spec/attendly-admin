@@ -1,0 +1,52 @@
+.cm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  display: grid;
+  place-items: center;
+  z-index: 4000;
+}
+
+.cm-modal {
+  width: 380px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+  padding: 14px;
+}
+
+.cm-title {
+  display: flex;
+  justify-content: center;
+  font-family: "Montserrat", system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  margin-bottom: 10px;
+  color: #0f172a;
+}
+
+
+
+
+.cm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cm-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #9ca3af;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cm-btn.yes {
+  background: #0a4e86;
+  border-color: #0a4e86;
+  color: #fff;
+}

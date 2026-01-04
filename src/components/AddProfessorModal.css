@@ -1,0 +1,92 @@
+.apm-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: grid;
+  place-items: center;
+  z-index: 5000;
+}
+
+.apm-card{
+  width: 340px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 20px 55px rgba(0,0,0,0.25);
+  padding: 16px 18px 14px;
+}
+
+.apm-title{
+  text-align: center;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: #0f172a;
+}
+
+.apm-form{ display: flex; flex-direction: column; gap: 12px; }
+
+.apm-field label{
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+  display: block;
+}
+.apm-field label span{ color: #ef4444; }
+
+.apm-field input{
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 10px 12px;
+  outline: none;
+  font-size: 13px;
+}
+
+.apm-passWrap{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 0 6px 0 12px;
+}
+.apm-passWrap input{
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 10px 0;
+}
+
+.apm-eye{
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 8px;
+  opacity: 0.7;
+}
+.apm-eye:hover{ opacity: 1; }
+
+.apm-actions{
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 6px;
+}
+
+.apm-btn{
+  min-width: 110px;
+  padding: 9px 14px;
+  border-radius: 6px;
+  border: 1px solid #9ca3af;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.apm-btn.primary{
+  background: #0a4e86;
+  color: #fff;
+  border-color: #0a4e86;
+}

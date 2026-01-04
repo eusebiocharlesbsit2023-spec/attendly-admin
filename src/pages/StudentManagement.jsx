@@ -2,12 +2,81 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./StudentManagement.css";
+import AddStudentModal from "../components/AddStudentModal";
+import ConfirmModal from "../components/ConfirmModal";
+import EditStudentModal from "../components/EditStudentModal";
+
+
 
 export default function StudentManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [q, setQ] = useState("");
+
+    // ===== Add Student Modal & Confirm =====
+  const [addOpen, setAddOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingStudent, setPendingStudent] = useState(null);
+
+  const onAdd = () => setAddOpen(true);
+
+    // ===== Edit Student + Apply Changes Confirm =====
+  const [editOpen, setEditOpen] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [pendingEdit, setPendingEdit] = useState(null);
+
+  // open edit modal
+  const onEdit = (student) => {
+    setEditingStudent(student);
+    setEditOpen(true);
+  };
+
+  // after clicking Save inside edit modal -> open confirm
+  const onEditSaveClick = (updatedStudent) => {
+    setPendingEdit(updatedStudent);
+    setApplyOpen(true);
+  };
+
+  // YES apply
+  const applyYes = () => {
+    setApplyOpen(false);
+    setEditOpen(false);
+
+    // later: update state or call API
+    alert(`Applied changes: ${pendingEdit?.name} -> ${pendingEdit?.status}`);
+
+    setPendingEdit(null);
+    setEditingStudent(null);
+  };
+
+  // cancel confirm
+  const applyCancel = () => {
+    setApplyOpen(false);
+  };
+
+
+  // When Add button in modal is clicked
+  const handleAddFormSubmit = (payload) => {
+    setPendingStudent(payload);
+    setConfirmOpen(true);
+  };
+
+  // Confirm YES
+  const confirmYes = () => {
+    setConfirmOpen(false);
+    alert(`Student Added: ${pendingStudent?.name}`);
+    setPendingStudent(null);
+  };
+
+  // Confirm CANCEL
+  const confirmCancel = () => {
+    setConfirmOpen(false);
+  };
+
+  
+
 
   const students = useMemo(
     () => [
@@ -85,8 +154,7 @@ export default function StudentManagement() {
   };
 
   // demo only
-  const onAdd = () => alert("Add student (UI only)");
-  const onEdit = (name) => alert(`Edit: ${name} (UI only)`);
+
   const onDelete = (name) => alert(`Delete: ${name} (UI only)`);
 
   useEffect(() => {
@@ -196,7 +264,7 @@ export default function StudentManagement() {
                 </div>
 
                 <div className="sm-actionIcons">
-                  <button className="sm-icoBtn edit" onClick={() => onEdit(s.name)} aria-label="Edit">
+                  <button className="sm-icoBtn edit" onClick={() => onEdit(s)} aria-label="Edit">
                     <Svg name="edit" />
                   </button>
                   <button className="sm-icoBtn del" onClick={() => onDelete(s.name)} aria-label="Delete">
@@ -209,10 +277,41 @@ export default function StudentManagement() {
             {filtered.length === 0 && <div className="sm-empty">No students found.</div>}
           </div>
         </section>
-      </main>
+            </main>
+      {/* Add Student Modal */}
+      <AddStudentModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onSubmit={handleAddFormSubmit}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={confirmOpen}
+        title="Add New Student?"
+        onYes={confirmYes}
+        onCancel={confirmCancel}
+      />
+          {/* Edit Student Modal */}
+    <EditStudentModal
+      open={editOpen}
+      student={editingStudent}
+      onClose={() => setEditOpen(false)}
+      onSaveClick={onEditSaveClick}
+    />
+
+    {/* Apply Changes Confirm */}
+    <ConfirmModal
+      open={applyOpen}
+      title="Apply Changes?"
+      onYes={applyYes}
+      onCancel={applyCancel}
+    />
+
     </div>
   );
 }
+
 
 /* helpers */
 function initials(name) {
