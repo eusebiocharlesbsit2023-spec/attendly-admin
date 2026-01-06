@@ -23,7 +23,20 @@
   left: 0;
   height: 100vh;
   width: 500px;  /* changed to 700px */
+  display: flex;
+  flex-direction: column;
 }
+
+/* make nav take remaining space so we can push maintenance to the bottom */
+.sidebarV2-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  flex: 1;
+}
+
+
 
 .sidebarV2-brand {
   display: flex;
@@ -101,6 +114,9 @@
   min-width: 27px;
   font-size: 21px;
   opacity: 0.85;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebarV2-item:hover {

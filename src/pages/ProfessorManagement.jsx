@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./ProfessorManagement.css";
 import AddProfessorModal from "../components/AddProfessorModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
@@ -9,6 +10,9 @@ import EditProfessorModal from "../components/EditProfessorModal";
 export default function ProfessorManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+  const notifRef = useRef(null);
 
   const [q, setQ] = useState("");
 
@@ -199,15 +203,6 @@ export default function ProfessorManagement() {
       <header className="pm-topbar">
         <div className="pm-topbar-inner">
           <div className="pm-topbar-left">
-            <button
-              className="pm-icon-btn"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Menu"
-              type="button"
-            >
-              <Svg name="menu" />
-            </button>
-
             <div>
               <div className="pm-title">Professor Management</div>
               <div className="pm-subtitle">Review list of professors</div>
@@ -215,22 +210,29 @@ export default function ProfessorManagement() {
           </div>
 
           <div className="pm-topbar-right">
-            <button className="pm-icon-btn" aria-label="Notifications" type="button">
+            <button
+              className="pm-icon-btn bell-btn"
+              ref={notifRef}
+              aria-label="Notifications"
+              type="button"
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
               <span className="pm-notif-dot" />
               <Svg name="bell" />
-            </button>
-
-            <button
-              className="pm-icon-btn"
-              aria-label="Logout"
-              type="button"
-              onClick={() => navigate("/")}
-            >
-              <Svg name="logout" />
-            </button>
+            </button> 
           </div>
         </div>
       </header>
+
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={[]}
+        anchorRect={activityAnchorRect}
+      />
 
       <main className="pm-main">
         {/* Stats */}

@@ -2,8 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faGaugeHigh,
-  faClipboardList,
+  faHouse,
+  faHistory,
   faScrewdriverWrench,
   faUserShield,
   faRightFromBracket,
@@ -51,26 +51,17 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
             onClick={() => go("/dashboard")}
             type="button"
           >
-            <FontAwesomeIcon icon={faGaugeHigh} className="sidebarV2-icon" />
+            <FontAwesomeIcon icon={faHouse} className="sidebarV2-icon" />
             <span className="sidebarV2-text">Dashboard</span>
-          </button>
+          </button> 
 
           <button
             className={`sidebarV2-item ${active === "attendance" ? "active" : ""}`}
             onClick={() => go("/attendance")}
             type="button"
           >
-            <FontAwesomeIcon icon={faClipboardList} className="sidebarV2-icon" />
+            <FontAwesomeIcon icon={faHistory} className="sidebarV2-icon" />
             <span className="sidebarV2-text">Attendance Record</span>
-          </button>
-
-          <button
-            className={`sidebarV2-item ${active === "maintenance" ? "active" : ""}`}
-            onClick={() => go("/maintenance")}
-            type="button"
-          >
-            <FontAwesomeIcon icon={faScrewdriverWrench} className="sidebarV2-icon" />
-            <span className="sidebarV2-text">Maintenance</span>
           </button>
 
           <button
@@ -80,6 +71,15 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
           >
             <FontAwesomeIcon icon={faFileLines} className="sidebarV2-icon" />
             <span className="sidebarV2-text">Reports</span>
+          </button>
+
+          <button
+            className={`sidebarV2-item ${active === "maintenance" ? "active" : ""}`}
+            onClick={() => go("/maintenance")}
+            type="button"
+          >
+            <FontAwesomeIcon icon={faScrewdriverWrench} className="sidebarV2-icon" />
+            <span className="sidebarV2-text">Maintenance</span>
           </button>
 
           {/* ✅ ONLY SUPER ADMIN CAN SEE THIS */}
