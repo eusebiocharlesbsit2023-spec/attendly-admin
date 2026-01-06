@@ -6,43 +6,52 @@
   z-index: 900;
 }
 
-/* Sidebar base */
+
+/* Header */
+.sidebarV2-header {
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* center the brand */
+  border-bottom: 1px solid #eef2f7;
+  padding: 0 16px;
+}
+
 .sidebarV2 {
   position: fixed;
   top: 0;
   left: 0;
-  width: 280px;
   height: 100vh;
-  background: #fff;
-  z-index: 1000;
+  width: 500px;  /* changed to 700px */
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #e5e7eb;
-
-  /* MOBILE DEFAULT: hidden drawer */
-  transform: translateX(-100%);
-  transition: transform 0.28s ease;
 }
 
-/* Drawer open (mobile) */
-.sidebarV2.open {
-  transform: translateX(0);
-}
-
-/* Header */
-.sidebarV2-header {
-  height: 72px;
+/* make nav take remaining space so we can push maintenance to the bottom */
+.sidebarV2-nav {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid #eef2f7;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  flex: 1;
 }
+
+
 
 .sidebarV2-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebarV2-brand img{
+  width: auto;
+  max-width: 80%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 .sidebarV2-title {
@@ -74,9 +83,14 @@
   padding: 14px;
 }
 
+.sidebarV2-nav button:hover{
+    background-color: #0a4e86;
+    color: white;
+}
+
 .sidebarV2-item {
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 10px;
   border-radius: 12px;
   border: none;
   background: transparent;
@@ -88,16 +102,21 @@
   gap: 12px;
 
   color: #0f172a;
-  font-size: 15px;
   font-weight: 700;
-  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebarV2-text{
+    font-size: 20px;
 }
 
 .sidebarV2-icon {
-  width: 22px;
-  min-width: 22px;
-  font-size: 16px;
+  width: 27px;
+  min-width: 27px;
+  font-size: 21px;
   opacity: 0.85;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebarV2-item:hover {
@@ -115,31 +134,22 @@
 
 /* Footer */
 .sidebarV2-footer {
-  margin-top: auto;
-  padding: 14px;
+    display: flex;
+    justify-content: center;
   border-top: 1px solid #eef2f7;
 }
-
-.sidebarV2-logout {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: none;
-  background: #f8fafc;
-  cursor: pointer;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-
-  font-size: 15px;
-  font-weight: 800;
-  color: #0f172a;
+.logout-btn{
+    font-size: 20px;
+    border: none;
+    background-color: transparent;
+    text-align: center;
+    padding: 15px 50px;
+    border-radius: 8px;
+    transition: background-color .15s;
 }
-
-.sidebarV2-logout:hover {
-  background: #eef2f7;
+.logout-btn:hover{
+    background-color: #0a4e86;
+    color: white;
 }
 
 /* ✅ DESKTOP MODE: sidebar always visible like screenshot */

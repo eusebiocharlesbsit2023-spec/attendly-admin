@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./ClassManagement.css";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditClassModal from "../components/EditClassModal";
@@ -8,6 +9,9 @@ import EditClassModal from "../components/EditClassModal";
 export default function ClassManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+  const notifRef = useRef(null);
 
   // ===== Edit Class + Apply Changes Confirm =====
   const [editOpen, setEditOpen] = useState(false);
@@ -185,21 +189,33 @@ export default function ClassManagement() {
       <header className="cm-topbar">
         <div className="cm-topbar-inner">
           <div className="cm-topbar-left">
-            {/* ✅ burger button REMOVED */}
-
             <div className="cm-title">Class Management</div>
           </div>
 
           <div className="cm-topbar-right">
-            <button className="cm-icon-btn" aria-label="Notifications" type="button">
+            <button
+              className="cm-icon-btn bell-btn"
+              ref={notifRef}
+              aria-label="Notifications"
+              type="button"
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
               <span className="cm-notif-dot" />
               <Svg name="bell" />
-            </button>
-
-            {/* ❌ Logout button removed */}
+            </button> 
           </div>
         </div>
       </header>
+
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={[]}
+        anchorRect={activityAnchorRect}
+      />
 
       <main className="cm-main">
         {/* Stats */}

@@ -2,7 +2,7 @@
 
 /* Topbar */
 .pm-topbar{
-  background:#0a4e86; color:#fff; height:110px;
+  background:#0a4e86; color:#fff; height:92px;
   display:flex; align-items:center;
 }
 .pm-topbar-inner{
@@ -12,7 +12,7 @@
 }
 .pm-topbar-left{ display:flex; align-items:center; gap:18px; }
 
-.pm-title{ font-size:38px; font-weight:800; }
+.pm-title{ font-size: clamp(20px, 2.2vw + 10px, 28px); font-weight:600; }
 .pm-subtitle{ font-size:18px; opacity:.9; margin-top:2px; }
 
 .pm-topbar-right{ display:flex; align-items:center; gap:16px; }

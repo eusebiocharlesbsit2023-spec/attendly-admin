@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./ManageAdmin.css";
 import "./AdminDashboard.css";
 
@@ -68,6 +69,9 @@ function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
 export default function ManageAdmin() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+  const notifRef = useRef(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -251,10 +255,6 @@ export default function ManageAdmin() {
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
-            <button className="icon-btn" aria-label="Menu" type="button" onClick={() => setMenuOpen(true)}>
-              <Svg name="menu" />
-            </button>
-
             <div>
               <div className="dash-title">Admin Management</div>
               <div className="dash-subtitle">Manage administrator accounts</div>
@@ -262,12 +262,19 @@ export default function ManageAdmin() {
           </div>
 
           <div className="dash-topbar-right">
-            <button className="icon-btn" aria-label="Notifications" type="button">
+            <button
+              className="icon-btn bell-btn"
+              ref={notifRef}
+              aria-label="Notifications"
+              type="button"
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
               <span className="notif-dot" />
               <Svg name="bell" />
-            </button>
-
-            {/* ❌ Logout button removed */}
+            </button> 
           </div>
         </div>
       </header>

@@ -1,12 +1,16 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./AdminDashboard.css";
 import "./Reports.css";
 
 export default function Reports() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+  const notifRef = useRef(null);
 
   // Filters (UI only)
   const [status, setStatus] = useState("All");
@@ -118,8 +122,6 @@ export default function Reports() {
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
-            {/* ✅ burger button REMOVED */}
-
             <div>
               <div className="dash-title">Reports</div>
               <div className="dash-subtitle">View submitted reports and status</div>
@@ -127,12 +129,19 @@ export default function Reports() {
           </div>
 
           <div className="dash-topbar-right">
-            <button className="icon-btn" aria-label="Notifications" type="button">
+            <button
+              className="icon-btn bell-btn"
+              ref={notifRef}
+              aria-label="Notifications"
+              type="button"
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
               <span className="notif-dot" />
               <Svg name="bell" />
-            </button>
-
-            {/* ❌ Logout button removed */}
+            </button> 
           </div>
         </div>
       </header>
@@ -229,6 +238,12 @@ export default function Reports() {
           </div>
         </section>
       </main>
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={[]}
+        anchorRect={activityAnchorRect}
+      />
     </div>
   );
 }

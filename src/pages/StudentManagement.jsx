@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./StudentManagement.css";
 import AddStudentModal from "../components/AddStudentModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
@@ -9,6 +10,9 @@ import EditStudentModal from "../components/EditStudentModal";
 export default function StudentManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+  const notifRef = useRef(null);
 
   const [q, setQ] = useState("");
 
@@ -205,8 +209,6 @@ export default function StudentManagement() {
       <header className="sm-topbar">
         <div className="sm-topbar-inner">
           <div className="sm-topbar-left">
-            {/* ✅ burger button REMOVED */}
-
             <div>
               <div className="sm-title">Student Management</div>
               <div className="sm-subtitle">Review list of students</div>
@@ -214,15 +216,29 @@ export default function StudentManagement() {
           </div>
 
           <div className="sm-topbar-right">
-            <button className="sm-icon-btn" aria-label="Notifications" type="button">
+            <button
+              className="sm-icon-btn bell-btn"
+              ref={notifRef}
+              aria-label="Notifications"
+              type="button"
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
               <span className="sm-notif-dot" />
               <Svg name="bell" />
-            </button>
-
-            {/* ❌ Logout button removed */}
+            </button> 
           </div>
         </div>
       </header>
+
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={[]}
+        anchorRect={activityAnchorRect}
+      />
 
       <main className="sm-main">
         {/* Stats */}
