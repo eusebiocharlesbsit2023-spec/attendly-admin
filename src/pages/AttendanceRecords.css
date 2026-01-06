@@ -415,7 +415,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 320px;
+  width: 400px;
   max-width: 86vw;
   height: 100vh;
   background: #ffffff;
@@ -492,8 +492,8 @@ body {
 }
 
 .sidebarV2-ico {
-  width: 42px;
-  height: 42px;
+  width: 47px;
+  height: 47px;
   display: grid;
   place-items: center;
   color: #111827;
@@ -599,6 +599,6 @@ body {
 
 @media (min-width: 900px) {
   .app-shell {
-    margin-left: 320px; /* same as sidebar width */
+    margin-left: 500px; /* same as sidebar width */
   }
 }

@@ -78,6 +78,6 @@ body {
 /* desktop: leave space for fixed sidebar */
 @media (min-width: 900px) {
   .app-shell {
-    margin-left: 280px; /* must match sidebar width */
+    margin-left: 700px; /* must match sidebar width */
   }
 }

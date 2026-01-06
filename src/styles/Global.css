@@ -37,7 +37,7 @@ textarea {
 /* Desktop: reserve sidebar width */
 @media (min-width: 900px) {
   .app-shell {
-    margin-left: 320px; /* match your sidebar width */
+    margin-left: 400px; /* match your sidebar width */
   }
 }
 

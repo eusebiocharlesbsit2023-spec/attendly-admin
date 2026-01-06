@@ -11,6 +11,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import "./Sidebar.css";
+import Logo from '../assets/Logo.png';
 
 export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const navigate = useNavigate();
@@ -35,22 +36,12 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
       {/* Mobile overlay */}
       {open && <div className="sidebar-overlay" onClick={onClose} />}
 
-      <aside className={`sidebarV2 ${open ? "open" : ""}`}>
+      <aside className='sidebarV2 navbar'>
         {/* Header */}
         <div className="sidebarV2-header">
           <div className="sidebarV2-brand">
-            <span className="sidebarV2-title">Attendly</span>
+            <img src={Logo} alt="" />
           </div>
-
-          {/* Close button (mobile only via CSS) */}
-          <button
-            className="sidebarV2-close"
-            onClick={onClose}
-            type="button"
-            aria-label="Close Sidebar"
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
         </div>
 
         {/* Navigation */}
@@ -106,13 +97,9 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
 
         {/* Footer */}
         <div className="sidebarV2-footer">
-          <button
-            className="sidebarV2-logout"
-            onClick={logout}
-            type="button"
-          >
+          <button className="logout-btn" onClick={logout}>
             <FontAwesomeIcon icon={faRightFromBracket} />
-            <span>Log out</span>
+            Log out
           </button>
         </div>
       </aside>
