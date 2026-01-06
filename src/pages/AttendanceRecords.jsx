@@ -1,12 +1,16 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./AttendanceRecords.css";
 
 export default function AttendanceRecords() {
   const navigate = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+  const notifRef = useRef(null);
 
   const [q, setQ] = useState("");
   const [date, setDate] = useState("");
@@ -179,10 +183,6 @@ export default function AttendanceRecords() {
       <header className="ar-topbar">
         <div className="ar-topbar-inner">
           <div className="ar-topbar-left">
-            <button className="ar-icon-btn" type="button" onClick={() => setMenuOpen(true)} aria-label="Menu">
-              <Svg name="menu" />
-            </button>
-
             <div>
               <div className="ar-title">Attendance Records</div>
               <div className="ar-subtitle">Track attendance record</div>
@@ -190,13 +190,18 @@ export default function AttendanceRecords() {
           </div>
 
           <div className="ar-topbar-right">
-            <button className="ar-icon-btn" type="button" aria-label="Notifications">
+            <button
+              className="ar-icon-btn bell-btn"
+              ref={notifRef}
+              type="button"
+              aria-label="Notifications"
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
               <span className="ar-notif-dot" />
               <Svg name="bell" />
-            </button>
-
-            <button className="ar-icon-btn" type="button" aria-label="Logout" onClick={() => navigate("/")}>
-              <Svg name="logout" />
             </button>
           </div>
         </div>
@@ -347,6 +352,12 @@ export default function AttendanceRecords() {
           </div>
         </section>
       </main>
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={[]}
+        anchorRect={activityAnchorRect}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 .ahm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: transparent; /* removed dark backdrop */
   display: grid;
   place-items: center;
   z-index: 5000;
@@ -59,6 +59,7 @@
   gap: 10px;
   padding: 10px 0;
   border-bottom: 1px solid #f1f5f9;
+  position: relative; /* needed for the more menu */
 }
 
 .ahm-dot {
@@ -68,6 +69,15 @@
   background: #0a4e86;
   margin-top: 6px;
   flex: 0 0 auto;
+}
+
+.ahm-item.read .ahm-dot {
+  display: none; /* hide dot when read */
+}
+
+.ahm-item.read .ahm-main {
+  color: #94a3b8;
+  font-weight: 600;
 }
 
 .ahm-main {
@@ -82,6 +92,64 @@
   margin-top: 2px;
 }
 
+/* More button */
+.ahm-more {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
+.ahm-more:hover {
+  background: #f8fafc;
+}
+
+.ahm-more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.08);
+  min-width: 140px;
+  z-index: 10;
+  padding: 6px 6px;
+}
+
+.ahm-more-item {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ahm-more-item.disabled {
+  color: #94a3b8;
+  cursor: default;
+}
+
+.ahm-more-item.danger {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.ahm-more-item.danger:hover {
+  background: #fff1f2;
+}
+
 .ahm-empty {
   padding: 24px 0;
   text-align: center;
@@ -93,7 +161,22 @@
   padding: 12px 18px;
   border-top: 1px solid #eef2f7;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between; /* mark all on left, close on right */
+  align-items: center;
+}
+
+.ahm-markAll {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ahm-markAll:hover {
+  background: #f8fafc;
 }
 
 .ahm-btn {
@@ -110,6 +193,7 @@
   .ahm-card {
     width: calc(100vw - 24px);
   }
+  .ahm-more-menu { right: 8px; left: auto; }
 }
 
 .ahm-body {

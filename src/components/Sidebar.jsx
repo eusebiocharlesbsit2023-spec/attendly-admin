@@ -2,8 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faGaugeHigh,
-  faClipboardList,
+  faHouse,
+  faHistory,
   faScrewdriverWrench,
   faUserShield,
   faRightFromBracket,
@@ -11,6 +11,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import "./Sidebar.css";
+import Logo from '../assets/Logo.png';
 
 export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const navigate = useNavigate();
@@ -35,22 +36,12 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
       {/* Mobile overlay */}
       {open && <div className="sidebar-overlay" onClick={onClose} />}
 
-      <aside className={`sidebarV2 ${open ? "open" : ""}`}>
+      <aside className='sidebarV2 navbar'>
         {/* Header */}
         <div className="sidebarV2-header">
           <div className="sidebarV2-brand">
-            <span className="sidebarV2-title">Attendly</span>
+            <img src={Logo} alt="" />
           </div>
-
-          {/* Close button (mobile only via CSS) */}
-          <button
-            className="sidebarV2-close"
-            onClick={onClose}
-            type="button"
-            aria-label="Close Sidebar"
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
         </div>
 
         {/* Navigation */}
@@ -60,26 +51,17 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
             onClick={() => go("/dashboard")}
             type="button"
           >
-            <FontAwesomeIcon icon={faGaugeHigh} className="sidebarV2-icon" />
+            <FontAwesomeIcon icon={faHouse} className="sidebarV2-icon" />
             <span className="sidebarV2-text">Dashboard</span>
-          </button>
+          </button> 
 
           <button
             className={`sidebarV2-item ${active === "attendance" ? "active" : ""}`}
             onClick={() => go("/attendance")}
             type="button"
           >
-            <FontAwesomeIcon icon={faClipboardList} className="sidebarV2-icon" />
+            <FontAwesomeIcon icon={faHistory} className="sidebarV2-icon" />
             <span className="sidebarV2-text">Attendance Record</span>
-          </button>
-
-          <button
-            className={`sidebarV2-item ${active === "maintenance" ? "active" : ""}`}
-            onClick={() => go("/maintenance")}
-            type="button"
-          >
-            <FontAwesomeIcon icon={faScrewdriverWrench} className="sidebarV2-icon" />
-            <span className="sidebarV2-text">Maintenance</span>
           </button>
 
           <button
@@ -89,6 +71,15 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
           >
             <FontAwesomeIcon icon={faFileLines} className="sidebarV2-icon" />
             <span className="sidebarV2-text">Reports</span>
+          </button>
+
+          <button
+            className={`sidebarV2-item ${active === "maintenance" ? "active" : ""}`}
+            onClick={() => go("/maintenance")}
+            type="button"
+          >
+            <FontAwesomeIcon icon={faScrewdriverWrench} className="sidebarV2-icon" />
+            <span className="sidebarV2-text">Maintenance</span>
           </button>
 
           {/* ✅ ONLY SUPER ADMIN CAN SEE THIS */}
@@ -106,13 +97,9 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
 
         {/* Footer */}
         <div className="sidebarV2-footer">
-          <button
-            className="sidebarV2-logout"
-            onClick={logout}
-            type="button"
-          >
+          <button className="logout-btn" onClick={logout}>
             <FontAwesomeIcon icon={faRightFromBracket} />
-            <span>Log out</span>
+            Log out
           </button>
         </div>
       </aside>

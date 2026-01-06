@@ -37,7 +37,7 @@ textarea {
 /* Desktop: reserve sidebar width */
 @media (min-width: 900px) {
   .app-shell {
-    margin-left: 320px; /* match your sidebar width */
+    margin-left: 400px; /* match your sidebar width */
   }
 }
 
@@ -91,4 +91,57 @@ textarea {
   textarea {
     max-width: 100%;
   }
+}
+
+/* ===== Shared Topbar / Navbar styles (consistent across pages) ===== */
+.dash-topbar, .sm-topbar, .pm-topbar, .ar-topbar, .mnt-topbar, .cm-topbar {
+  background: #0a4e86;
+  color: #fff;
+  height: 92px;
+  display: flex;
+  align-items: center;
+}
+.dash-topbar-inner, .sm-topbar-inner, .pm-topbar-inner, .ar-topbar-inner, .mnt-topbar-inner, .cm-topbar-inner {
+  width: min(1200px, 92vw);
+  margin: 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.dash-title, .sm-title, .pm-title, .ar-title, .mnt-title, .cm-title {
+  font-size: clamp(20px, 2.2vw + 10px, 28px);
+  font-weight: 600; /* unified title weight */
+}
+.dash-subtitle, .sm-subtitle, .pm-subtitle, .ar-subtitle {
+  font-size: 14px;
+  font-weight: 500; /* unified subtitle weight */
+  opacity: .9;
+  margin-top: 2px;
+}
+.icon-btn, .sm-icon-btn, .pm-icon-btn, .ar-icon-btn, .mnt-icon-btn, .cm-icon-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+/* larger bell icon (+5px) */
+.bell-btn .svg {
+  width: 27px !important;
+  height: 27px !important;
+}
+
+/* nudged notification dot for larger icon */
+.bell-btn .notif-dot,
+.bell-btn .sm-notif-dot,
+.bell-btn .pm-notif-dot,
+.bell-btn .ar-notif-dot,
+.bell-btn .cm-notif-dot,
+.bell-btn .mnt-notif-dot {
+  right: 7px;
+  top: 7px;
 }

@@ -7,9 +7,21 @@
 .sm-topbar {
   background: #0a4e86;
   color: #fff;
-  height: 110px;
+  height: 92px;
   display: flex;
   align-items: center;
+}
+
+.sm-title {
+  font-size: clamp(20px, 2.2vw + 10px, 28px);
+  font-weight: 600;
+}
+
+.sm-subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-top: 2px;
 }
 
 .sm-topbar-inner {

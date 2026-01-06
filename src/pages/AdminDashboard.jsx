@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AdminDashboard.css";
@@ -8,6 +8,8 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+  const notifRef = useRef(null);
 
   const stats = [
     { label: "Total Students", value: 45, icon: "users", tint: "blue" },
@@ -42,10 +44,6 @@ export default function AdminDashboard() {
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
-            <button className="icon-btn" onClick={() => setMenuOpen(true)}>
-              <Svg name="menu" />
-            </button>
-
             <div>
               <div className="dash-title">Admin Dashboard</div>
               <div className="dash-subtitle">Welcome back, Admin123!</div>
@@ -53,14 +51,18 @@ export default function AdminDashboard() {
           </div>
 
           <div className="dash-topbar-right">
-            <button className="icon-btn" onClick={() => setActivityOpen(true)}>
+            <button
+              className="icon-btn bell-btn"
+              ref={notifRef}
+              onClick={() => {
+                // capture the bell button position and open the modal anchored to it
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
               <span className="notif-dot" />
               <Svg name="bell" />
-            </button>
-
-            <button className="icon-btn" onClick={() => navigate("/")}>
-              <Svg name="logout" />
-            </button>
+            </button> 
           </div>
         </div>
       </header>
@@ -140,6 +142,7 @@ export default function AdminDashboard() {
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
         items={activity}
+        anchorRect={activityAnchorRect}
       />
     </div>
   );
