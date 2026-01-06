@@ -1,44 +1,23 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./ClassManagement.css";
-import ConfirmModal from "../components/ConfirmModal";
+import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditClassModal from "../components/EditClassModal";
-
 
 export default function ClassManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // ===== Edit Class + Apply Changes Confirm =====
-const [editOpen, setEditOpen] = useState(false);
-const [applyOpen, setApplyOpen] = useState(false);
-const [editingClass, setEditingClass] = useState(null);
-const [pendingEdit, setPendingEdit] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [editingClass, setEditingClass] = useState(null);
+  const [pendingEdit, setPendingEdit] = useState(null);
 
-const onEdit = (clazzObj) => {
-  setEditingClass(clazzObj);
-  setEditOpen(true);
-};
-
-const onEditSaveClick = (updatedClass) => {
-  setPendingEdit(updatedClass);
-  setApplyOpen(true);
-};
-
-const applyYes = () => {
-  setApplyOpen(false);
-  setEditOpen(false);
-
-  // later: update state or API
-  alert(`Applied changes: ${pendingEdit?.code} -> ${pendingEdit?.status}`);
-
-  setPendingEdit(null);
-  setEditingClass(null);
-};
-
-const applyCancel = () => setApplyOpen(false);
-
+  // ✅ Delete confirm
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   // filters
   const [q, setQ] = useState("");
@@ -46,7 +25,8 @@ const applyCancel = () => setApplyOpen(false);
   const [status, setStatus] = useState("All Status");
   const [prof, setProf] = useState("All Professors");
 
-  const classes = useMemo(
+  // ✅ initial data (memo)
+  const initialClasses = useMemo(
     () => [
       {
         name: "Introduction to Computer Science",
@@ -88,24 +68,74 @@ const applyCancel = () => setApplyOpen(false);
     []
   );
 
+  // ✅ real list (state) so edits/deletes update UI
+  const [rows, setRows] = useState(initialClasses);
+
+  // ===== Edit handlers =====
+  const onEdit = (clazzObj) => {
+    setEditingClass(clazzObj);
+    setEditOpen(true);
+  };
+
+  // Save click inside modal -> open confirm (no alert)
+  const onEditSaveClick = (updatedClass) => {
+    setPendingEdit(updatedClass);
+    setApplyOpen(true);
+  };
+
+  // ✅ Apply YES -> update rows immediately (temporary/local)
+  const applyYes = () => {
+    if (pendingEdit?.code) {
+      setRows((prev) =>
+        prev.map((c) => (c.code === pendingEdit.code ? { ...c, ...pendingEdit } : c))
+      );
+    }
+
+    setApplyOpen(false);
+    setEditOpen(false);
+    setPendingEdit(null);
+    setEditingClass(null);
+  };
+
+  const applyCancel = () => {
+    setApplyOpen(false);
+    setPendingEdit(null);
+  };
+
+  // ✅ Delete handlers
+  const onDeleteClick = (clazzObj) => {
+    setPendingDelete(clazzObj);
+    setDeleteOpen(true);
+  };
+
+  const deleteYes = () => {
+    setRows((prev) => prev.filter((c) => c.code !== pendingDelete?.code));
+    setDeleteOpen(false);
+    setPendingDelete(null);
+  };
+
+  const deleteCancel = () => {
+    setDeleteOpen(false);
+    setPendingDelete(null);
+  };
+
+  // options (based on current rows)
   const classOptions = useMemo(() => {
-    const set = new Set(classes.map((c) => c.code));
+    const set = new Set(rows.map((c) => c.code));
     return ["All Classes", ...Array.from(set)];
-  }, [classes]);
+  }, [rows]);
 
   const profOptions = useMemo(() => {
-    const set = new Set(classes.map((c) => c.professor));
+    const set = new Set(rows.map((c) => c.professor));
     return ["All Professors", ...Array.from(set)];
-  }, [classes]);
+  }, [rows]);
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
 
-    return classes.filter((c) => {
+    return rows.filter((c) => {
       const matchesQuery =
-        !query ||
-        c.name.toLowerCase().includes(query) ||
-        c.code.toLowerCase().includes(query);
+        !query || c.name.toLowerCase().includes(query) || c.code.toLowerCase().includes(query);
 
       const matchesClass = clazz === "All Classes" || c.code === clazz;
       const matchesStatus = status === "All Status" || c.status === status;
@@ -113,19 +143,27 @@ const applyCancel = () => setApplyOpen(false);
 
       return matchesQuery && matchesClass && matchesStatus && matchesProf;
     });
-  }, [classes, q, clazz, status, prof]);
+  }, [rows, q, clazz, status, prof]);
 
   const stats = useMemo(() => {
-    const total = classes.length;
-    const activeCount = classes.filter((c) => c.status === "Active").length;
-    const inactiveCount = classes.filter((c) => c.status === "Inactive").length;
+    const total = rows.length;
+    const activeCount = rows.filter((c) => c.status === "Active").length;
+    const inactiveCount = rows.filter((c) => c.status === "Inactive").length;
     return { total, activeCount, inactiveCount };
-  }, [classes]);
+  }, [rows]);
 
   const exportCSV = () => {
     const header = ["Class Name", "Code", "Professor", "Room", "Schedule", "WiFi", "Status"];
-    const rows = filtered.map((c) => [c.name, c.code, c.professor, c.room, c.schedule, c.wifi, c.status]);
-    const csv = [header, ...rows].map((r) => r.map(csvEscape).join(",")).join("\n");
+    const dataRows = filtered.map((c) => [
+      c.name,
+      c.code,
+      c.professor,
+      c.room,
+      c.schedule,
+      c.wifi,
+      c.status,
+    ]);
+    const csv = [header, ...dataRows].map((r) => r.map(csvEscape).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -138,23 +176,21 @@ const applyCancel = () => setApplyOpen(false);
     URL.revokeObjectURL(url);
   };
 
-  // demo only
-
-  const onDelete = (name) => alert(`Delete: ${name} (UI only)`);
-
-  useEffect(() => {
-    // reset filters if needed later
-  }, []);
-
   return (
-    <div className="cm">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="dashboard" />
+    <div className="app-shell cm">
+      {/* ✅ Sidebar now fits all pages using app-shell */}
+      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="classes" />
 
       {/* Topbar */}
       <header className="cm-topbar">
         <div className="cm-topbar-inner">
           <div className="cm-topbar-left">
-            <button className="cm-icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu" type="button">
+            <button
+              className="cm-icon-btn"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Menu"
+              type="button"
+            >
               <Svg name="menu" />
             </button>
 
@@ -167,7 +203,12 @@ const applyCancel = () => setApplyOpen(false);
               <Svg name="bell" />
             </button>
 
-            <button className="cm-icon-btn" aria-label="Logout" type="button" onClick={() => navigate("/")}>
+            <button
+              className="cm-icon-btn"
+              aria-label="Logout"
+              type="button"
+              onClick={() => navigate("/")}
+            >
               <Svg name="logout" />
             </button>
           </div>
@@ -197,12 +238,10 @@ const applyCancel = () => setApplyOpen(false);
         <section className="cm-filters card">
           <div className="cm-searchRow">
             <div className="cm-search">
-              <span className="cm-searchIcon"><Svg name="search" /></span>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by name or Id"
-              />
+              <span className="cm-searchIcon">
+                <Svg name="search" />
+              </span>
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or Id" />
             </div>
           </div>
 
@@ -211,7 +250,9 @@ const applyCancel = () => setApplyOpen(false);
               <label>Class</label>
               <select value={clazz} onChange={(e) => setClazz(e.target.value)}>
                 {classOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </div>
@@ -229,13 +270,17 @@ const applyCancel = () => setApplyOpen(false);
               <label>Professors</label>
               <select value={prof} onChange={(e) => setProf(e.target.value)}>
                 {profOptions.map((p) => (
-                  <option key={p} value={p}>{p}</option>
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
                 ))}
               </select>
             </div>
 
             <button className="cm-exportBtn" type="button" onClick={exportCSV}>
-              <span className="cm-exportIcon"><Svg name="download" /></span>
+              <span className="cm-exportIcon">
+                <Svg name="download" />
+              </span>
               Export CSV
             </button>
           </div>
@@ -258,30 +303,45 @@ const applyCancel = () => setApplyOpen(false);
 
               <div className="cm-card-body">
                 <div className="cm-line">
-                  <span className="cm-ico"><Svg name="user" /></span>
+                  <span className="cm-ico">
+                    <Svg name="user" />
+                  </span>
                   <span>{c.professor}</span>
                 </div>
                 <div className="cm-line">
-                  <span className="cm-ico"><Svg name="pin" /></span>
+                  <span className="cm-ico">
+                    <Svg name="pin" />
+                  </span>
                   <span>{c.room}</span>
                 </div>
                 <div className="cm-line">
-                  <span className="cm-ico"><Svg name="clock" /></span>
+                  <span className="cm-ico">
+                    <Svg name="clock" />
+                  </span>
                   <span>{c.schedule}</span>
                 </div>
                 <div className="cm-line">
-                  <span className="cm-ico"><Svg name="wifi" /></span>
+                  <span className="cm-ico">
+                    <Svg name="wifi" />
+                  </span>
                   <span>{c.wifi}</span>
                 </div>
               </div>
 
               <div className="cm-card-actions">
                 <button className="cm-editBtn" type="button" onClick={() => onEdit(c)}>
-                  <span className="cm-editIco"><Svg name="edit" /></span>
+                  <span className="cm-editIco">
+                    <Svg name="edit" />
+                  </span>
                   Edit
                 </button>
 
-                <button className="cm-trashBtn" type="button" onClick={() => onDelete(c.name)} aria-label="Delete">
+                <button
+                  className="cm-trashBtn"
+                  type="button"
+                  onClick={() => onDeleteClick(c)}
+                  aria-label="Delete"
+                >
                   <Svg name="trash" />
                 </button>
               </div>
@@ -291,21 +351,26 @@ const applyCancel = () => setApplyOpen(false);
           {filtered.length === 0 && <div className="cm-empty">No classes found.</div>}
         </section>
       </main>
+
+      {/* Edit modal */}
       <EditClassModal
-       open={editOpen}
-       clazz={editingClass}
-       allClasses={classes}
-       onClose={() => setEditOpen(false)}
-       onSaveClick={onEditSaveClick}
+        open={editOpen}
+        clazz={editingClass}
+        allClasses={rows}
+        onClose={() => setEditOpen(false)}
+        onSaveClick={onEditSaveClick}
       />
 
-      <ConfirmModal
-       open={applyOpen}
-       title="Apply Changes?"
-       onYes={applyYes}
-       onCancel={applyCancel}
-      />
+      {/* Apply confirm */}
+      <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={applyCancel} />
 
+      {/* Delete confirm */}
+      <SmallConfirmModal
+        open={deleteOpen}
+        title={`Delete ${pendingDelete?.code || "this class"}?`}
+        onYes={deleteYes}
+        onCancel={deleteCancel}
+      />
     </div>
   );
 }
@@ -330,81 +395,98 @@ function Svg({ name }) {
   switch (name) {
     case "menu":
       return (
-        <svg {...common}><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+        <svg {...common}>
+          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
       );
     case "bell":
       return (
         <svg {...common}>
-          <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path
+            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "logout":
       return (
         <svg {...common}>
-          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "search":
       return (
         <svg {...common}>
-          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="2"/>
-          <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="2" />
+          <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "download":
       return (
         <svg {...common}>
-          <path d="M12 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M12 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "user":
       return (
         <svg {...common}>
-          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="2"/>
-          <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="2" />
+          <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "pin":
       return (
         <svg {...common}>
-          <path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-          <circle cx="12" cy="10" r="2" stroke="currentColor" strokeWidth="2"/>
+          <path
+            d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+          <circle cx="12" cy="10" r="2" stroke="currentColor" strokeWidth="2" />
         </svg>
       );
     case "clock":
       return (
         <svg {...common}>
-          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
-          <path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+          <path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "wifi":
       return (
         <svg {...common}>
-          <path d="M5 12.55a11 11 0 0 1 14 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M8.5 15.5a6 6 0 0 1 7 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M11 18.5a2 2 0 0 1 2 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M5 12.55a11 11 0 0 1 14 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M8.5 15.5a6 6 0 0 1 7 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M11 18.5a2 2 0 0 1 2 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     case "edit":
       return (
         <svg {...common}>
-          <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+          <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
         </svg>
       );
     case "trash":
       return (
         <svg {...common}>
-          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
     default:

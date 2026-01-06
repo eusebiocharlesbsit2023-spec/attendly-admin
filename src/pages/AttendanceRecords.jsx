@@ -3,26 +3,17 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AttendanceRecords.css";
 
-/**
- * AttendanceRecords
- * - Pure React + Pure CSS
- * - UI matches your screenshot: header, stat cards, filters, export CSV, table, pagination
- */
-
 export default function AttendanceRecords() {
   const navigate = useNavigate();
 
-  // sidebar open/close
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // filters
   const [q, setQ] = useState("");
   const [date, setDate] = useState("");
   const [clazz, setClazz] = useState("All Classes");
   const [status, setStatus] = useState("All Status");
   const [prof, setProf] = useState("All Professors");
 
-  // pagination (simple)
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
@@ -176,26 +167,19 @@ export default function AttendanceRecords() {
     URL.revokeObjectURL(url);
   };
 
-  // reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [q, date, clazz, status, prof]);
 
   return (
-    <div className="ar">
-      {/* ✅ Reusable Sidebar */}
+    <div className="app-shell ar">
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="attendance" />
 
       {/* Top Bar */}
       <header className="ar-topbar">
         <div className="ar-topbar-inner">
           <div className="ar-topbar-left">
-            <button
-              className="ar-icon-btn"
-              type="button"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Menu"
-            >
+            <button className="ar-icon-btn" type="button" onClick={() => setMenuOpen(true)} aria-label="Menu">
               <Svg name="menu" />
             </button>
 
@@ -247,11 +231,7 @@ export default function AttendanceRecords() {
           <div className="ar-searchRow">
             <div className="ar-search">
               <span className="ar-searchIcon"><Svg name="search" /></span>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by name or Id"
-              />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or Id" />
             </div>
           </div>
 
@@ -322,7 +302,6 @@ export default function AttendanceRecords() {
                   </div>
 
                   <div>{r.date}</div>
-
                   <div className="ar-classCell">{r.className}</div>
 
                   <div>
@@ -333,19 +312,13 @@ export default function AttendanceRecords() {
                 </div>
               ))}
 
-              {paged.length === 0 && (
-                <div className="ar-empty">No records found.</div>
-              )}
+              {paged.length === 0 && <div className="ar-empty">No records found.</div>}
             </div>
           </div>
 
           {/* Pagination */}
           <div className="ar-pagination">
-            <button
-              className="ar-pageBtn"
-              disabled={safePage === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
+            <button className="ar-pageBtn" disabled={safePage === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
               ‹
             </button>
 
@@ -378,7 +351,7 @@ export default function AttendanceRecords() {
   );
 }
 
-/* -------- helpers -------- */
+/* helpers */
 function csvEscape(v) {
   const s = String(v ?? "");
   if (/[,"\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -398,7 +371,6 @@ function initials(name) {
   return (a + b) || "U";
 }
 
-/* -------- page icons only -------- */
 function Svg({ name }) {
   const common = {
     width: 22,

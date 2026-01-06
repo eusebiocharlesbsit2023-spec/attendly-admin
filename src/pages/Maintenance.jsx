@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./Maintenance.css";
+import MaintenanceConfirmModal from "../components/MaintenanceConfirmModal";
 
 export default function Maintenance() {
   const navigate = useNavigate();
@@ -10,16 +11,33 @@ export default function Maintenance() {
   // UI only (you can connect this to backend later)
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
 
+  // Confirm modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingNextMode, setPendingNextMode] = useState(null); // "maintenance" | "online"
+
   const statusLabel = isMaintenanceMode ? "Maintenance" : "Online";
   const statusClass = isMaintenanceMode ? "status-red" : "status-green";
 
   const handleSwitch = () => {
+    const next = isMaintenanceMode ? "online" : "maintenance";
+    setPendingNextMode(next);
+    setConfirmOpen(true);
+  };
+
+  const confirmYes = () => {
+    setConfirmOpen(false);
     setIsMaintenanceMode((v) => !v);
+    setPendingNextMode(null);
+  };
+
+  const confirmCancel = () => {
+    setConfirmOpen(false);
+    setPendingNextMode(null);
   };
 
   return (
-    <div className="mnt">
-      {/* Sidebar */}
+    <div className="app-shell mnt">
+      {/* ✅ Sidebar (fits all pages using app-shell) */}
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="maintenance" />
 
       {/* Top Bar */}
@@ -80,6 +98,14 @@ export default function Maintenance() {
           </button>
         </section>
       </main>
+
+      {/* Confirm Modal */}
+      <MaintenanceConfirmModal
+        open={confirmOpen}
+        title={pendingNextMode === "maintenance" ? "Switch to Maintenance?" : "Switch to Online?"}
+        onYes={confirmYes}
+        onCancel={confirmCancel}
+      />
     </div>
   );
 }
@@ -98,7 +124,12 @@ function Svg({ name }) {
     case "menu":
       return (
         <svg {...common}>
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M4 6h16M4 12h16M4 18h16"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       );
 
@@ -111,16 +142,37 @@ function Svg({ name }) {
             strokeWidth="2"
             strokeLinejoin="round"
           />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M10 19a2 2 0 004 0"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       );
 
     case "logout":
       return (
         <svg {...common}>
-          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M10 16l-4-4 4-4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M6 12h9"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       );
 

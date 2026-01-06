@@ -270,6 +270,12 @@
   font-weight: 900;
 }
 
+.mam-action.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
 /* responsive */
 @media (max-width: 900px) {
   .mam-filters {

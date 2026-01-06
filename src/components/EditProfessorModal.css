@@ -1,0 +1,61 @@
+.epm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: grid;
+  place-items: center;
+  z-index: 5000;
+}
+
+.epm-modal {
+  width: 420px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.2);
+  padding: 18px 18px 16px;
+}
+
+.epm-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px 14px;
+  align-items: center;
+}
+
+.epm-label {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.epm-value {
+  color: #0f172a;
+  text-align: right;
+}
+
+.epm-select {
+  width: 160px;
+  height: 34px;
+  border-radius: 18px;
+  border: 1px solid #cbd5e1;
+  padding: 0 10px;
+  background: #fff;
+  outline: none;
+}
+
+.epm-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+.epm-save {
+  width: 150px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #0a4e86;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}

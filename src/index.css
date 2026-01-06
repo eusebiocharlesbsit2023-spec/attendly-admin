@@ -74,3 +74,10 @@ body {
   margin: 0;
   overflow-x: hidden;
 }
+
+/* desktop: leave space for fixed sidebar */
+@media (min-width: 900px) {
+  .app-shell {
+    margin-left: 280px; /* must match sidebar width */
+  }
+}

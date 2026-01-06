@@ -107,7 +107,7 @@
 
 .sm-stat-value {
   font-size: 44px;
-  font-weight: 900;
+  font-weight: 600;
   color: #0b0b0b;
 }
 
@@ -201,7 +201,7 @@
   grid-template-columns: 2.2fr 1.3fr 1.6fr 1fr 1.2fr 1.1fr;
   background: #dfe7ea;
   padding: 18px 22px;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 20px;
 }
 
@@ -300,4 +300,9 @@
   }
   .sm-thead { font-size: 16px; }
   .sm-title { font-size: 28px; }
+}
+
+/* layout shell for pages that use Sidebar */
+.app-shell {
+  min-height: 100vh;
 }

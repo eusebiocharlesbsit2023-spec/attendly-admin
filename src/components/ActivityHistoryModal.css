@@ -111,3 +111,9 @@
     width: calc(100vw - 24px);
   }
 }
+
+.ahm-body {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 6px;
+}

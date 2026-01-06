@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
+
 /* ========== Base ========== */
 *,
 *::before,
@@ -5,13 +7,18 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
 body {
   margin: 0;
   overflow-x: hidden;
+
+  /* ✅ Global font */
+  font-family: "Montserrat", sans-serif;
 }
 
 /* Page background similar to screenshot */
@@ -19,7 +26,14 @@ body {
   min-height: 100vh;
   background: #eaf4ff;
   color: #0f172a;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+  /* ✅ Ensure dashboard uses Montserrat */
+  font-family: "Montserrat", sans-serif;
+}
+
+/* ✅ Force all dashboard children */
+.dash * {
+  font-family: "Montserrat", sans-serif;
 }
 
 /* ========== Top bar ========== */
@@ -53,7 +67,7 @@ body {
 
 .dash-title {
   font-size: clamp(20px, 2.2vw + 10px, 30px);
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.1;
 }
 
@@ -61,6 +75,7 @@ body {
   margin-top: 4px;
   font-size: clamp(12px, 1vw + 9px, 14px);
   opacity: 0.85;
+  font-weight: 500;
 }
 
 /* Icon buttons */
@@ -155,6 +170,7 @@ body {
 .stat-label {
   margin-top: 6px;
   font-size: 13px;
+  font-weight: 500;
   color: #080808;
   white-space: nowrap;
   overflow: hidden;
@@ -220,7 +236,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 750;
+  font-weight: 700;
   font-size: 18px;
   color: #0f172a;
   margin-bottom: 14px;
@@ -257,12 +273,12 @@ body {
 
 .activity-text {
   min-width: 0;
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .activity-main {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #1f2a44;
   white-space: normal;
   word-break: break-word;
@@ -271,6 +287,7 @@ body {
 .activity-sub {
   margin-top: 4px;
   font-size: 12px;
+  font-weight: 500;
   color: #64748b;
 }
 
@@ -296,7 +313,7 @@ body {
 }
 
 .class-title {
-  font-weight: 500;
+  font-weight: 600;
   color: #0f172a;
   font-size: 14px;
   line-height: 1.25;
@@ -310,6 +327,7 @@ body {
   gap: 10px;
   color: #64748b;
   font-size: 12px;
+  font-weight: 500;
 }
 
 .meta-pill {
@@ -323,7 +341,7 @@ body {
   white-space: nowrap;
   background: #dbeafe;
   color: #1d4ed8;
-  font-weight: 900;
+  font-weight: 600;
   font-size: 12px;
   padding: 8px 10px;
   border-radius: 10px;
@@ -340,7 +358,7 @@ body {
   border: none;
   background: transparent;
   color: #1d4ed8;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -349,8 +367,26 @@ body {
 }
 
 /* ========== Tints ========== */
-.tint-blue { background: #dbeafe; color: #1d4ed8; }
-.tint-purple { background: #ede9fe; color: #6d28d9; }
-.tint-green { background: #dcfce7; color: #15803d; }
-.tint-yellow { background: #fef3c7; color: #b45309; }
+.tint-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.tint-purple {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+.tint-green {
+  background: #dcfce7;
+  color: #15803d;
+}
+.tint-yellow {
+  background: #fef3c7;
+  color: #b45309;
+}
 
+/* Sidebar spacing */
+@media (min-width: 900px) {
+  .app-shell {
+    margin-left: 320px; /* match sidebar width */
+  }
+}

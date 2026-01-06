@@ -7,8 +7,9 @@ import StudentManagement from "./pages/Studentmanagement";
 import ClassManagement from "./pages/ClassManagement";
 import ProfessorManagement from "./pages/ProfessorManagement";
 import ManageAdmin from "./pages/ManageAdmin";
+import Reports from "./pages/Reports";
 
-
+import SuperAdminRoute from "./routes/SuperAdminRoute";
 
 
 function App() {
@@ -23,11 +24,15 @@ function App() {
         <Route path="/classes" element={<ClassManagement />} />
         <Route path="/professors" element={<ProfessorManagement />} />
         <Route path="/manage-admin" element={<ManageAdmin />} />
-
-        
-
-
-
+        <Route path="/reports" element={<Reports />} /> 
+        <Route
+  path="/manage-admin"
+  element={
+    <SuperAdminRoute>
+      <ManageAdmin />
+    </SuperAdminRoute>
+  }
+/>
 
       </Routes>
     </BrowserRouter>

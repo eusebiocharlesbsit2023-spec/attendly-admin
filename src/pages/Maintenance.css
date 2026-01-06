@@ -1,7 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
 
+/* Page */
 .mnt {
   min-height: 100vh;
   background: #eaf6ff;
+
+  /* ✅ Global font */
+  font-family: "Montserrat", sans-serif;
+}
+
+/* ✅ Force all children to Montserrat */
+.mnt * {
+  font-family: "Montserrat", sans-serif;
 }
 
 /* Topbar */
@@ -38,7 +48,6 @@
   align-items: center;
   gap: 16px;
 }
-
 
 .mnt-icon-btn {
   width: 46px;

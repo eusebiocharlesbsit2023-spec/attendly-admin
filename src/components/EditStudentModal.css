@@ -5,6 +5,9 @@
   display: grid;
   place-items: center;
   z-index: 3500;
+
+   font-family: "Montserrat", system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
 }
 
 .esm-card {
@@ -14,7 +17,12 @@
   border: 1px solid #e2e8f0;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   padding: 26px 34px;
+
+  /* ✅ add this */
+  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
 }
+
 
 .esm-row {
   display: grid;
@@ -25,7 +33,7 @@
 
 .esm-label {
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 600;
   color: #0f172a;
 }
 

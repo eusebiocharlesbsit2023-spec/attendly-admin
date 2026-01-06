@@ -1,0 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
+
+/* ===== Global Reset ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+
+  /* ✅ Global font everywhere */
+  font-family: "Montserrat", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* ===== Global Responsive Layout ===== */
+/* Your pages use .app-shell, so make it responsive globally */
+.app-shell {
+  min-height: 100vh;
+}
+
+/* Desktop: reserve sidebar width */
+@media (min-width: 900px) {
+  .app-shell {
+    margin-left: 320px; /* match your sidebar width */
+  }
+}
+
+/* Mobile/Tablet: sidebar overlays, so no margin */
+@media (max-width: 899px) {
+  .app-shell {
+    margin-left: 0;
+  }
+}
+
+/* ===== Global Container Helper (optional) ===== */
+.container {
+  width: min(1200px, 92vw);
+  margin: 0 auto;
+}
+
+/* ===== Global Table Responsiveness (IMPORTANT) ===== */
+/* Any wrapper with class "table-wrap" becomes scrollable on small screens */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* If you add class "table-min" to your table/grid, it won’t crush columns */
+.table-min {
+  min-width: 900px;
+}
+
+/* ===== Global Mobile Tweaks ===== */
+@media (max-width: 600px) {
+  /* safer padding on small screens */
+  .dash-main,
+  .rep-main,
+  .mnt-main {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  /* buttons slightly bigger tap area */
+  button,
+  .rep-btn,
+  .mam-createBtn,
+  .mnt-btn {
+    min-height: 40px;
+  }
+
+  /* inputs full width */
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+}

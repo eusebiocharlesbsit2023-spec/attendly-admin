@@ -1,12 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./StudentManagement.css";
 import AddStudentModal from "../components/AddStudentModal";
-import ConfirmModal from "../components/ConfirmModal";
+import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditStudentModal from "../components/EditStudentModal";
-
-
 
 export default function StudentManagement() {
   const navigate = useNavigate();
@@ -14,71 +12,23 @@ export default function StudentManagement() {
 
   const [q, setQ] = useState("");
 
-    // ===== Add Student Modal & Confirm =====
+  // ===== Add Student Modal & Confirm =====
   const [addOpen, setAddOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingStudent, setPendingStudent] = useState(null);
 
-  const onAdd = () => setAddOpen(true);
-
-    // ===== Edit Student + Apply Changes Confirm =====
+  // ===== Edit Student + Apply Changes Confirm =====
   const [editOpen, setEditOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [pendingEdit, setPendingEdit] = useState(null);
 
-  // open edit modal
-  const onEdit = (student) => {
-    setEditingStudent(student);
-    setEditOpen(true);
-  };
+  // ✅ Delete Confirm
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
-  // after clicking Save inside edit modal -> open confirm
-  const onEditSaveClick = (updatedStudent) => {
-    setPendingEdit(updatedStudent);
-    setApplyOpen(true);
-  };
-
-  // YES apply
-  const applyYes = () => {
-    setApplyOpen(false);
-    setEditOpen(false);
-
-    // later: update state or call API
-    alert(`Applied changes: ${pendingEdit?.name} -> ${pendingEdit?.status}`);
-
-    setPendingEdit(null);
-    setEditingStudent(null);
-  };
-
-  // cancel confirm
-  const applyCancel = () => {
-    setApplyOpen(false);
-  };
-
-
-  // When Add button in modal is clicked
-  const handleAddFormSubmit = (payload) => {
-    setPendingStudent(payload);
-    setConfirmOpen(true);
-  };
-
-  // Confirm YES
-  const confirmYes = () => {
-    setConfirmOpen(false);
-    alert(`Student Added: ${pendingStudent?.name}`);
-    setPendingStudent(null);
-  };
-
-  // Confirm CANCEL
-  const confirmCancel = () => {
-    setConfirmOpen(false);
-  };
-
-  
-
-
-  const students = useMemo(
+  // ✅ initial students (memo)
+  const initialStudents = useMemo(
     () => [
       {
         name: "John Smith",
@@ -119,28 +69,120 @@ export default function StudentManagement() {
     []
   );
 
+  const [rows, setRows] = useState(initialStudents);
+
+  // ===== ADD FLOW =====
+  const onAdd = () => setAddOpen(true);
+
+  // from AddStudentModal -> open confirm first (no alert)
+  const handleAddFormSubmit = (payload) => {
+    setPendingStudent(payload);
+    setAddOpen(false);
+    setConfirmOpen(true);
+  };
+
+  // Confirm YES -> actually add to list (temporary/local)
+  const confirmYes = () => {
+    setConfirmOpen(false);
+
+    if (pendingStudent?.name && pendingStudent?.studentId) {
+      setRows((prev) => [
+        {
+          name: pendingStudent.name,
+          studentId: pendingStudent.studentId,
+          deviceId: pendingStudent.deviceId || "N/A",
+          classes: Number(pendingStudent.classes ?? 0),
+          status: pendingStudent.status || "Active",
+        },
+        ...prev,
+      ]);
+    }
+
+    setPendingStudent(null);
+  };
+
+  const confirmCancel = () => {
+    setConfirmOpen(false);
+    setPendingStudent(null);
+    // optional: reopen add modal
+    // setAddOpen(true);
+  };
+
+  // ===== EDIT FLOW =====
+  const onEdit = (student) => {
+    setEditingStudent(student);
+    setEditOpen(true);
+  };
+
+  // after Save inside edit modal -> open apply confirm
+  const onEditSaveClick = (updatedStudent) => {
+    setPendingEdit(updatedStudent);
+    setApplyOpen(true);
+  };
+
+  // Apply YES -> update local list (temporary/local)
+  const applyYes = () => {
+    setApplyOpen(false);
+    setEditOpen(false);
+
+    if (pendingEdit?.studentId) {
+      setRows((prev) =>
+        prev.map((s) => (s.studentId === pendingEdit.studentId ? { ...s, ...pendingEdit } : s))
+      );
+    }
+
+    setPendingEdit(null);
+    setEditingStudent(null);
+  };
+
+  const applyCancel = () => {
+    setApplyOpen(false);
+    setPendingEdit(null);
+    // optional: go back to edit modal
+    // setEditOpen(true);
+  };
+
+  // ===== DELETE FLOW =====
+  const onDeleteClick = (student) => {
+    setPendingDelete(student);
+    setDeleteOpen(true);
+  };
+
+  const deleteYes = () => {
+    setRows((prev) => prev.filter((s) => s.studentId !== pendingDelete?.studentId));
+    setDeleteOpen(false);
+    setPendingDelete(null);
+  };
+
+  const deleteCancel = () => {
+    setDeleteOpen(false);
+    setPendingDelete(null);
+  };
+
+  // ===== FILTERING =====
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return students;
+    if (!query) return rows;
 
-    return students.filter(
+    return rows.filter(
       (s) =>
         s.name.toLowerCase().includes(query) ||
         s.studentId.toLowerCase().includes(query)
     );
-  }, [students, q]);
+  }, [rows, q]);
 
+  // ===== STATS =====
   const stats = useMemo(() => {
-    const total = students.length;
-    const active = students.filter((s) => s.status === "Active").length;
-    const inactive = students.filter((s) => s.status === "Inactive").length;
+    const total = rows.length;
+    const active = rows.filter((s) => s.status === "Active").length;
+    const inactive = rows.filter((s) => s.status === "Inactive").length;
     return { total, active, inactive };
-  }, [students]);
+  }, [rows]);
 
   const exportCSV = () => {
     const header = ["Student Name", "Student Id", "Device Id", "Classes", "Status"];
-    const rows = filtered.map((s) => [s.name, s.studentId, s.deviceId, s.classes, s.status]);
-    const csv = [header, ...rows].map((r) => r.map(csvEscape).join(",")).join("\n");
+    const dataRows = filtered.map((s) => [s.name, s.studentId, s.deviceId, s.classes, s.status]);
+    const csv = [header, ...dataRows].map((r) => r.map(csvEscape).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -153,23 +195,22 @@ export default function StudentManagement() {
     URL.revokeObjectURL(url);
   };
 
-  // demo only
-
-  const onDelete = (name) => alert(`Delete: ${name} (UI only)`);
-
-  useEffect(() => {
-    // close sidebar on route change if you want later
-  }, []);
+  useEffect(() => {}, []);
 
   return (
-    <div className="sm">
+    <div className="app-shell sm">
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="dashboard" />
 
       {/* Topbar */}
       <header className="sm-topbar">
         <div className="sm-topbar-inner">
           <div className="sm-topbar-left">
-            <button className="sm-icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu">
+            <button
+              className="sm-icon-btn"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Menu"
+              type="button"
+            >
               <Svg name="menu" />
             </button>
 
@@ -185,7 +226,12 @@ export default function StudentManagement() {
               <Svg name="bell" />
             </button>
 
-            <button className="sm-icon-btn" aria-label="Logout" type="button" onClick={() => navigate("/")}>
+            <button
+              className="sm-icon-btn"
+              aria-label="Logout"
+              type="button"
+              onClick={() => navigate("/")}
+            >
               <Svg name="logout" />
             </button>
           </div>
@@ -211,10 +257,12 @@ export default function StudentManagement() {
           </div>
         </section>
 
-        {/* Search + actions row */}
+        {/* Search + actions */}
         <section className="sm-tools card">
           <div className="sm-search">
-            <span className="sm-searchIcon"><Svg name="search" /></span>
+            <span className="sm-searchIcon">
+              <Svg name="search" />
+            </span>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -228,7 +276,9 @@ export default function StudentManagement() {
             </button>
 
             <button className="sm-exportBtn" type="button" onClick={exportCSV}>
-              <span className="sm-exportIcon"><Svg name="download" /></span>
+              <span className="sm-exportIcon">
+                <Svg name="download" />
+              </span>
               Export CSV
             </button>
           </div>
@@ -264,10 +314,21 @@ export default function StudentManagement() {
                 </div>
 
                 <div className="sm-actionIcons">
-                  <button className="sm-icoBtn edit" onClick={() => onEdit(s)} aria-label="Edit">
+                  <button
+                    className="sm-icoBtn edit"
+                    onClick={() => onEdit(s)}
+                    aria-label="Edit"
+                    type="button"
+                  >
                     <Svg name="edit" />
                   </button>
-                  <button className="sm-icoBtn del" onClick={() => onDelete(s.name)} aria-label="Delete">
+
+                  <button
+                    className="sm-icoBtn del"
+                    onClick={() => onDeleteClick(s)}
+                    aria-label="Delete"
+                    type="button"
+                  >
                     <Svg name="trash" />
                   </button>
                 </div>
@@ -277,41 +338,35 @@ export default function StudentManagement() {
             {filtered.length === 0 && <div className="sm-empty">No students found.</div>}
           </div>
         </section>
-            </main>
+      </main>
+
       {/* Add Student Modal */}
-      <AddStudentModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onSubmit={handleAddFormSubmit}
+      <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAddFormSubmit} />
+
+      {/* Add confirm */}
+      <SmallConfirmModal open={confirmOpen} title="Add New Student?" onYes={confirmYes} onCancel={confirmCancel} />
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        open={editOpen}
+        student={editingStudent}
+        onClose={() => setEditOpen(false)}
+        onSaveClick={onEditSaveClick}
       />
 
-      {/* Confirm Modal */}
-      <ConfirmModal
-        open={confirmOpen}
-        title="Add New Student?"
-        onYes={confirmYes}
-        onCancel={confirmCancel}
+      {/* Apply edit confirm */}
+      <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={applyCancel} />
+
+      {/* Delete confirm */}
+      <SmallConfirmModal
+        open={deleteOpen}
+        title={`Delete ${pendingDelete?.name || "this student"}?`}
+        onYes={deleteYes}
+        onCancel={deleteCancel}
       />
-          {/* Edit Student Modal */}
-    <EditStudentModal
-      open={editOpen}
-      student={editingStudent}
-      onClose={() => setEditOpen(false)}
-      onSaveClick={onEditSaveClick}
-    />
-
-    {/* Apply Changes Confirm */}
-    <ConfirmModal
-      open={applyOpen}
-      title="Apply Changes?"
-      onYes={applyYes}
-      onCancel={applyCancel}
-    />
-
     </div>
   );
 }
-
 
 /* helpers */
 function initials(name) {
@@ -347,7 +402,12 @@ function Svg({ name }) {
     case "bell":
       return (
         <svg {...common}>
-          <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+          <path
+            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
           <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
@@ -383,12 +443,7 @@ function Svg({ name }) {
     case "edit":
       return (
         <svg {...common}>
-          <path
-            d="M12 20h9"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+          <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           <path
             d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"
             stroke="currentColor"
