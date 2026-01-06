@@ -157,7 +157,7 @@ export default function EditClassModal({
                 })
               }
             >
-              <FontAwesomeIcon icon={faFloppyDisk} />
+              
               Save
             </button>
           </div>
