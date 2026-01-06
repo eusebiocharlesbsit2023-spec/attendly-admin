@@ -199,14 +199,7 @@ export default function ProfessorManagement() {
       <header className="pm-topbar">
         <div className="pm-topbar-inner">
           <div className="pm-topbar-left">
-            <button
-              className="pm-icon-btn"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Menu"
-              type="button"
-            >
-              <Svg name="menu" />
-            </button>
+            {/* ✅ burger button REMOVED */}
 
             <div>
               <div className="pm-title">Professor Management</div>
@@ -220,14 +213,7 @@ export default function ProfessorManagement() {
               <Svg name="bell" />
             </button>
 
-            <button
-              className="pm-icon-btn"
-              aria-label="Logout"
-              type="button"
-              onClick={() => navigate("/")}
-            >
-              <Svg name="logout" />
-            </button>
+            {/* ❌ Logout button removed */}
           </div>
         </div>
       </header>
@@ -341,7 +327,12 @@ export default function ProfessorManagement() {
       />
 
       {/* Confirm Add */}
-      <SmallConfirmModal open={confirmOpen} title="Add New Professor?" onYes={confirmYes} onCancel={confirmCancel} />
+      <SmallConfirmModal
+        open={confirmOpen}
+        title="Add New Professor?"
+        onYes={confirmYes}
+        onCancel={confirmCancel}
+      />
 
       {/* Edit Professor Modal */}
       <EditProfessorModal
@@ -393,7 +384,12 @@ function Svg({ name }) {
     case "menu":
       return (
         <svg {...common}>
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M4 6h16M4 12h16M4 18h16"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       );
     case "bell":
@@ -411,9 +407,20 @@ function Svg({ name }) {
     case "logout":
       return (
         <svg {...common}>
-          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M10 16l-4-4 4-4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
           <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       );
     case "search":

@@ -205,14 +205,7 @@ export default function StudentManagement() {
       <header className="sm-topbar">
         <div className="sm-topbar-inner">
           <div className="sm-topbar-left">
-            <button
-              className="sm-icon-btn"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Menu"
-              type="button"
-            >
-              <Svg name="menu" />
-            </button>
+            {/* ✅ burger button REMOVED */}
 
             <div>
               <div className="sm-title">Student Management</div>
@@ -226,14 +219,7 @@ export default function StudentManagement() {
               <Svg name="bell" />
             </button>
 
-            <button
-              className="sm-icon-btn"
-              aria-label="Logout"
-              type="button"
-              onClick={() => navigate("/")}
-            >
-              <Svg name="logout" />
-            </button>
+            {/* ❌ Logout button removed */}
           </div>
         </div>
       </header>

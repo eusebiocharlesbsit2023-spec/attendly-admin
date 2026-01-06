@@ -10,6 +10,7 @@ import ManageAdmin from "./pages/ManageAdmin";
 import Reports from "./pages/Reports";
 
 import SuperAdminRoute from "./routes/SuperAdminRoute";
+import TodaysSchedule from "./pages/TodaysSchedule";
 
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/professors" element={<ProfessorManagement />} />
         <Route path="/manage-admin" element={<ManageAdmin />} />
         <Route path="/reports" element={<Reports />} /> 
+        <Route path="/schedule" element={<TodaysSchedule />} />
         <Route
   path="/manage-admin"
   element={

@@ -5,7 +5,6 @@ import "./AttendanceRecords.css";
 
 export default function AttendanceRecords() {
   const navigate = useNavigate();
-
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [q, setQ] = useState("");
@@ -179,10 +178,6 @@ export default function AttendanceRecords() {
       <header className="ar-topbar">
         <div className="ar-topbar-inner">
           <div className="ar-topbar-left">
-            <button className="ar-icon-btn" type="button" onClick={() => setMenuOpen(true)} aria-label="Menu">
-              <Svg name="menu" />
-            </button>
-
             <div>
               <div className="ar-title">Attendance Records</div>
               <div className="ar-subtitle">Track attendance record</div>
@@ -194,14 +189,11 @@ export default function AttendanceRecords() {
               <span className="ar-notif-dot" />
               <Svg name="bell" />
             </button>
-
-            <button className="ar-icon-btn" type="button" aria-label="Logout" onClick={() => navigate("/")}>
-              <Svg name="logout" />
-            </button>
           </div>
         </div>
       </header>
 
+      {/* Main */}
       <main className="ar-main">
         {/* Stats */}
         <section className="ar-stats">
@@ -230,8 +222,14 @@ export default function AttendanceRecords() {
         <section className="ar-filters card">
           <div className="ar-searchRow">
             <div className="ar-search">
-              <span className="ar-searchIcon"><Svg name="search" /></span>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or Id" />
+              <span className="ar-searchIcon">
+                <Svg name="search" />
+              </span>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search by name or Id"
+              />
             </div>
           </div>
 
@@ -239,7 +237,9 @@ export default function AttendanceRecords() {
             <div className="ar-field">
               <label>Date</label>
               <div className="ar-inputWithIcon">
-                <span className="ar-miniIcon"><Svg name="calendar" /></span>
+                <span className="ar-miniIcon">
+                  <Svg name="calendar" />
+                </span>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
             </div>
@@ -248,7 +248,9 @@ export default function AttendanceRecords() {
               <label>Class</label>
               <select value={clazz} onChange={(e) => setClazz(e.target.value)}>
                 {classOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </div>
@@ -267,7 +269,9 @@ export default function AttendanceRecords() {
               <label>Professors</label>
               <select value={prof} onChange={(e) => setProf(e.target.value)}>
                 {profOptions.map((p) => (
-                  <option key={p} value={p}>{p}</option>
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
                 ))}
               </select>
             </div>
@@ -277,7 +281,9 @@ export default function AttendanceRecords() {
         {/* Export */}
         <div className="ar-exportRow">
           <button className="ar-exportBtn" type="button" onClick={exportCSV}>
-            <span className="ar-exportIcon"><Svg name="download" /></span>
+            <span className="ar-exportIcon">
+              <Svg name="download" />
+            </span>
             Export CSV
           </button>
         </div>
@@ -318,11 +324,18 @@ export default function AttendanceRecords() {
 
           {/* Pagination */}
           <div className="ar-pagination">
-            <button className="ar-pageBtn" disabled={safePage === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+            <button
+              className="ar-pageBtn"
+              disabled={safePage === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
               ‹
             </button>
 
-            <button className={`ar-pageNum ${safePage === 1 ? "active" : ""}`} onClick={() => setPage(1)}>
+            <button
+              className={`ar-pageNum ${safePage === 1 ? "active" : ""}`}
+              onClick={() => setPage(1)}
+            >
               1
             </button>
 
@@ -381,48 +394,34 @@ function Svg({ name }) {
   };
 
   switch (name) {
-    case "menu":
-      return (
-        <svg {...common}>
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
     case "bell":
       return (
         <svg {...common}>
-          <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "logout":
-      return (
-        <svg {...common}>
-          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="2" />
+          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" />
         </svg>
       );
     case "search":
       return (
         <svg {...common}>
           <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="2" />
-          <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" />
         </svg>
       );
     case "calendar":
       return (
         <svg {...common}>
-          <path d="M7 3v2M17 3v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M4 7h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M7 3v2M17 3v2" stroke="currentColor" strokeWidth="2" />
+          <path d="M4 7h16" stroke="currentColor" strokeWidth="2" />
           <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
         </svg>
       );
     case "download":
       return (
         <svg {...common}>
-          <path d="M12 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="M12 3v10" stroke="currentColor" strokeWidth="2" />
+          <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2" />
+          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" />
         </svg>
       );
     default:

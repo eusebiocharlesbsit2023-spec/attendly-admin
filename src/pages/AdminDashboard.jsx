@@ -4,16 +4,19 @@ import Sidebar from "../components/Sidebar";
 import "./AdminDashboard.css";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 
+/* Figma-style icons */
+import { Users, Cpu, GraduationCap, BookOpen } from "lucide-react";
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
 
   const stats = [
-    { label: "Total Students", value: 45, icon: "users", tint: "blue" },
-    { label: "Active Devices", value: 40, icon: "chip", tint: "purple" },
-    { label: "Professors", value: 6, icon: "cap", tint: "green" },
-    { label: "Active Sessions", value: 1, icon: "book", tint: "yellow" },
+    { label: "Total Students", value: 45, tint: "blue" },
+    { label: "Active Devices", value: 40, tint: "purple" },
+    { label: "Professors", value: 6, tint: "green" },
+    { label: "Active Sessions", value: 1, tint: "yellow" },
   ];
 
   const activity = [
@@ -23,32 +26,50 @@ export default function AdminDashboard() {
     { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
     { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
     { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
-    { text: "Maintenance switched to Online", time: "3 days ago" },
-    { text: "Attendance export generated", time: "1 week ago" },
   ];
 
   const todayClasses = [
-    { title: "CS101 - Introduction to Computer Science", time: "9:00 AM", location: "Room 301", students: 45 },
-    { title: "CS201 - Information Assurance Security", time: "9:00 AM", location: "Room 301", students: 39 },
-    { title: "PathFit - Sports and Fitness", time: "2:00 PM", location: "Court", students: 30 },
+    {
+      title: "CS101 - Introduction to Computer Science",
+      time: "9:00 AM",
+      location: "Room 301",
+      students: 45,
+    },
+    {
+      title: "CS201 - Information Assurance Security",
+      time: "9:00 AM",
+      location: "Room 301",
+      students: 39,
+    },
+    {
+      title: "PathFit - Sports and Fitness",
+      time: "2:00 PM",
+      location: "Court",
+      students: 30,
+    },
   ];
+
+  /* Stat icons */
+  const StatIcon = ({ label }) => {
+    const common = { size: 26, strokeWidth: 2.2 };
+    if (label === "Total Students") return <Users {...common} />;
+    if (label === "Active Devices") return <Cpu {...common} />;
+    if (label === "Professors") return <GraduationCap {...common} />;
+    if (label === "Active Sessions") return <BookOpen {...common} />;
+    return null;
+  };
 
   return (
     <div className="app-shell dash">
-      {/* Sidebar */}
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="dashboard" />
 
       {/* Top Bar */}
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
-            <button className="icon-btn" onClick={() => setMenuOpen(true)}>
-              <Svg name="menu" />
-            </button>
-
             <div>
               <div className="dash-title">Admin Dashboard</div>
-              <div className="dash-subtitle">Welcome back, Admin123!</div>
+              <div className="dash-subtitle">Welcome back, Admin</div>
             </div>
           </div>
 
@@ -57,22 +78,18 @@ export default function AdminDashboard() {
               <span className="notif-dot" />
               <Svg name="bell" />
             </button>
-
-            <button className="icon-btn" onClick={() => navigate("/")}>
-              <Svg name="logout" />
-            </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="dash-main">
-        {/* Stats */}
+        {/* STATS */}
         <section className="stats-grid">
           {stats.map((s) => (
             <div className="card stat-card" key={s.label}>
               <div className={`stat-icon tint-${s.tint}`}>
-                <Svg name={s.icon} />
+                <StatIcon label={s.label} />
               </div>
               <div className="stat-right">
                 <div className="stat-value">{s.value}</div>
@@ -82,15 +99,31 @@ export default function AdminDashboard() {
           ))}
         </section>
 
-        {/* Manage */}
+        {/* MANAGE */}
         <section className="manage-grid">
-          <ManageCard title="Manage Students" icon="users" onClick={() => navigate("/students")} tint="blue" />
-          <ManageCard title="Manage Classes" icon="book" onClick={() => navigate("/classes")} tint="yellow" />
-          <ManageCard title="Manage Professors" icon="cap" onClick={() => navigate("/professors")} tint="green" />
+          <ManageCard
+            title="Manage Students"
+            icon="students"
+            tint="blue"
+            onClick={() => navigate("/students")}
+          />
+          <ManageCard
+            title="Manage Classes"
+            icon="classes"
+            tint="yellow"
+            onClick={() => navigate("/classes")}
+          />
+          <ManageCard
+            title="Manage Professors"
+            icon="professors"
+            tint="green"
+            onClick={() => navigate("/professors")}
+          />
         </section>
 
-        {/* Bottom */}
+        {/* BOTTOM */}
         <section className="bottom-grid">
+          {/* Recent Activity */}
           <div className="card panel">
             <div className="panel-title">
               <Svg name="clock" small />
@@ -108,12 +141,9 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
-
-            <div className="panel-footer hint">
-              Click the bell icon to view full activity history
-            </div>
           </div>
 
+          {/* Today Classes */}
           <div className="card panel">
             <div className="panel-title plain">Today Classes</div>
 
@@ -123,19 +153,33 @@ export default function AdminDashboard() {
                   <div>
                     <div className="class-title">{c.title}</div>
                     <div className="class-meta">
-                      <span><Svg name="clock" small />{c.time}</span>
-                      <span><Svg name="pin" small />{c.location}</span>
+                      <span>
+                        <Svg name="clock" small /> {c.time}
+                      </span>
+                      <span>
+                        <Svg name="pin" small /> {c.location}
+                      </span>
                     </div>
                   </div>
                   <div className="badge">{c.students} Students</div>
                 </div>
               ))}
             </div>
+
+            {/* VIEW SCHEDULE */}
+            <div className="panel-footer">
+              <button
+                className="link-btn"
+                type="button"
+                onClick={() => navigate("/schedule")}
+              >
+                View Schedule
+              </button>
+            </div>
           </div>
         </section>
       </main>
 
-      {/* Activity Modal */}
       <ActivityHistoryModal
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
@@ -145,51 +189,58 @@ export default function AdminDashboard() {
   );
 }
 
-/* ===== Helpers ===== */
-
+/* ===== MANAGE CARD ===== */
 function ManageCard({ title, icon, onClick, tint }) {
+  const common = { size: 28, strokeWidth: 2.2 };
+  const icons = {
+    students: <Users {...common} />,
+    classes: <BookOpen {...common} />,
+    professors: <GraduationCap {...common} />,
+  };
+
   return (
     <div className="card manage-card">
       <button className="manage-btn" onClick={onClick}>
-        <div className={`manage-icon tint-${tint}`}>
-          <Svg name={icon} />
-        </div>
+        <div className={`manage-icon tint-${tint}`}>{icons[icon]}</div>
         <div className="manage-text">{title}</div>
       </button>
     </div>
   );
 }
 
+/* ===== SVG HELPER ===== */
 function Svg({ name, small = false }) {
   const s = small ? 16 : 22;
   const props = { width: s, height: s, viewBox: "0 0 24 24", fill: "none" };
 
   const icons = {
-    menu: <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" />,
     bell: (
       <>
-        <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="2" />
-        <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" />
+        <path
+          d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path
+          d="M10 19a2 2 0 004 0"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
       </>
     ),
-    logout: (
-      <>
-        <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" />
-        <path d="M6 12h9" stroke="currentColor" strokeWidth="2" />
-        <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" />
-      </>
-    ),
-    users: <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />,
-    chip: <rect x="6" y="6" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="2" />,
-    cap: <path d="M12 3l10 5-10 5L2 8z" stroke="currentColor" strokeWidth="2" />,
-    book: <path d="M6 3h14v16H6z" stroke="currentColor" strokeWidth="2" />,
     clock: (
       <>
         <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
         <path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="2" />
       </>
     ),
-    pin: <path d="M12 21s7-4.5 7-11a7 7 0 10-14 0z" stroke="currentColor" strokeWidth="2" />,
+    pin: (
+      <path
+        d="M12 21s7-4.5 7-11a7 7 0 10-14 0z"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+    ),
   };
 
   return <svg {...props}>{icons[name]}</svg>;

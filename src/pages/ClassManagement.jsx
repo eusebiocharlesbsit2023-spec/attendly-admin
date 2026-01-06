@@ -185,14 +185,7 @@ export default function ClassManagement() {
       <header className="cm-topbar">
         <div className="cm-topbar-inner">
           <div className="cm-topbar-left">
-            <button
-              className="cm-icon-btn"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Menu"
-              type="button"
-            >
-              <Svg name="menu" />
-            </button>
+            {/* ✅ burger button REMOVED */}
 
             <div className="cm-title">Class Management</div>
           </div>
@@ -203,14 +196,7 @@ export default function ClassManagement() {
               <Svg name="bell" />
             </button>
 
-            <button
-              className="cm-icon-btn"
-              aria-label="Logout"
-              type="button"
-              onClick={() => navigate("/")}
-            >
-              <Svg name="logout" />
-            </button>
+            {/* ❌ Logout button removed */}
           </div>
         </div>
       </header>

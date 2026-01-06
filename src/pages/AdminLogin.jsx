@@ -9,8 +9,7 @@ function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ Hardcoded accounts based on your table
-  // NOTE: Passwords are demo-only (you can change them)
+
   const accounts = [
     { id: "ADM1", fullName: "John Doe", username: "admin1", role: "Admin", status: "Active", password: "admin1" },
     { id: "ADM2", fullName: "Jane Smith", username: "admin2", role: "Super Admin", status: "Active", password: "admin2" },

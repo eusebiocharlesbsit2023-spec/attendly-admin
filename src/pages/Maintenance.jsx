@@ -44,15 +44,7 @@ export default function Maintenance() {
       <header className="mnt-topbar">
         <div className="mnt-topbar-inner">
           <div className="mnt-topbar-left">
-            <button
-              className="mnt-icon-btn"
-              type="button"
-              aria-label="Menu"
-              onClick={() => setMenuOpen(true)}
-            >
-              <Svg name="menu" />
-            </button>
-
+            {/* ✅ burger button REMOVED */}
             <div className="mnt-title">Maintenance</div>
           </div>
 
@@ -62,15 +54,7 @@ export default function Maintenance() {
               <Svg name="bell" />
             </button>
 
-            <button
-              className="mnt-icon-btn"
-              type="button"
-              aria-label="Logout"
-              title="Logout"
-              onClick={() => navigate("/")}
-            >
-              <Svg name="logout" />
-            </button>
+            {/* ❌ Logout button removed */}
           </div>
         </div>
       </header>
@@ -102,7 +86,11 @@ export default function Maintenance() {
       {/* Confirm Modal */}
       <MaintenanceConfirmModal
         open={confirmOpen}
-        title={pendingNextMode === "maintenance" ? "Switch to Maintenance?" : "Switch to Online?"}
+        title={
+          pendingNextMode === "maintenance"
+            ? "Are you sure you want to switch to maintenance?"
+            : " Are you sure you want to switch to online?"
+        }
         onYes={confirmYes}
         onCancel={confirmCancel}
       />
@@ -161,12 +149,7 @@ function Svg({ name }) {
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <path
-            d="M6 12h9"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           <path
             d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4"
             stroke="currentColor"

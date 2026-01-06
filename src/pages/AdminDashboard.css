@@ -1,5 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
 
+
+.dash-topbar-left {
+  transform: translateX(-50px); 
+}
+
 /* ========== Base ========== */
 *,
 *::before,
@@ -315,7 +320,7 @@ body {
 .class-title {
   font-weight: 600;
   color: #0f172a;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.25;
   word-break: break-word;
 }
@@ -390,3 +395,14 @@ body {
     margin-left: 320px; /* match sidebar width */
   }
 }
+/* time/location icons with text */
+.class-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.class-meta > span svg {
+  display: block;
+}
+

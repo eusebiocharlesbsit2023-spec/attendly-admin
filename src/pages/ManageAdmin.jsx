@@ -267,9 +267,7 @@ export default function ManageAdmin() {
               <Svg name="bell" />
             </button>
 
-            <button className="icon-btn" aria-label="Logout" type="button" onClick={() => navigate("/")} title="Logout">
-              <Svg name="logout" />
-            </button>
+            {/* ❌ Logout button removed */}
           </div>
         </div>
       </header>

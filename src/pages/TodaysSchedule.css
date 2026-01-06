@@ -1,0 +1,212 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
+
+/* PAGE */
+.schedule {
+  min-height: 100vh;
+  background: #eaf4ff;
+  color: #0f172a;
+  font-family: "Montserrat", sans-serif;
+}
+
+.schedule * {
+  font-family: "Montserrat", sans-serif;
+}
+
+/* ===== Container widths tuned for 1920 =====
+   - default: 92% width
+   - but cap grows on large screens to reduce side gutters
+*/
+:root {
+  --container-max: 1200px; /* default */
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --container-max: 1380px;
+  }
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --container-max: 1560px; /* ✅ good for 1920x1080 */
+  }
+}
+
+/* TOP BAR */
+.schedule-topbar {
+  background: #0a4e86;
+  color: #fff;
+  padding: 18px 0;
+}
+
+.schedule-topbar-inner {
+  width: min(var(--container-max), 92%);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schedule-title {
+  font-size: clamp(20px, 2.2vw + 10px, 30px);
+  font-weight: 600;
+}
+
+/* MAIN CONTAINER */
+.schedule-main {
+  width: min(var(--container-max), 92%);
+  margin: 18px auto 28px;
+}
+
+/* DATE + EXPORT ROW */
+.schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.schedule-date {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* EXPORT BUTTON */
+.export-btn {
+  border: none;
+  background: #0a4e86;
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-btn:hover {
+  opacity: 0.92;
+}
+
+/* GRID (2 cols on desktop) */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* CARD */
+.schedule-card {
+  background: #fff;
+  border: 1px solid #e6eef7;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  padding: 16px;
+}
+
+/* STATUS PILL */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+}
+
+.status-pill.inprogress {
+  background: #fff7d6;
+  color: #a16207;
+  border-color: #fde68a;
+}
+
+.status-pill.ended {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.status-pill.ongoing {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+/* TOP ROW */
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.course-title {
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.students-pill {
+  white-space: nowrap;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 10px;
+}
+
+.course-code {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* INFO ROW */
+.info-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* TOP RIGHT ICON BUTTON */
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: #fff;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .schedule-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ✅ Sidebar offset for schedule ONLY */
+@media (min-width: 900px) {
+  .app-shell.schedule {
+    margin-left: 320px;
+  }
+}
