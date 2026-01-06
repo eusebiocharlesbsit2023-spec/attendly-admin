@@ -19,8 +19,7 @@
 .cm-title {
   display: flex;
   justify-content: center;
-  font-family: "Montserrat", system-ui, -apple-system,
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Montserrat";
   font-size: 9px;
   font-weight: 400;
   margin-bottom: 10px;

@@ -16,6 +16,7 @@
   padding: 22px 26px;
 }
 
+/* ================= TOP ================= */
 .ecm-top{
   display: flex;
   align-items: flex-start;
@@ -36,6 +37,7 @@
   font-weight: 700;
 }
 
+/* ================= STATUS ================= */
 .ecm-statusWrap{
   display: inline-flex;
   align-items: center;
@@ -75,6 +77,7 @@
   padding: 4px 8px;
 }
 
+/* ================= FIELDS ================= */
 .ecm-fields{
   margin-top: 14px;
   display: flex;
@@ -96,7 +99,8 @@
   opacity: 0.75;
 }
 
-.ecm-select, .ecm-input{
+.ecm-select,
+.ecm-input{
   flex: 0 0 auto;
   min-width: 260px;
   border: 1px solid #cbd5e1;
@@ -111,12 +115,15 @@
   min-width: 220px;
 }
 
-.ecm-save{
+/* ================= FOOTER (NEW) ================= */
+.ecm-footer{
+  display: flex;
+  justify-content: flex-end; /* ✅ pushes Save button right */
   margin-top: 18px;
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+}
+
+/* ================= SAVE BUTTON ================= */
+.ecm-save{
   min-width: 160px;
   padding: 12px 16px;
   border: none;
@@ -126,9 +133,43 @@
   font-weight: 900;
   cursor: pointer;
 }
-.ecm-save:hover{ filter: brightness(1.05); }
 
+.ecm-save:hover{
+  filter: brightness(1.05);
+}
+
+/* ===== Rectangular dropdowns ===== */
+.ecm-select,
+.ecm-statusSelect {
+  border-radius: 4px !important;
+}
+
+/* ===== WiFi + Save alignment ===== */
+.ecm-wifiRow {
+  align-items: center;
+  gap: 12px;
+}
+
+/* Save button inline with wifi */
+.ecm-save.inline {
+  margin: 0;
+  height: 40px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+
+/* ================= RESPONSIVE ================= */
 @media (max-width: 820px){
-  .ecm-card{ width: calc(100vw - 28px); }
-  .ecm-select, .ecm-input{ min-width: 200px; }
+  .ecm-card{
+    width: calc(100vw - 28px);
+  }
+
+  .ecm-select,
+  .ecm-input{
+    min-width: 200px;
+  }
 }

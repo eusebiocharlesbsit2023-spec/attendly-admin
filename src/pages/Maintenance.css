@@ -6,12 +6,12 @@
   background: #eaf6ff;
 
   /* ✅ Global font */
-  font-family: "Montserrat", sans-serif;
+  font-family: "Montserrat";
 }
 
 /* ✅ Force all children to Montserrat */
 .mnt * {
-  font-family: "Montserrat", sans-serif;
+  font-family: "Montserrat";
 }
 
 /* Topbar */

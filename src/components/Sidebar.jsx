@@ -12,16 +12,20 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./Sidebar.css";
 
+// ✅ import logo (OPTION 1 – recommended)
+import logo from "../assets/logo.png"; 
+// make sure logo is here: src/assets/logo.png
+// OR use /logo.png if stored in public folder
+
 export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const navigate = useNavigate();
 
-  // ✅ get role from login
   const role = localStorage.getItem("role"); // "Admin" | "Super Admin"
   const isSuperAdmin = role === "Super Admin";
 
   const go = (path) => {
     navigate(path);
-    onClose?.(); // close drawer on mobile only
+    onClose?.();
   };
 
   const logout = () => {
@@ -36,13 +40,19 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
       {open && <div className="sidebar-overlay" onClick={onClose} />}
 
       <aside className={`sidebarV2 ${open ? "open" : ""}`}>
+        
         {/* Header */}
         <div className="sidebarV2-header">
           <div className="sidebarV2-brand">
-            <span className="sidebarV2-title">Attendly</span>
+            <img
+              src={logo}
+              alt="Attendly Logo"
+              className="sidebarV2-logo"
+            />
+            <span className="sidebarV2-title"></span>
           </div>
 
-          {/* Close button (mobile only via CSS) */}
+          {/* Close button (mobile only) */}
           <button
             className="sidebarV2-close"
             onClick={onClose}
@@ -91,7 +101,7 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
             <span className="sidebarV2-text">Reports</span>
           </button>
 
-          {/* ✅ ONLY SUPER ADMIN CAN SEE THIS */}
+          {/* Super Admin only */}
           {isSuperAdmin && (
             <button
               className={`sidebarV2-item ${active === "manage-admin" ? "active" : ""}`}
