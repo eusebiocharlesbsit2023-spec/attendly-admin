@@ -23,7 +23,7 @@ body {
   overflow-x: hidden;
 
   /* ✅ Global font */
-  font-family: "Montserrat", sans-serif;
+  font-family: "Montserrat";
 }
 
 /* Page background similar to screenshot */
@@ -33,12 +33,12 @@ body {
   color: #0f172a;
 
   /* ✅ Ensure dashboard uses Montserrat */
-  font-family: "Montserrat", sans-serif;
+  font-family: "Montserrat";
 }
 
 /* ✅ Force all dashboard children */
 .dash * {
-  font-family: "Montserrat", sans-serif;
+  font-family: "Montserrat";
 }
 
 /* ========== Top bar ========== */

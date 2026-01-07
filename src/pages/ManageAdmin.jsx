@@ -7,6 +7,11 @@ import "./AdminDashboard.css";
 
 import CreateAdminModal from "../components/CreateAdminModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
+
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars, faBell, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
 /* =========================
    Role-only Edit Modal
@@ -14,7 +19,6 @@ import SmallConfirmModal from "../components/SmallConfirmModal";
 function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
   const [role, setRole] = useState(admin?.role || "Admin");
 
-  // keep role in sync when opening on different row
   useEffect(() => {
     setRole(admin?.role || "Admin");
   }, [admin, open]);
@@ -69,9 +73,24 @@ function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
 export default function ManageAdmin() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
+
+  // ===== Activity (SAME AS ADMIN DASHBOARD) =====
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activity = useMemo(
+    () => [
+      { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
+      { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
+      { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
+      { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
+      { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
+      { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
+      { text: "Maintenance switched to Online", time: "3 days ago" },
+      { text: "Attendance export generated", time: "1 week ago" },
+    ],
+    []
+  );
 
   // Filters
   const [search, setSearch] = useState("");
@@ -125,7 +144,6 @@ export default function ManageAdmin() {
     setRows((prev) => [newRow, ...prev]);
     setCreateOpen(false);
 
-    // ✅ removed alert -> temporary toast
     showToast(`Admin created: ${payload.fullName} (${payload.role})`, "success");
   };
 
@@ -143,7 +161,6 @@ export default function ManageAdmin() {
   };
 
   const onEditSaveClick = (payload) => {
-    // payload: { id, role }
     setPendingRoleChange(payload);
     setEditRoleOpen(false);
     setApplyOpen(true);
@@ -157,7 +174,6 @@ export default function ManageAdmin() {
     setPendingRoleChange(null);
     setEditingRow(null);
 
-    // ✅ removed alert -> temporary toast
     showToast(`Role updated: ${id} → ${newRole}`, "success");
   };
 
@@ -171,9 +187,7 @@ export default function ManageAdmin() {
   const [pendingDelete, setPendingDelete] = useState(null);
 
   const onDelete = (r) => {
-    // ✅ Hard rule: super admin can't delete (even if user clicks somehow)
     if (r.role === "Super Admin") {
-      // ✅ removed alert -> temporary toast
       showToast("Super Admin accounts cannot be deleted.", "danger");
       return;
     }
@@ -182,7 +196,6 @@ export default function ManageAdmin() {
   };
 
   const deleteYes = () => {
-    // ✅ Extra safety: block delete if super admin
     if (pendingDelete?.role === "Super Admin") {
       setDeleteOpen(false);
       setPendingDelete(null);
@@ -232,7 +245,6 @@ export default function ManageAdmin() {
   const showingTo = (safePage - 1) * entries + pageRows.length;
 
   return (
-    // ✅ use app-shell so sidebar fits consistently on ALL pages
     <div className="app-shell dash mam-shell">
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="manage-admin" />
 
@@ -255,6 +267,15 @@ export default function ManageAdmin() {
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
+            <button
+              className="icon-btn"
+              aria-label="Menu"
+              type="button"
+              onClick={() => setMenuOpen(true)}
+            >
+              <FontAwesomeIcon icon={faBars} />
+            </button>
+
             <div>
               <div className="dash-title">Admin Management</div>
               <div className="dash-subtitle">Manage administrator accounts</div>
@@ -263,18 +284,24 @@ export default function ManageAdmin() {
 
           <div className="dash-topbar-right">
             <button
-              className="icon-btn bell-btn"
-              ref={notifRef}
+              className="icon-btn"
               aria-label="Notifications"
               type="button"
-              onClick={() => {
-                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
-                setActivityOpen(true);
-              }}
+              onClick={() => setActivityOpen(true)}
             >
               <span className="notif-dot" />
-              <Svg name="bell" />
-            </button> 
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+
+            <button
+              className="icon-btn"
+              aria-label="Logout"
+              type="button"
+              onClick={() => navigate("/")}
+              title="Logout"
+            >
+              <FontAwesomeIcon icon={faRightFromBracket} />
+            </button>
           </div>
         </div>
       </header>
@@ -355,7 +382,11 @@ export default function ManageAdmin() {
             </div>
 
             <div className="mam-miniPager">
-              <button className="mam-miniBtn" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+              <button
+                className="mam-miniBtn"
+                disabled={safePage <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
                 ‹
               </button>
               <span className="mam-miniPage">{safePage}</span>
@@ -394,14 +425,15 @@ export default function ManageAdmin() {
                       <td>{r.username}</td>
                       <td>{r.role}</td>
                       <td>
-                        <span className={`mam-status ${r.status === "Active" ? "active" : "inactive"}`}>{r.status}</span>
+                        <span className={`mam-status ${r.status === "Active" ? "active" : "inactive"}`}>
+                          {r.status}
+                        </span>
                       </td>
                       <td className="mam-actionsCell">
                         <button className="mam-action edit" onClick={() => onEdit(r)} type="button">
                           ✎ Edit
                         </button>
 
-                        {/* ✅ Super Admin can't delete */}
                         <button
                           className={`mam-action del ${superAdmin ? "disabled" : ""}`}
                           onClick={() => onDelete(r)}
@@ -484,50 +516,13 @@ export default function ManageAdmin() {
         onYes={deleteYes}
         onCancel={deleteCancel}
       />
+
+      {/* Activity Modal (Bell) */}
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={activity}
+      />
     </div>
   );
-}
-
-/* Icons */
-function Svg({ name, small = false }) {
-  const s = small ? 16 : 22;
-  const common = {
-    width: s,
-    height: s,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-    className: small ? "svg small" : "svg",
-  };
-
-  switch (name) {
-    case "menu":
-      return (
-        <svg {...common}>
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "bell":
-      return (
-        <svg {...common}>
-          <path
-            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "logout":
-      return (
-        <svg {...common}>
-          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    default:
-      return null;
-  }
 }

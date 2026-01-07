@@ -6,15 +6,45 @@ import "./StudentManagement.css";
 import AddStudentModal from "../components/AddStudentModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditStudentModal from "../components/EditStudentModal";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
+
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBars,
+  faBell,
+  faRightFromBracket,
+  faMagnifyingGlass,
+  faPlus,
+  faDownload,
+  faPenToSquare,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function StudentManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
+  // ===== Activity (Bell) =====
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activity = [
+    { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
+    { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
+    { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
+    { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
+    { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
+    { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
+    { text: "Maintenance switched to Online", time: "3 days ago" },
+    { text: "Attendance export generated", time: "1 week ago" },
+  ];
+
+  // ===== Filters =====
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [entries, setEntries] = useState(10);
+  const [page, setPage] = useState(1);
 
   // ===== Add Student Modal & Confirm =====
   const [addOpen, setAddOpen] = useState(false);
@@ -31,61 +61,28 @@ export default function StudentManagement() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
 
-  // ✅ initial students (memo)
   const initialStudents = useMemo(
     () => [
-      {
-        name: "John Smith",
-        studentId: "20231547",
-        deviceId: "AA:BB:CC:DD:EE:01",
-        classes: 6,
-        status: "Active",
-      },
-      {
-        name: "Alice Willson",
-        studentId: "20236485",
-        deviceId: "AA:BB:CC:DD:EE:02",
-        classes: 6,
-        status: "Inactive",
-      },
-      {
-        name: "Dakota Johnson",
-        studentId: "20235487",
-        deviceId: "AA:BB:CC:DD:EE:03",
-        classes: 6,
-        status: "Active",
-      },
-      {
-        name: "Odette Lancelot",
-        studentId: "20231544",
-        deviceId: "AA:BB:CC:DD:EE:04",
-        classes: 6,
-        status: "Active",
-      },
-      {
-        name: "Michal Winger",
-        studentId: "20231154",
-        deviceId: "AA:BB:CC:DD:EE:05",
-        classes: 6,
-        status: "Inactive",
-      },
+      { name: "John Smith", studentId: "20231547", deviceId: "AA:BB:CC:DD:EE:01", classes: 6, status: "Active" },
+      { name: "Alice Willson", studentId: "20236485", deviceId: "AA:BB:CC:DD:EE:02", classes: 6, status: "Inactive" },
+      { name: "Dakota Johnson", studentId: "20235487", deviceId: "AA:BB:CC:DD:EE:03", classes: 6, status: "Active" },
+      { name: "Odette Lancelot", studentId: "20231544", deviceId: "AA:BB:CC:DD:EE:04", classes: 6, status: "Active" },
+      { name: "Michal Winger", studentId: "20231154", deviceId: "AA:BB:CC:DD:EE:05", classes: 6, status: "Inactive" },
     ],
     []
   );
 
   const [rows, setRows] = useState(initialStudents);
 
-  // ===== ADD FLOW =====
+  // ===== ADD =====
   const onAdd = () => setAddOpen(true);
 
-  // from AddStudentModal -> open confirm first (no alert)
   const handleAddFormSubmit = (payload) => {
     setPendingStudent(payload);
     setAddOpen(false);
     setConfirmOpen(true);
   };
 
-  // Confirm YES -> actually add to list (temporary/local)
   const confirmYes = () => {
     setConfirmOpen(false);
 
@@ -108,23 +105,19 @@ export default function StudentManagement() {
   const confirmCancel = () => {
     setConfirmOpen(false);
     setPendingStudent(null);
-    // optional: reopen add modal
-    // setAddOpen(true);
   };
 
-  // ===== EDIT FLOW =====
+  // ===== EDIT =====
   const onEdit = (student) => {
     setEditingStudent(student);
     setEditOpen(true);
   };
 
-  // after Save inside edit modal -> open apply confirm
   const onEditSaveClick = (updatedStudent) => {
     setPendingEdit(updatedStudent);
     setApplyOpen(true);
   };
 
-  // Apply YES -> update local list (temporary/local)
   const applyYes = () => {
     setApplyOpen(false);
     setEditOpen(false);
@@ -142,11 +135,9 @@ export default function StudentManagement() {
   const applyCancel = () => {
     setApplyOpen(false);
     setPendingEdit(null);
-    // optional: go back to edit modal
-    // setEditOpen(true);
   };
 
-  // ===== DELETE FLOW =====
+  // ===== DELETE =====
   const onDeleteClick = (student) => {
     setPendingDelete(student);
     setDeleteOpen(true);
@@ -166,14 +157,34 @@ export default function StudentManagement() {
   // ===== FILTERING =====
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return rows;
 
-    return rows.filter(
-      (s) =>
+    return rows.filter((s) => {
+      const matchesQuery =
+        !query ||
         s.name.toLowerCase().includes(query) ||
-        s.studentId.toLowerCase().includes(query)
-    );
-  }, [rows, q]);
+        s.studentId.toLowerCase().includes(query);
+
+      const matchesStatus = statusFilter === "All Status" || s.status === statusFilter;
+
+      return matchesQuery && matchesStatus;
+    });
+  }, [rows, q, statusFilter]);
+
+  // ===== pagination =====
+  const totalPages = Math.max(1, Math.ceil(filtered.length / entries));
+  const safePage = Math.min(page, totalPages);
+
+  const pageRows = useMemo(() => {
+    const start = (safePage - 1) * entries;
+    return filtered.slice(start, start + entries);
+  }, [filtered, safePage, entries]);
+
+  const showingFrom = (safePage - 1) * entries + (pageRows.length ? 1 : 0);
+  const showingTo = (safePage - 1) * entries + pageRows.length;
+
+  useEffect(() => {
+    setPage(1);
+  }, [q, statusFilter, entries]);
 
   // ===== STATS =====
   const stats = useMemo(() => {
@@ -199,8 +210,6 @@ export default function StudentManagement() {
     URL.revokeObjectURL(url);
   };
 
-  useEffect(() => {}, []);
-
   return (
     <div className="app-shell sm">
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="dashboard" />
@@ -209,6 +218,10 @@ export default function StudentManagement() {
       <header className="sm-topbar">
         <div className="sm-topbar-inner">
           <div className="sm-topbar-left">
+            <button className="sm-icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu" type="button">
+              <FontAwesomeIcon icon={faBars} />
+            </button>
+
             <div>
               <div className="sm-title">Student Management</div>
               <div className="sm-subtitle">Review list of students</div>
@@ -217,18 +230,18 @@ export default function StudentManagement() {
 
           <div className="sm-topbar-right">
             <button
-              className="sm-icon-btn bell-btn"
-              ref={notifRef}
+              className="sm-icon-btn"
               aria-label="Notifications"
               type="button"
-              onClick={() => {
-                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
-                setActivityOpen(true);
-              }}
+              onClick={() => setActivityOpen(true)}
             >
               <span className="sm-notif-dot" />
-              <Svg name="bell" />
-            </button> 
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+
+            <button className="sm-icon-btn" aria-label="Logout" type="button" onClick={() => navigate("/")}>
+              <FontAwesomeIcon icon={faRightFromBracket} />
+            </button>
           </div>
         </div>
       </header>
@@ -259,96 +272,154 @@ export default function StudentManagement() {
           </div>
         </section>
 
-        {/* Search + actions */}
-        <section className="sm-tools card">
-          <div className="sm-search">
-            <span className="sm-searchIcon">
-              <Svg name="search" />
-            </span>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by name or Id"
-            />
-          </div>
-
-          <div className="sm-actions">
-            <button className="sm-addBtn" type="button" onClick={onAdd} aria-label="Add">
-              <Svg name="plus" />
+        {/* One white container */}
+        <section className="sm-card">
+          {/* top-right buttons */}
+          <div className="sm-cardTop">
+            <button className="sm-addTopBtn" type="button" onClick={onAdd}>
+              <FontAwesomeIcon icon={faPlus} />
+              Add Student
             </button>
 
-            <button className="sm-exportBtn" type="button" onClick={exportCSV}>
-              <span className="sm-exportIcon">
-                <Svg name="download" />
-              </span>
+            <button className="sm-exportTopBtn" type="button" onClick={exportCSV}>
+              <FontAwesomeIcon icon={faDownload} />
               Export CSV
             </button>
           </div>
-        </section>
 
-        {/* Table */}
-        <section className="sm-table card">
-          <div className="sm-thead">
-            <div>Student Name</div>
-            <div>Student Id</div>
-            <div>Device Id</div>
-            <div>Classes</div>
-            <div>Status</div>
-            <div>Actions</div>
-          </div>
+          {/* ✅ Filter row: SEARCH FIRST, then STATUS */}
+          <div className="sm-filters">
+            <div className="sm-filterRow">
+              <div className="sm-searchBox">
+                <span className="sm-searchIcon">
+                  <FontAwesomeIcon icon={faMagnifyingGlass} />
+                </span>
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
+              </div>
 
-          <div className="sm-tbody">
-            {filtered.map((s, idx) => (
-              <div className={`sm-row ${idx % 2 ? "alt" : ""}`} key={s.studentId}>
-                <div className="sm-nameCell">
-                  <span className="sm-avatar">{initials(s.name)}</span>
-                  <span>{s.name}</span>
+              <div className="sm-filterRight">
+                <div className="sm-filterLabel">Status</div>
+                <select
+                  className="sm-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option>All Status</option>
+                  <option>Active</option>
+                  <option>Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            {/* ✅ upper-left text + show entries (NO mini pager on right) */}
+            <div className="sm-strip">
+              <div className="sm-stripLeft">
+                <div className="sm-stripText">
+                  Showing {showingFrom} to {showingTo} of {filtered.length} entries
                 </div>
 
-                <div>{s.studentId}</div>
-                <div className="sm-device">{s.deviceId}</div>
-                <div>{s.classes}</div>
-
-                <div>
-                  <span className={`sm-pill ${s.status === "Active" ? "active" : "inactive"}`}>
-                    {s.status}
-                  </span>
-                </div>
-
-                <div className="sm-actionIcons">
-                  <button
-                    className="sm-icoBtn edit"
-                    onClick={() => onEdit(s)}
-                    aria-label="Edit"
-                    type="button"
-                  >
-                    <Svg name="edit" />
-                  </button>
-
-                  <button
-                    className="sm-icoBtn del"
-                    onClick={() => onDeleteClick(s)}
-                    aria-label="Delete"
-                    type="button"
-                  >
-                    <Svg name="trash" />
-                  </button>
+                <div className="sm-entries">
+                  <span>Show</span>
+                  <select value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                  </select>
+                  <span>entries</span>
                 </div>
               </div>
-            ))}
+            </div>
+          </div>
 
-            {filtered.length === 0 && <div className="sm-empty">No students found.</div>}
+          {/* Table */}
+          <div className="sm-tableWrap">
+            <table className="sm-table2">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Student ID</th>
+                  <th>Device ID</th>
+                  <th>Classes</th>
+                  <th className="sm-th-center">Status</th>
+                  <th className="sm-actionsHead">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {pageRows.map((s) => (
+                  <tr key={s.studentId}>
+                    <td className="sm-nameTd">
+                      <span className="sm-avatar">{initials(s.name)}</span>
+                      <span className="sm-nameText">{s.name}</span>
+                    </td>
+                    <td>{s.studentId}</td>
+                    <td className="sm-deviceTd">{s.deviceId}</td>
+                    <td>{s.classes}</td>
+                    <td className="sm-td-center">
+                      <span className={`sm-status ${s.status === "Active" ? "active" : "inactive"}`}>
+                        {s.status}
+                      </span>
+                    </td>
+                    <td className="sm-actionsCell">
+                      <button className="sm-action edit" onClick={() => onEdit(s)} type="button">
+                        <FontAwesomeIcon icon={faPenToSquare} />
+                        Edit
+                      </button>
+
+                      <button className="sm-action del" onClick={() => onDeleteClick(s)} type="button">
+                        <FontAwesomeIcon icon={faTrash} />
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {pageRows.length === 0 && (
+                  <tr>
+                    <td className="sm-emptyRow" colSpan={6}>
+                      No students found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer pagination (keep bottom like screenshot) */}
+          <div className="sm-footer">
+            <div className="sm-footerLeft">
+              {/* keep empty or repeat info, your choice */}
+            </div>
+
+            <div className="sm-footerRight">
+              <button
+                className="sm-footerBtn"
+                disabled={safePage <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                type="button"
+              >
+                ‹ Previous
+              </button>
+
+              <span className="sm-footerPage">{safePage}</span>
+
+              <button
+                className="sm-footerBtn"
+                disabled={safePage >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                type="button"
+              >
+                Next ›
+              </button>
+            </div>
           </div>
         </section>
       </main>
 
-      {/* Add Student Modal */}
+      {/* Modals */}
       <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAddFormSubmit} />
-
-      {/* Add confirm */}
       <SmallConfirmModal open={confirmOpen} title="Add New Student?" onYes={confirmYes} onCancel={confirmCancel} />
 
-      {/* Edit Student Modal */}
       <EditStudentModal
         open={editOpen}
         student={editingStudent}
@@ -356,16 +427,16 @@ export default function StudentManagement() {
         onSaveClick={onEditSaveClick}
       />
 
-      {/* Apply edit confirm */}
       <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={applyCancel} />
 
-      {/* Delete confirm */}
       <SmallConfirmModal
         open={deleteOpen}
         title={`Delete ${pendingDelete?.name || "this student"}?`}
         onYes={deleteYes}
         onCancel={deleteCancel}
       />
+
+      <ActivityHistoryModal open={activityOpen} onClose={() => setActivityOpen(false)} items={activity} />
     </div>
   );
 }
@@ -382,88 +453,4 @@ function csvEscape(v) {
   const s = String(v ?? "");
   if (/[,"\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
-}
-
-/* Icons (no libs) */
-function Svg({ name }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-  };
-
-  switch (name) {
-    case "menu":
-      return (
-        <svg {...common}>
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "bell":
-      return (
-        <svg {...common}>
-          <path
-            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "logout":
-      return (
-        <svg {...common}>
-          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "search":
-      return (
-        <svg {...common}>
-          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="2" />
-          <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "download":
-      return (
-        <svg {...common}>
-          <path d="M12 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "plus":
-      return (
-        <svg {...common}>
-          <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "edit":
-      return (
-        <svg {...common}>
-          <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path
-            d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case "trash":
-      return (
-        <svg {...common}>
-          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    default:
-      return null;
-  }
 }

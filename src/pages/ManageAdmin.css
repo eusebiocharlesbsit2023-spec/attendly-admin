@@ -167,6 +167,13 @@
   width: 240px;
 }
 
+/* ✅ CENTER STATUS COLUMN (5th column) */
+.mam-table thead th:nth-child(5),
+.mam-table tbody td:nth-child(5) {
+  text-align: center;
+}
+
+/* ✅ Status badge aligned same size */
 .mam-status {
   display: inline-flex;
   align-items: center;
@@ -176,7 +183,11 @@
   font-size: 12px;
   font-weight: 800;
   border: 1px solid transparent;
+
+  min-width: 90px;   /* ✅ same width for Active & Inactive */
+  text-align: center;
 }
+
 .mam-status.active {
   background: #e7f7ee;
   color: #0f7a3d;
@@ -274,7 +285,6 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-
 
 /* responsive */
 @media (max-width: 900px) {

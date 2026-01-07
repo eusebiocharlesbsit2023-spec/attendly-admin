@@ -4,11 +4,15 @@ import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./Maintenance.css";
 import MaintenanceConfirmModal from "../components/MaintenanceConfirmModal";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
+
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars, faBell, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
 export default function Maintenance() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
@@ -18,6 +22,19 @@ export default function Maintenance() {
   // Confirm modal state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingNextMode, setPendingNextMode] = useState(null); // "maintenance" | "online"
+
+  // ===== Activity (SAME AS ADMIN DASHBOARD) =====
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activity = [
+    { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
+    { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
+    { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
+    { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
+    { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
+    { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
+    { text: "Maintenance switched to Online", time: "3 days ago" },
+    { text: "Attendance export generated", time: "1 week ago" },
+  ];
 
   const statusLabel = isMaintenanceMode ? "Maintenance" : "Online";
   const statusClass = isMaintenanceMode ? "status-red" : "status-green";
@@ -41,30 +58,44 @@ export default function Maintenance() {
 
   return (
     <div className="app-shell mnt">
-      {/* ✅ Sidebar (fits all pages using app-shell) */}
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="maintenance" />
 
       {/* Top Bar */}
       <header className="mnt-topbar">
         <div className="mnt-topbar-inner">
           <div className="mnt-topbar-left">
+            <button
+              className="mnt-icon-btn"
+              type="button"
+              aria-label="Menu"
+              onClick={() => setMenuOpen(true)}
+            >
+              <FontAwesomeIcon icon={faBars} />
+            </button>
+
             <div className="mnt-title">Maintenance</div>
           </div>
 
           <div className="mnt-topbar-right">
             <button
-              className="mnt-icon-btn bell-btn"
-              ref={notifRef}
+              className="mnt-icon-btn"
               type="button"
               aria-label="Notifications"
-              onClick={() => {
-                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
-                setActivityOpen(true);
-              }}
+              onClick={() => setActivityOpen(true)}
             >
               <span className="mnt-notif-dot" />
-              <Svg name="bell" />
-            </button> 
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+
+            <button
+              className="mnt-icon-btn"
+              type="button"
+              aria-label="Logout"
+              title="Logout"
+              onClick={() => navigate("/")}
+            >
+              <FontAwesomeIcon icon={faRightFromBracket} />
+            </button>
           </div>
         </div>
       </header>
@@ -105,78 +136,12 @@ export default function Maintenance() {
         onCancel={confirmCancel}
       />
 
+      {/* Activity Modal (Bell) */}
       <ActivityHistoryModal
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
-        items={[]}
-        anchorRect={activityAnchorRect}
+        items={activity}
       />
     </div>
   );
-}
-
-/* Inline icons (no libraries) */
-function Svg({ name }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-  };
-
-  switch (name) {
-    case "menu":
-      return (
-        <svg {...common}>
-          <path
-            d="M4 6h16M4 12h16M4 18h16"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-
-    case "bell":
-      return (
-        <svg {...common}>
-          <path
-            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M10 19a2 2 0 004 0"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-
-    case "logout":
-      return (
-        <svg {...common}>
-          <path
-            d="M10 16l-4-4 4-4"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path
-            d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-
-    default:
-      return null;
-  }
 }

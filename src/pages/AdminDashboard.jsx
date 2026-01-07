@@ -4,8 +4,19 @@ import Sidebar from "../components/Sidebar";
 import "./AdminDashboard.css";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 
-/* Figma-style icons */
-import { Users, Cpu, GraduationCap, BookOpen } from "lucide-react";
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBars,
+  faBell,
+  faRightFromBracket,
+  faUsers,
+  faMicrochip,
+  faGraduationCap,
+  faBookOpen,
+  faClock,
+  faLocationDot,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -15,10 +26,10 @@ export default function AdminDashboard() {
   const notifRef = useRef(null);
 
   const stats = [
-    { label: "Total Students", value: 45, tint: "blue" },
-    { label: "Active Devices", value: 40, tint: "purple" },
-    { label: "Professors", value: 6, tint: "green" },
-    { label: "Active Sessions", value: 1, tint: "yellow" },
+    { label: "Total Students", value: 45, icon: faUsers, tint: "blue" },
+    { label: "Active Devices", value: 43, icon: faMicrochip, tint: "purple" },
+    { label: "Professors", value: 6, icon: faGraduationCap, tint: "green" },
+    { label: "Active Sessions", value: 1, icon: faBookOpen, tint: "yellow" },
   ];
 
   const activity = [
@@ -69,6 +80,10 @@ export default function AdminDashboard() {
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
+            <button className="icon-btn" onClick={() => setMenuOpen(true)}>
+              <FontAwesomeIcon icon={faBars} />
+            </button>
+
             <div>
               <div className="dash-title">Admin Dashboard</div>
               <div className="dash-subtitle">Welcome back, Admin</div>
@@ -86,8 +101,12 @@ export default function AdminDashboard() {
               }}
             >
               <span className="notif-dot" />
-              <Svg name="bell" />
-            </button> 
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+
+            <button className="icon-btn" onClick={() => navigate("/")}>
+              <FontAwesomeIcon icon={faRightFromBracket} />
+            </button>
           </div>
         </div>
       </header>
@@ -99,7 +118,7 @@ export default function AdminDashboard() {
           {stats.map((s) => (
             <div className="card stat-card" key={s.label}>
               <div className={`stat-icon tint-${s.tint}`}>
-                <StatIcon label={s.label} />
+                <FontAwesomeIcon icon={s.icon} />
               </div>
               <div className="stat-right">
                 <div className="stat-value">{s.value}</div>
@@ -113,30 +132,30 @@ export default function AdminDashboard() {
         <section className="manage-grid">
           <ManageCard
             title="Manage Students"
-            icon="students"
-            tint="blue"
+            icon={faUsers}
             onClick={() => navigate("/students")}
+            tint="blue"
           />
           <ManageCard
             title="Manage Classes"
-            icon="classes"
-            tint="yellow"
+            icon={faBookOpen}
             onClick={() => navigate("/classes")}
+            tint="yellow"
           />
           <ManageCard
             title="Manage Professors"
-            icon="professors"
-            tint="green"
+            icon={faGraduationCap}
             onClick={() => navigate("/professors")}
+            tint="green"
           />
         </section>
 
         {/* BOTTOM */}
         <section className="bottom-grid">
-          {/* Recent Activity */}
+          {/* Activity */}
           <div className="card panel">
             <div className="panel-title">
-              <Svg name="clock" small />
+              <FontAwesomeIcon icon={faClock} />
               <span>Recent Activity</span>
             </div>
 
@@ -153,7 +172,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Today Classes */}
+          {/* Classes */}
           <div className="card panel">
             <div className="panel-title plain">Today Classes</div>
 
@@ -164,10 +183,10 @@ export default function AdminDashboard() {
                     <div className="class-title">{c.title}</div>
                     <div className="class-meta">
                       <span>
-                        <Svg name="clock" small /> {c.time}
+                        <FontAwesomeIcon icon={faClock} /> {c.time}
                       </span>
                       <span>
-                        <Svg name="pin" small /> {c.location}
+                        <FontAwesomeIcon icon={faLocationDot} /> {c.location}
                       </span>
                     </div>
                   </div>
@@ -212,47 +231,11 @@ function ManageCard({ title, icon, onClick, tint }) {
   return (
     <div className="card manage-card">
       <button className="manage-btn" onClick={onClick}>
-        <div className={`manage-icon tint-${tint}`}>{icons[icon]}</div>
+        <div className={`manage-icon tint-${tint}`}>
+          <FontAwesomeIcon icon={icon} />
+        </div>
         <div className="manage-text">{title}</div>
       </button>
     </div>
   );
-}
-
-/* ===== SVG HELPER ===== */
-function Svg({ name, small = false }) {
-  const s = small ? 16 : 22;
-  const props = { width: s, height: s, viewBox: "0 0 24 24", fill: "none" };
-
-  const icons = {
-    bell: (
-      <>
-        <path
-          d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <path
-          d="M10 19a2 2 0 004 0"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-      </>
-    ),
-    clock: (
-      <>
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-        <path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="2" />
-      </>
-    ),
-    pin: (
-      <path
-        d="M12 21s7-4.5 7-11a7 7 0 10-14 0z"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-    ),
-  };
-
-  return <svg {...props}>{icons[name]}</svg>;
 }

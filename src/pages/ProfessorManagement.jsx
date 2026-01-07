@@ -6,17 +6,48 @@ import "./ProfessorManagement.css";
 import AddProfessorModal from "../components/AddProfessorModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditProfessorModal from "../components/EditProfessorModal";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
+
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBars,
+  faBell,
+  faRightFromBracket,
+  faMagnifyingGlass,
+  faPlus,
+  faDownload,
+  faPenToSquare,
+  faTrash,
+  faChevronLeft,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function ProfessorManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
+  // Search + pagination
   const [q, setQ] = useState("");
+  const [entries, setEntries] = useState(10);
+  const [page, setPage] = useState(1);
 
-  // ===== initial list -> state (so add/edit/delete works in UI) =====
+  // ===== Activity (Bell) =====
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activity = [
+    { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
+    { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
+    { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
+    { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
+    { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
+    { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
+    { text: "Maintenance switched to Online", time: "3 days ago" },
+    { text: "Attendance export generated", time: "1 week ago" },
+  ];
+
+  // ===== initial list -> state =====
   const initialProfessors = useMemo(
     () => [
       { name: "John Smith", email: "johnsmith@gmail.com", classes: 6, status: "Active" },
@@ -30,12 +61,9 @@ export default function ProfessorManagement() {
 
   const [rows, setRows] = useState(initialProfessors);
 
-  // ===== Toast (temporary message) =====
+  // ===== Toast =====
   const [toast, setToast] = useState({ open: false, message: "", type: "info" });
-
-  const showToast = (message, type = "info") => {
-    setToast({ open: true, message, type });
-  };
+  const showToast = (message, type = "info") => setToast({ open: true, message, type });
 
   useEffect(() => {
     if (!toast.open) return;
@@ -43,7 +71,7 @@ export default function ProfessorManagement() {
     return () => clearTimeout(t);
   }, [toast.open]);
 
-  // ===== Add Professor + Confirm =====
+  // ===== Add + Confirm =====
   const [addOpen, setAddOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingProf, setPendingProf] = useState(null);
@@ -52,23 +80,22 @@ export default function ProfessorManagement() {
 
   const handleAddSubmit = (payload) => {
     setPendingProf(payload);
-    setAddOpen(false); // hide form
-    setConfirmOpen(true); // show confirm
+    setAddOpen(false);
+    setConfirmOpen(true);
   };
 
   const confirmYes = () => {
     setConfirmOpen(false);
 
-    // demo: add to list
     if (pendingProf?.email) {
       setRows((prev) => [
-        ...prev,
         {
           name: pendingProf.name,
           email: pendingProf.email,
           classes: Number(pendingProf.classes ?? 0),
           status: pendingProf.status ?? "Active",
         },
+        ...prev,
       ]);
 
       showToast(`Professor added: ${pendingProf.name}`, "success");
@@ -82,7 +109,7 @@ export default function ProfessorManagement() {
     setPendingProf(null);
   };
 
-  // ===== Edit Professor + Apply Confirm =====
+  // ===== Edit + Apply Confirm =====
   const [editOpen, setEditOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [editingProf, setEditingProf] = useState(null);
@@ -102,12 +129,8 @@ export default function ProfessorManagement() {
   const applyYes = () => {
     setApplyOpen(false);
 
-    // demo apply (update local list)
     if (pendingEdit?.email) {
-      setRows((prev) =>
-        prev.map((p) => (p.email === pendingEdit.email ? { ...p, ...pendingEdit } : p))
-      );
-
+      setRows((prev) => prev.map((p) => (p.email === pendingEdit.email ? { ...p, ...pendingEdit } : p)));
       showToast(`Changes applied: ${pendingEdit.name}`, "success");
     }
 
@@ -121,7 +144,7 @@ export default function ProfessorManagement() {
     setEditingProf(null);
   };
 
-  // ✅ Delete confirm state
+  // ===== Delete confirm =====
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
 
@@ -132,11 +155,9 @@ export default function ProfessorManagement() {
 
   const deleteYes = () => {
     const name = pendingDelete?.name;
-
     setRows((prev) => prev.filter((p) => p.email !== pendingDelete?.email));
     setDeleteOpen(false);
     setPendingDelete(null);
-
     if (name) showToast(`Deleted: ${name}`, "danger");
   };
 
@@ -145,15 +166,32 @@ export default function ProfessorManagement() {
     setPendingDelete(null);
   };
 
+  // ===== Filtering =====
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     if (!query) return rows;
 
-    return rows.filter(
-      (p) => p.name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query)
-    );
+    return rows.filter((p) => p.name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query));
   }, [rows, q]);
 
+  // reset page when filters/entries change
+  useEffect(() => {
+    setPage(1);
+  }, [q, entries]);
+
+  // ===== Pagination =====
+  const totalPages = Math.max(1, Math.ceil(filtered.length / entries));
+  const safePage = Math.min(page, totalPages);
+
+  const paged = useMemo(() => {
+    const start = (safePage - 1) * entries;
+    return filtered.slice(start, start + entries);
+  }, [filtered, safePage, entries]);
+
+  const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * entries + 1;
+  const showingTo = Math.min(filtered.length, (safePage - 1) * entries + paged.length);
+
+  // ===== Stats =====
   const stats = useMemo(() => {
     const total = rows.length;
     const active = rows.filter((p) => p.status === "Active").length;
@@ -180,7 +218,6 @@ export default function ProfessorManagement() {
   };
 
   return (
-    // ✅ use app-shell so sidebar fits consistently on ALL pages
     <div className="app-shell pm">
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="dashboard" />
 
@@ -188,12 +225,7 @@ export default function ProfessorManagement() {
       {toast.open && (
         <div className={`pm-toast ${toast.type}`}>
           <span>{toast.message}</span>
-          <button
-            type="button"
-            className="pm-toast-x"
-            onClick={() => setToast((p) => ({ ...p, open: false }))}
-            aria-label="Close"
-          >
+          <button type="button" className="pm-toast-x" onClick={() => setToast((p) => ({ ...p, open: false }))} aria-label="Close">
             ✕
           </button>
         </div>
@@ -203,6 +235,10 @@ export default function ProfessorManagement() {
       <header className="pm-topbar">
         <div className="pm-topbar-inner">
           <div className="pm-topbar-left">
+            <button className="pm-icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu" type="button">
+              <FontAwesomeIcon icon={faBars} />
+            </button>
+
             <div>
               <div className="pm-title">Professor Management</div>
               <div className="pm-subtitle">Review list of professors</div>
@@ -210,19 +246,14 @@ export default function ProfessorManagement() {
           </div>
 
           <div className="pm-topbar-right">
-            <button
-              className="pm-icon-btn bell-btn"
-              ref={notifRef}
-              aria-label="Notifications"
-              type="button"
-              onClick={() => {
-                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
-                setActivityOpen(true);
-              }}
-            >
+            <button className="pm-icon-btn" aria-label="Notifications" type="button" onClick={() => setActivityOpen(true)}>
               <span className="pm-notif-dot" />
-              <Svg name="bell" />
-            </button> 
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+
+            <button className="pm-icon-btn" aria-label="Logout" type="button" onClick={() => navigate("/")}>
+              <FontAwesomeIcon icon={faRightFromBracket} />
+            </button>
           </div>
         </div>
       </header>
@@ -253,94 +284,123 @@ export default function ProfessorManagement() {
           </div>
         </section>
 
-        {/* Search + actions */}
-        <section className="pm-tools card">
-          <div className="pm-search">
-            <span className="pm-searchIcon">
-              <Svg name="search" />
-            </span>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by name or email"
-            />
-          </div>
+        {/* TABLE CARD (Admin-layout style) */}
+        <section className="pm-card">
+          {/* Controls Row (like screenshot) */}
+          <div className="pm-controls">
+            <div className="pm-controls-left">
+              <span className="pm-controlLabel">Show</span>
 
-          <div className="pm-actions">
-            <button className="pm-addBtn" type="button" onClick={onAdd} aria-label="Add">
-              <Svg name="plus" />
-            </button>
-
-            <button className="pm-exportBtn" type="button" onClick={exportCSV}>
-              <span className="pm-exportIcon">
-                <Svg name="download" />
-              </span>
-              Export CSV
-            </button>
-          </div>
-        </section>
-
-        {/* Table */}
-        <section className="pm-table card">
-          <div className="pm-thead">
-            <div>Professor Name</div>
-            <div>Email</div>
-            <div>Classes</div>
-            <div>Status</div>
-            <div>Actions</div>
-          </div>
-
-          <div className="pm-tbody">
-            {filtered.map((p, idx) => (
-              <div className={`pm-row ${idx % 2 ? "alt" : ""}`} key={p.email}>
-                <div className="pm-nameCell">
-                  <span className="pm-avatar">{initials(p.name)}</span>
-                  <span>{p.name}</span>
-                </div>
-
-                <div className="pm-email">{p.email}</div>
-                <div>{p.classes}</div>
-
-                <div>
-                  <span className={`pm-pill ${p.status === "Active" ? "active" : "inactive"}`}>
-                    {p.status}
-                  </span>
-                </div>
-
-                <div className="pm-actionIcons">
-                  <button
-                    className="pm-icoBtn edit"
-                    onClick={() => onEdit(p)}
-                    aria-label="Edit"
-                    type="button"
-                  >
-                    <Svg name="edit" />
-                  </button>
-
-                  {/* ✅ Delete now opens confirm */}
-                  <button
-                    className="pm-icoBtn del"
-                    onClick={() => onDeleteClick(p)}
-                    aria-label="Delete"
-                    type="button"
-                  >
-                    <Svg name="trash" />
-                  </button>
-                </div>
+              <div className="pm-searchBox">
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
+                <span className="pm-searchIcon">
+                  <FontAwesomeIcon icon={faMagnifyingGlass} />
+                </span>
               </div>
-            ))}
 
-            {filtered.length === 0 && <div className="pm-empty">No professors found.</div>}
+              <div className="pm-entriesInline">
+                <span className="pm-entriesLabel">Show</span>
+                <select value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                </select>
+                <span className="pm-entriesLabel">entries</span>
+              </div>
+            </div>
+
+            <div className="pm-controls-right">
+              <button className="pm-addBtn" type="button" onClick={onAdd} aria-label="Add">
+                <FontAwesomeIcon icon={faPlus} />
+              </button>
+
+              <button className="pm-exportBtn" type="button" onClick={exportCSV}>
+                <span className="pm-exportIcon">
+                  <FontAwesomeIcon icon={faDownload} />
+                </span>
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="pm-table">
+            <div className="pm-thead">
+              <div>Professor Name</div>
+              <div>Email</div>
+              <div>Classes</div>
+              <div>Status</div>
+              <div>Actions</div>
+            </div>
+
+            <div className="pm-tbody">
+              {paged.map((p) => (
+                <div className="pm-row" key={p.email}>
+                  <div className="pm-nameCell">
+                    <span className="pm-avatar">{initials(p.name)}</span>
+                    <span>{p.name}</span>
+                  </div>
+
+                  <div className="pm-email">{p.email}</div>
+                  <div>{p.classes}</div>
+
+                  <div className="pm-statusCell">
+                    <span className={`pm-pill ${p.status === "Active" ? "active" : "inactive"}`}>{p.status}</span>
+                  </div>
+
+                  <div className="pm-actionCell">
+                    <button className="pm-actionBtn edit" onClick={() => onEdit(p)} type="button">
+                      <FontAwesomeIcon icon={faPenToSquare} />
+                      Edit
+                    </button>
+
+                    <button className="pm-actionBtn del" onClick={() => onDeleteClick(p)} type="button">
+                      <FontAwesomeIcon icon={faTrash} />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {paged.length === 0 && <div className="pm-empty">No professors found.</div>}
+            </div>
+
+            {/* Footer (like screenshot) */}
+            <div className="pm-footer">
+              <div className="pm-footerLeft">
+                Showing {showingFrom} to {showingTo} of {filtered.length} entries
+              </div>
+
+              <div className="pm-footerRight">
+                <button
+                  className="pm-pageBtn"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  type="button"
+                >
+                  <FontAwesomeIcon icon={faChevronLeft} /> Previous
+                </button>
+
+                <button className="pm-pageNum active" type="button">
+                  {safePage}
+                </button>
+
+                <button
+                  className="pm-pageBtn"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  type="button"
+                >
+                  Next <FontAwesomeIcon icon={faChevronRight} />
+                </button>
+              </div>
+            </div>
           </div>
         </section>
       </main>
 
       {/* Add Professor Modal */}
-      <AddProfessorModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onSubmit={handleAddSubmit}
-      />
+      <AddProfessorModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAddSubmit} />
 
       {/* Confirm Add */}
       <SmallConfirmModal
@@ -351,23 +411,16 @@ export default function ProfessorManagement() {
       />
 
       {/* Edit Professor Modal */}
-      <EditProfessorModal
-        open={editOpen}
-        professor={editingProf}
-        onClose={() => setEditOpen(false)}
-        onSaveClick={onEditSaveClick}
-      />
+      <EditProfessorModal open={editOpen} professor={editingProf} onClose={() => setEditOpen(false)} onSaveClick={onEditSaveClick} />
 
       {/* Confirm Apply Edit */}
       <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={applyCancel} />
 
-      {/* ✅ Confirm Delete */}
-      <SmallConfirmModal
-        open={deleteOpen}
-        title={`Delete ${pendingDelete?.name || "this professor"}?`}
-        onYes={deleteYes}
-        onCancel={deleteCancel}
-      />
+      {/* Confirm Delete */}
+      <SmallConfirmModal open={deleteOpen} title={`Delete ${pendingDelete?.name || "this professor"}?`} onYes={deleteYes} onCancel={deleteCancel} />
+
+      {/* Activity Modal (Bell) */}
+      <ActivityHistoryModal open={activityOpen} onClose={() => setActivityOpen(false)} items={activity} />
     </div>
   );
 }
@@ -384,104 +437,4 @@ function csvEscape(v) {
   const s = String(v ?? "");
   if (/[,"\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
-}
-
-/* icons (no libs) */
-function Svg({ name }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-  };
-
-  switch (name) {
-    case "menu":
-      return (
-        <svg {...common}>
-          <path
-            d="M4 6h16M4 12h16M4 18h16"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case "bell":
-      return (
-        <svg {...common}>
-          <path
-            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "logout":
-      return (
-        <svg {...common}>
-          <path
-            d="M10 16l-4-4 4-4"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path
-            d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case "search":
-      return (
-        <svg {...common}>
-          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="2" />
-          <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "download":
-      return (
-        <svg {...common}>
-          <path d="M12 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "plus":
-      return (
-        <svg {...common}>
-          <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "edit":
-      return (
-        <svg {...common}>
-          <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path
-            d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case "trash":
-      return (
-        <svg {...common}>
-          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    default:
-      return null;
-  }
 }

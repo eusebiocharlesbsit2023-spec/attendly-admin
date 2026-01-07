@@ -5,13 +5,42 @@ import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./ClassManagement.css";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditClassModal from "../components/EditClassModal";
+import ActivityHistoryModal from "../components/ActivityHistoryModal";
+
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBars,
+  faBell,
+  faRightFromBracket,
+  faMagnifyingGlass,
+  faDownload,
+  faUserTie,
+  faLocationDot,
+  faClock,
+  faWifi,
+  faPenToSquare,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function ClassManagement() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
+
+  // ===== Activity (SAME AS ADMIN DASHBOARD) =====
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activity = [
+    { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
+    { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
+    { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
+    { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
+    { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
+    { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
+    { text: "Maintenance switched to Online", time: "3 days ago" },
+    { text: "Attendance export generated", time: "1 week ago" },
+  ];
 
   // ===== Edit Class + Apply Changes Confirm =====
   const [editOpen, setEditOpen] = useState(false);
@@ -182,30 +211,43 @@ export default function ClassManagement() {
 
   return (
     <div className="app-shell cm">
-      {/* ✅ Sidebar now fits all pages using app-shell */}
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="classes" />
 
       {/* Topbar */}
       <header className="cm-topbar">
         <div className="cm-topbar-inner">
           <div className="cm-topbar-left">
+            <button
+              className="cm-icon-btn"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Menu"
+              type="button"
+            >
+              <FontAwesomeIcon icon={faBars} />
+            </button>
+
             <div className="cm-title">Class Management</div>
           </div>
 
           <div className="cm-topbar-right">
             <button
-              className="cm-icon-btn bell-btn"
-              ref={notifRef}
+              className="cm-icon-btn"
               aria-label="Notifications"
               type="button"
-              onClick={() => {
-                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
-                setActivityOpen(true);
-              }}
+              onClick={() => setActivityOpen(true)}
             >
               <span className="cm-notif-dot" />
-              <Svg name="bell" />
-            </button> 
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+
+            <button
+              className="cm-icon-btn"
+              aria-label="Logout"
+              type="button"
+              onClick={() => navigate("/")}
+            >
+              <FontAwesomeIcon icon={faRightFromBracket} />
+            </button>
           </div>
         </div>
       </header>
@@ -241,9 +283,13 @@ export default function ClassManagement() {
           <div className="cm-searchRow">
             <div className="cm-search">
               <span className="cm-searchIcon">
-                <Svg name="search" />
+                <FontAwesomeIcon icon={faMagnifyingGlass} />
               </span>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or Id" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search by name or Id"
+              />
             </div>
           </div>
 
@@ -281,7 +327,7 @@ export default function ClassManagement() {
 
             <button className="cm-exportBtn" type="button" onClick={exportCSV}>
               <span className="cm-exportIcon">
-                <Svg name="download" />
+                <FontAwesomeIcon icon={faDownload} />
               </span>
               Export CSV
             </button>
@@ -306,25 +352,28 @@ export default function ClassManagement() {
               <div className="cm-card-body">
                 <div className="cm-line">
                   <span className="cm-ico">
-                    <Svg name="user" />
+                    <FontAwesomeIcon icon={faUserTie} />
                   </span>
                   <span>{c.professor}</span>
                 </div>
+
                 <div className="cm-line">
                   <span className="cm-ico">
-                    <Svg name="pin" />
+                    <FontAwesomeIcon icon={faLocationDot} />
                   </span>
                   <span>{c.room}</span>
                 </div>
+
                 <div className="cm-line">
                   <span className="cm-ico">
-                    <Svg name="clock" />
+                    <FontAwesomeIcon icon={faClock} />
                   </span>
                   <span>{c.schedule}</span>
                 </div>
+
                 <div className="cm-line">
                   <span className="cm-ico">
-                    <Svg name="wifi" />
+                    <FontAwesomeIcon icon={faWifi} />
                   </span>
                   <span>{c.wifi}</span>
                 </div>
@@ -333,7 +382,7 @@ export default function ClassManagement() {
               <div className="cm-card-actions">
                 <button className="cm-editBtn" type="button" onClick={() => onEdit(c)}>
                   <span className="cm-editIco">
-                    <Svg name="edit" />
+                    <FontAwesomeIcon icon={faPenToSquare} />
                   </span>
                   Edit
                 </button>
@@ -344,7 +393,7 @@ export default function ClassManagement() {
                   onClick={() => onDeleteClick(c)}
                   aria-label="Delete"
                 >
-                  <Svg name="trash" />
+                  <FontAwesomeIcon icon={faTrash} />
                 </button>
               </div>
             </div>
@@ -373,6 +422,13 @@ export default function ClassManagement() {
         onYes={deleteYes}
         onCancel={deleteCancel}
       />
+
+      {/* Activity Modal (Bell) */}
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={activity}
+      />
     </div>
   );
 }
@@ -382,116 +438,4 @@ function csvEscape(v) {
   const s = String(v ?? "");
   if (/[,"\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
-}
-
-/* icons */
-function Svg({ name }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-  };
-
-  switch (name) {
-    case "menu":
-      return (
-        <svg {...common}>
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "bell":
-      return (
-        <svg {...common}>
-          <path
-            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "logout":
-      return (
-        <svg {...common}>
-          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "search":
-      return (
-        <svg {...common}>
-          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="2" />
-          <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "download":
-      return (
-        <svg {...common}>
-          <path d="M12 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "user":
-      return (
-        <svg {...common}>
-          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="2" />
-          <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "pin":
-      return (
-        <svg {...common}>
-          <path
-            d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <circle cx="12" cy="10" r="2" stroke="currentColor" strokeWidth="2" />
-        </svg>
-      );
-    case "clock":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-          <path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "wifi":
-      return (
-        <svg {...common}>
-          <path d="M5 12.55a11 11 0 0 1 14 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M8.5 15.5a6 6 0 0 1 7 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M11 18.5a2 2 0 0 1 2 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "edit":
-      return (
-        <svg {...common}>
-          <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path
-            d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case "trash":
-      return (
-        <svg {...common}>
-          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M6 6l1 16h10l1-16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    default:
-      return null;
-  }
 }

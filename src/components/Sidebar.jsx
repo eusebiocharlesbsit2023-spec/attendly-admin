@@ -13,16 +13,20 @@ import {
 import "./Sidebar.css";
 import Logo from '../assets/Logo.png';
 
+// ✅ import logo (OPTION 1 – recommended)
+import logo from "../assets/logo.png"; 
+// make sure logo is here: src/assets/logo.png
+// OR use /logo.png if stored in public folder
+
 export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const navigate = useNavigate();
 
-  // ✅ get role from login
   const role = localStorage.getItem("role"); // "Admin" | "Super Admin"
   const isSuperAdmin = role === "Super Admin";
 
   const go = (path) => {
     navigate(path);
-    onClose?.(); // close drawer on mobile only
+    onClose?.();
   };
 
   const logout = () => {
@@ -36,12 +40,28 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
       {/* Mobile overlay */}
       {open && <div className="sidebar-overlay" onClick={onClose} />}
 
-      <aside className='sidebarV2 navbar'>
+      <aside className={`sidebarV2 ${open ? "open" : ""}`}>
+        
         {/* Header */}
         <div className="sidebarV2-header">
           <div className="sidebarV2-brand">
-            <img src={Logo} alt="" />
+            <img
+              src={logo}
+              alt="Attendly Logo"
+              className="sidebarV2-logo"
+            />
+            <span className="sidebarV2-title"></span>
           </div>
+
+          {/* Close button (mobile only) */}
+          <button
+            className="sidebarV2-close"
+            onClick={onClose}
+            type="button"
+            aria-label="Close Sidebar"
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -73,16 +93,7 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
             <span className="sidebarV2-text">Reports</span>
           </button>
 
-          <button
-            className={`sidebarV2-item ${active === "maintenance" ? "active" : ""}`}
-            onClick={() => go("/maintenance")}
-            type="button"
-          >
-            <FontAwesomeIcon icon={faScrewdriverWrench} className="sidebarV2-icon" />
-            <span className="sidebarV2-text">Maintenance</span>
-          </button>
-
-          {/* ✅ ONLY SUPER ADMIN CAN SEE THIS */}
+          {/* Super Admin only */}
           {isSuperAdmin && (
             <button
               className={`sidebarV2-item ${active === "manage-admin" ? "active" : ""}`}
