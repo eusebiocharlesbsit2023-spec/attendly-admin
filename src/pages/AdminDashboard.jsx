@@ -7,9 +7,7 @@ import ActivityHistoryModal from "../components/ActivityHistoryModal";
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBars,
   faBell,
-  faRightFromBracket,
   faUsers,
   faMicrochip,
   faGraduationCap,
@@ -20,7 +18,6 @@ import {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
@@ -62,28 +59,14 @@ export default function AdminDashboard() {
     },
   ];
 
-  /* Stat icons */
-  const StatIcon = ({ label }) => {
-    const common = { size: 26, strokeWidth: 2.2 };
-    if (label === "Total Students") return <Users {...common} />;
-    if (label === "Active Devices") return <Cpu {...common} />;
-    if (label === "Professors") return <GraduationCap {...common} />;
-    if (label === "Active Sessions") return <BookOpen {...common} />;
-    return null;
-  };
-
   return (
     <div className="app-shell dash">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="dashboard" />
+      <Sidebar open={false} active="dashboard" />
 
       {/* Top Bar */}
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
-            <button className="icon-btn" onClick={() => setMenuOpen(true)}>
-              <FontAwesomeIcon icon={faBars} />
-            </button>
-
             <div>
               <div className="dash-title">Admin Dashboard</div>
               <div className="dash-subtitle">Welcome back, Admin</div>
@@ -95,7 +78,6 @@ export default function AdminDashboard() {
               className="icon-btn bell-btn"
               ref={notifRef}
               onClick={() => {
-                // capture the bell button position and open the modal anchored to it
                 setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
                 setActivityOpen(true);
               }}
@@ -104,9 +86,7 @@ export default function AdminDashboard() {
               <FontAwesomeIcon icon={faBell} />
             </button>
 
-            <button className="icon-btn" onClick={() => navigate("/")}>
-              <FontAwesomeIcon icon={faRightFromBracket} />
-            </button>
+            {/* logout button removed from topbar */}
           </div>
         </div>
       </header>
@@ -195,13 +175,8 @@ export default function AdminDashboard() {
               ))}
             </div>
 
-            {/* VIEW SCHEDULE */}
             <div className="panel-footer">
-              <button
-                className="link-btn"
-                type="button"
-                onClick={() => navigate("/schedule")}
-              >
+              <button className="link-btn" type="button" onClick={() => navigate("/schedule")}>
                 View Schedule
               </button>
             </div>
@@ -221,13 +196,6 @@ export default function AdminDashboard() {
 
 /* ===== MANAGE CARD ===== */
 function ManageCard({ title, icon, onClick, tint }) {
-  const common = { size: 28, strokeWidth: 2.2 };
-  const icons = {
-    students: <Users {...common} />,
-    classes: <BookOpen {...common} />,
-    professors: <GraduationCap {...common} />,
-  };
-
   return (
     <div className="card manage-card">
       <button className="manage-btn" onClick={onClick}>

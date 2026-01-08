@@ -1,6 +1,10 @@
 import React, { useMemo, useState } from "react";
 import "./CreateAdminModal.css";
 
+/* FontAwesome (eye icons) */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+
 export default function CreateAdminModal({ open, onClose, onCreate }) {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -39,7 +43,7 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
     onCreate?.({
       fullName: fullName.trim(),
       username: username.trim(),
-      role, // always Admin here
+      role,
       tempPassword: tempPassword.trim(),
     });
 
@@ -96,14 +100,16 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
               value={tempPassword}
               onChange={(e) => setTempPassword(e.target.value)}
             />
+
             <button
               type="button"
               className="cam-eye"
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={() => setShowPass((v) => !v)}
               aria-label={showPass ? "Hide password" : "Show password"}
               title={showPass ? "Hide password" : "Show password"}
             >
-              {showPass ? "🙈" : "👁️"}
+              <FontAwesomeIcon icon={showPass ? faEyeSlash : faEye} />
             </button>
           </div>
           {errors.tempPassword && <div className="cam-error">{errors.tempPassword}</div>}

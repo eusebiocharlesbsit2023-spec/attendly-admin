@@ -1,27 +1,20 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./AdminDashboard.css";
 import "./Reports.css";
-import ActivityHistoryModal from "../components/ActivityHistoryModal";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBars,
-  faBell,
-  faRightFromBracket,
-  faMagnifyingGlass,
-  faDownload,
-  faXmark,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBell, faMagnifyingGlass, faDownload } from "@fortawesome/free-solid-svg-icons";
 
 export default function Reports() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
+
+  // ✅ FIX: missing anchor rect state
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
 
   // ===== Activity (SAME AS ADMIN DASHBOARD) =====
   const [activityOpen, setActivityOpen] = useState(false);
@@ -50,7 +43,7 @@ export default function Reports() {
       {
         id: 1023,
         name: "Juan Dela Cruz",
-        email: "juan@example.com",
+        email: "20230000-1",
         subject: "Login Issue",
         message: "I can't log into my account.",
         date: "2023-12-15",
@@ -59,7 +52,7 @@ export default function Reports() {
       {
         id: 1022,
         name: "Maria Santos",
-        email: "maria@example.com",
+        email: "20230000-2",
         subject: "App Crash",
         message: "The app keeps crashing.",
         date: "2023-12-10",
@@ -68,7 +61,7 @@ export default function Reports() {
       {
         id: 1021,
         name: "Kevin Reyes",
-        email: "kevin@example.com",
+        email: "20230000-3",
         subject: "Attendanace Problem",
         message: "can't mark attendance.",
         date: "2023-12-05",
@@ -77,7 +70,7 @@ export default function Reports() {
       {
         id: 1020,
         name: "Lisa Tan",
-        email: "lisa@example.com",
+        email: "20230000-4",
         subject: "Account Help",
         message: "Need help updating profile.",
         date: "2023-11-28",
@@ -86,7 +79,7 @@ export default function Reports() {
       {
         id: 1019,
         name: "Mark Villanueva",
-        email: "mark@example.com",
+        email: "20230000-5",
         subject: "Bug Report",
         message: "Found a bug in the app.",
         date: "2023-11-20",
@@ -95,7 +88,7 @@ export default function Reports() {
       {
         id: 1018,
         name: "Anna Lim",
-        email: "anna@example.com",
+        email: "20230000-6",
         subject: "Technical Issue",
         message: "Having trouble with notifications.",
         date: "2023-11-15",
@@ -104,7 +97,7 @@ export default function Reports() {
       {
         id: 1017,
         name: "John Perez",
-        email: "john@example.com",
+        email: "20230000-7",
         subject: "General Inquiry",
         message: "Just have a few questions.",
         date: "2023-11-10",
@@ -113,7 +106,7 @@ export default function Reports() {
       {
         id: 1016,
         name: "Grace Mendoza",
-        email: "grace@example.com",
+        email: "20230000-8",
         subject: "Feedback",
         message: "Suggestions for the app.",
         date: "2023-11-05",
@@ -154,29 +147,10 @@ export default function Reports() {
   const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const showingTo = Math.min(filtered.length, safePage * pageSize);
 
-  const onClear = () => {
-    setQ("");
-    setStatus("All");
-    setFrom("");
-    setTo("");
-    setPage(1);
-  };
-
   const exportCSV = () => {
     const header = ["ID", "Name", "Email", "Subject", "Message", "Submission Date", "Status"];
-    const rows = filtered.map((r) => [
-      r.id,
-      r.name,
-      r.email,
-      r.subject,
-      r.message,
-      r.date,
-      r.status,
-    ]);
-
-    const csv = [header, ...rows]
-      .map((row) => row.map(csvEscape).join(","))
-      .join("\n");
+    const rows = filtered.map((r) => [r.id, r.name, r.email, r.subject, r.message, r.date, r.status]);
+    const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -196,16 +170,12 @@ export default function Reports() {
 
   return (
     <div className="app-shell rep">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="reports" />
+      <Sidebar open={false} active="reports" />
 
-      {/* SAME TOP BAR AS DASHBOARD */}
+      {/* TOP BAR */}
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
-            <button className="icon-btn" aria-label="Menu" type="button" onClick={() => setMenuOpen(true)}>
-              <FontAwesomeIcon icon={faBars} />
-            </button>
-
             <div>
               <div className="dash-title">Reports</div>
               <div className="dash-subtitle">View submitted reports and status</div>
@@ -213,153 +183,150 @@ export default function Reports() {
           </div>
 
           <div className="dash-topbar-right">
-            <button className="icon-btn" aria-label="Notifications" type="button" onClick={() => setActivityOpen(true)}>
+            <button
+              className="icon-btn"
+              type="button"
+              ref={notifRef}
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
               <span className="notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
 
-            <button className="icon-btn" aria-label="Logout" type="button" onClick={() => navigate("/")} title="Logout">
-              <FontAwesomeIcon icon={faRightFromBracket} />
-            </button>
+            {/* topbar logout removed */}
           </div>
         </div>
       </header>
 
-      {/* Content */}
+      {/* MAIN */}
       <main className="rep-main">
-        <section className="rep-card rep-dt">
-          {/* TOP controls like screenshot */}
-          <div className="rep-dt-top">
-            <div className="rep-dt-search">
-              <span className="rep-dt-searchIcon">
-                <FontAwesomeIcon icon={faMagnifyingGlass} />
-              </span>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
-            </div>
-
-            <div className="rep-dt-right">
-              <div className="rep-dt-field">
-                <label>Status</label>
-                <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                  <option value="All">All Status</option>
-                  <option value="Open">Open</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Closed">Closed</option>
-                </select>
+        <div className="rep-card">
+          <div className="rep-dt">
+            <div className="rep-dt-top">
+              <div className="rep-dt-search">
+                <span className="rep-dt-searchIcon">
+                  <FontAwesomeIcon icon={faMagnifyingGlass} />
+                </span>
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
               </div>
 
-              <button className="rep-dt-btn" type="button" onClick={onClear}>
-                <span className="rep-dt-btnIco">
-                  <FontAwesomeIcon icon={faXmark} />
-                </span>
-                Clear
-              </button>
-
-              <button className="rep-dt-btn primary" type="button" onClick={exportCSV}>
-                <span className="rep-dt-btnIco">
-                  <FontAwesomeIcon icon={faDownload} />
-                </span>
-                Export CSV
-              </button>
-            </div>
-          </div>
-
-          {/* SUB row: showing + show entries */}
-          <div className="rep-dt-sub">
-            <div className="rep-dt-showing">
-              Showing {showingFrom} to {showingTo} of {filtered.length} entries
-            </div>
-
-            <div className="rep-dt-entries">
-              <span>Show</span>
-              <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-              </select>
-              <span>entries</span>
-            </div>
-          </div>
-
-          {/* Optional date range row (keeps your same filters) */}
-          <div className="rep-dt-filters">
-            <div className="rep-dt-mini">
-              <label>From</label>
-              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-            </div>
-            <div className="rep-dt-mini">
-              <label>To</label>
-              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="rep-dt-table">
-            <div className="rep-dt-thead">
-              <div>ID</div>
-              <div>Name</div>
-              <div>Email</div>
-              <div>Subject</div>
-              <div>Message</div>
-              <div>Submission Date</div>
-              <div>Status</div>
-            </div>
-
-            <div className="rep-dt-tbody">
-              {paged.map((r) => (
-                <div className="rep-dt-row" key={r.id}>
-                  <div>{r.id}</div>
-
-                  <div className="rep-dt-nameCell">
-                    <span className="rep-dt-avatar">{initials(r.name)}</span>
-                    <span className="rep-dt-name">{r.name}</span>
-                  </div>
-
-                  <div className="rep-email">{r.email}</div>
-                  <div className="rep-subject">{r.subject}</div>
-                  <div className="rep-message">{r.message}</div>
-                  <div>{r.date}</div>
-
-                  <div className="rep-dt-statusCell">
-                    <span className={`rep-pill ${pillClass(r.status)}`}>{r.status}</span>
-                  </div>
+              <div className="rep-dt-right">
+                <div className="rep-dt-field">
+                  <label>Status</label>
+                  <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                    <option>All</option>
+                    <option>Open</option>
+                    <option>Resolved</option>
+                    <option>Pending</option>
+                    <option>Closed</option>
+                  </select>
                 </div>
-              ))}
 
-              {paged.length === 0 && <div className="rep-dt-empty">No reports found.</div>}
+                <button className="rep-dt-btn primary" type="button" onClick={exportCSV}>
+                  <span className="rep-dt-btnIco">
+                    <FontAwesomeIcon icon={faDownload} />
+                  </span>
+                  Export CSV
+                </button>
+              </div>
+            </div>
+
+            <div className="rep-dt-sub">
+              <div className="rep-dt-showing">
+                Showing {showingFrom} to {showingTo} of {filtered.length} entries
+              </div>
+
+              <div className="rep-dt-entries">
+                <span>Show</span>
+                <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                </select>
+                <span>entries</span>
+              </div>
+            </div>
+
+            <div className="rep-dt-filters">
+              <div className="rep-dt-mini">
+                <label>From</label>
+                <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+              </div>
+
+              <div className="rep-dt-mini">
+                <label>To</label>
+                <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="rep-dt-table">
+              <div className="rep-dt-thead">
+                <div>ID</div>
+                <div>Name</div>
+                <div>Student ID</div>
+                <div>Subject</div>
+                <div>Message</div>
+                <div>Submission Date</div>
+                <div>Status</div>
+              </div>
+
+              <div className="rep-dt-tbody">
+                {paged.map((r) => (
+                  <div className="rep-dt-row" key={r.id}>
+                    <div>{r.id}</div>
+                    <div className="rep-dt-nameCell">
+                      <span className="rep-dt-avatar">{initials(r.name)}</span>
+                      <div className="rep-dt-name">{r.name}</div>
+                    </div>
+
+                    <div className="rep-email">{r.email}</div>
+                    <div className="rep-subject">{r.subject}</div>
+                    <div className="rep-message">{r.message}</div>
+                    <div>{r.date}</div>
+                    <div className="rep-dt-statusCell">
+                      <span className={`rep-pill ${pillClass(r.status)}`}>{r.status}</span>
+                    </div>
+                  </div>
+                ))}
+
+                {paged.length === 0 && <div className="rep-dt-empty">No reports found.</div>}
+              </div>
+            </div>
+
+            <div className="rep-dt-pagination">
+              <button
+                className="rep-dt-pageBtn"
+                disabled={safePage === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                ‹ Previous
+              </button>
+
+              <button className="rep-dt-pageNum active" type="button">
+                {safePage}
+              </button>
+
+              <button
+                className="rep-dt-pageBtn"
+                disabled={safePage === totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next ›
+              </button>
             </div>
           </div>
-
-          {/* Pagination bottom-right like screenshot */}
-          <div className="rep-dt-pagination">
-            <button
-              className="rep-dt-pageBtn"
-              disabled={safePage === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              type="button"
-            >
-              ‹ Previous
-            </button>
-
-            <button className="rep-dt-pageNum active" type="button">
-              {safePage}
-            </button>
-
-            <button
-              className="rep-dt-pageBtn"
-              disabled={safePage === totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              type="button"
-            >
-              Next ›
-            </button>
-          </div>
-        </section>
+        </div>
       </main>
 
-      {/* Activity Modal (Bell) */}
-      <ActivityHistoryModal open={activityOpen} onClose={() => setActivityOpen(false)} items={activity} />
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={activity}
+        anchorRect={activityAnchorRect}
+      />
     </div>
   );
 }

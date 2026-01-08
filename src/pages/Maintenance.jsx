@@ -4,15 +4,13 @@ import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./Maintenance.css";
 import MaintenanceConfirmModal from "../components/MaintenanceConfirmModal";
-import ActivityHistoryModal from "../components/ActivityHistoryModal";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faBell, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { faBell } from "@fortawesome/free-solid-svg-icons";
 
 export default function Maintenance() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
@@ -58,21 +56,12 @@ export default function Maintenance() {
 
   return (
     <div className="app-shell mnt">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="maintenance" />
+      <Sidebar open={false} active="maintenance" />
 
       {/* Top Bar */}
       <header className="mnt-topbar">
         <div className="mnt-topbar-inner">
           <div className="mnt-topbar-left">
-            <button
-              className="mnt-icon-btn"
-              type="button"
-              aria-label="Menu"
-              onClick={() => setMenuOpen(true)}
-            >
-              <FontAwesomeIcon icon={faBars} />
-            </button>
-
             <div className="mnt-title">Maintenance</div>
           </div>
 
@@ -81,21 +70,17 @@ export default function Maintenance() {
               className="mnt-icon-btn"
               type="button"
               aria-label="Notifications"
-              onClick={() => setActivityOpen(true)}
+              ref={notifRef}
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
             >
               <span className="mnt-notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
 
-            <button
-              className="mnt-icon-btn"
-              type="button"
-              aria-label="Logout"
-              title="Logout"
-              onClick={() => navigate("/")}
-            >
-              <FontAwesomeIcon icon={faRightFromBracket} />
-            </button>
+            {/* topbar logout removed */}
           </div>
         </div>
       </header>
@@ -141,6 +126,7 @@ export default function Maintenance() {
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
         items={activity}
+        anchorRect={activityAnchorRect}
       />
     </div>
   );

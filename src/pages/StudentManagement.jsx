@@ -6,24 +6,13 @@ import "./StudentManagement.css";
 import AddStudentModal from "../components/AddStudentModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditStudentModal from "../components/EditStudentModal";
-import ActivityHistoryModal from "../components/ActivityHistoryModal";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBars,
-  faBell,
-  faRightFromBracket,
-  faMagnifyingGlass,
-  faPlus,
-  faDownload,
-  faPenToSquare,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBell, faMagnifyingGlass, faPlus, faDownload, faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 export default function StudentManagement() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
@@ -212,16 +201,12 @@ export default function StudentManagement() {
 
   return (
     <div className="app-shell sm">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="dashboard" />
+      <Sidebar open={false} active="dashboard" />
 
       {/* Topbar */}
       <header className="sm-topbar">
         <div className="sm-topbar-inner">
           <div className="sm-topbar-left">
-            <button className="sm-icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu" type="button">
-              <FontAwesomeIcon icon={faBars} />
-            </button>
-
             <div>
               <div className="sm-title">Student Management</div>
               <div className="sm-subtitle">Review list of students</div>
@@ -230,18 +215,20 @@ export default function StudentManagement() {
 
           <div className="sm-topbar-right">
             <button
-              className="sm-icon-btn"
+              className="icon-btn"
               aria-label="Notifications"
               type="button"
-              onClick={() => setActivityOpen(true)}
+              ref={notifRef}
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
             >
-              <span className="sm-notif-dot" />
+              <span className="notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
 
-            <button className="sm-icon-btn" aria-label="Logout" type="button" onClick={() => navigate("/")}>
-              <FontAwesomeIcon icon={faRightFromBracket} />
-            </button>
+            {/* topbar logout removed */}
           </div>
         </div>
       </header>
@@ -436,7 +423,12 @@ export default function StudentManagement() {
         onCancel={deleteCancel}
       />
 
-      <ActivityHistoryModal open={activityOpen} onClose={() => setActivityOpen(false)} items={activity} />
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={activity}
+        anchorRect={activityAnchorRect}
+      />
     </div>
   );
 }

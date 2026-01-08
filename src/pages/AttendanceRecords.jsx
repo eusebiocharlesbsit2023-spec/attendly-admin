@@ -3,25 +3,19 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./AttendanceRecords.css";
-import ActivityHistoryModal from "../components/ActivityHistoryModal";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBars,
-  faBell,
-  faRightFromBracket,
-  faMagnifyingGlass,
-  faCalendarDays,
-  faDownload,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBell, faMagnifyingGlass, faCalendarDays, faDownload } from "@fortawesome/free-solid-svg-icons";
 
 export default function AttendanceRecords() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
-  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+
+  // ✅ FIX: missing notifRef + anchor rect
   const notifRef = useRef(null);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+
+  const [activityOpen, setActivityOpen] = useState(false);
 
   const [q, setQ] = useState("");
   const [date, setDate] = useState("");
@@ -147,9 +141,7 @@ export default function AttendanceRecords() {
 
     return records.filter((r) => {
       const matchesQuery =
-        !query ||
-        r.student.toLowerCase().includes(query) ||
-        r.id.toLowerCase().includes(query);
+        !query || r.student.toLowerCase().includes(query) || r.id.toLowerCase().includes(query);
 
       const matchesDate = !date || r.date === date;
       const matchesClass = clazz === "All Classes" || r.className === clazz;
@@ -183,9 +175,7 @@ export default function AttendanceRecords() {
     const header = ["Student Name", "Student ID", "Date", "Classes", "Status", "Professors"];
     const rows = filtered.map((r) => [r.student, r.id, r.date, r.className, r.status, r.professor]);
 
-    const csv = [header, ...rows]
-      .map((row) => row.map(csvEscape).join(","))
-      .join("\n");
+    const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -205,21 +195,12 @@ export default function AttendanceRecords() {
 
   return (
     <div className="app-shell ar">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="attendance" />
+      <Sidebar open={false} active="attendance" />
 
       {/* Top Bar */}
       <header className="ar-topbar">
         <div className="ar-topbar-inner">
           <div className="ar-topbar-left">
-            <button
-              className="ar-icon-btn"
-              type="button"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Menu"
-            >
-              <FontAwesomeIcon icon={faBars} />
-            </button>
-
             <div>
               <div className="ar-title">Attendance Records</div>
               <div className="ar-subtitle">Track attendance record</div>
@@ -231,19 +212,14 @@ export default function AttendanceRecords() {
               className="ar-icon-btn"
               type="button"
               aria-label="Notifications"
-              onClick={() => setActivityOpen(true)}
+              ref={notifRef}
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
             >
               <span className="ar-notif-dot" />
               <FontAwesomeIcon icon={faBell} />
-            </button>
-
-            <button
-              className="ar-icon-btn"
-              type="button"
-              aria-label="Logout"
-              onClick={() => navigate("/")}
-            >
-              <FontAwesomeIcon icon={faRightFromBracket} />
             </button>
           </div>
         </div>
@@ -251,7 +227,7 @@ export default function AttendanceRecords() {
 
       {/* Main */}
       <main className="ar-main">
-        {/* Stats (kept as-is) */}
+        {/* Stats */}
         <section className="ar-stats">
           <div className="ar-stat ar-stat-white">
             <div className="ar-stat-label">Total Students</div>
@@ -274,19 +250,14 @@ export default function AttendanceRecords() {
           </div>
         </section>
 
-        {/* DataTable-like controls + table (matches screenshot layout) */}
+        {/* DataTable-like controls + table */}
         <section className="ar-dt card">
-          {/* Top controls row: Search left, Status right, Buttons right */}
           <div className="ar-dt-top">
             <div className="ar-dt-search">
               <span className="ar-dt-searchIcon">
                 <FontAwesomeIcon icon={faMagnifyingGlass} />
               </span>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search"
-              />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
             </div>
 
             <div className="ar-dt-right">
@@ -309,7 +280,6 @@ export default function AttendanceRecords() {
             </div>
           </div>
 
-          {/* Second row: Showing entries + Show N entries (like screenshot) */}
           <div className="ar-dt-sub">
             <div className="ar-dt-showing">
               Showing {showingFrom} to {showingTo} of {filtered.length} entries
@@ -326,7 +296,6 @@ export default function AttendanceRecords() {
             </div>
           </div>
 
-          {/* Extra filters row (optional, keeps your old filters but now compact) */}
           <div className="ar-dt-filters">
             <div className="ar-dt-mini">
               <label>Date</label>
@@ -361,7 +330,6 @@ export default function AttendanceRecords() {
             </div>
           </div>
 
-          {/* Table */}
           <div className="ar-dt-table">
             <div className="ar-dt-thead">
               <div>Student Name</div>
@@ -396,12 +364,12 @@ export default function AttendanceRecords() {
             </div>
           </div>
 
-          {/* Pagination bottom-right like screenshot */}
           <div className="ar-dt-pagination">
             <button
               className="ar-dt-pageBtn"
               disabled={safePage === 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
+              type="button"
             >
               ‹ Previous
             </button>
@@ -414,6 +382,7 @@ export default function AttendanceRecords() {
               className="ar-dt-pageBtn"
               disabled={safePage === totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              type="button"
             >
               Next ›
             </button>
@@ -421,11 +390,11 @@ export default function AttendanceRecords() {
         </section>
       </main>
 
-      {/* Activity Modal (Bell) */}
       <ActivityHistoryModal
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
         items={activity}
+        anchorRect={activityAnchorRect}
       />
     </div>
   );

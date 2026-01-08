@@ -7,11 +7,10 @@ import "./AdminDashboard.css";
 
 import CreateAdminModal from "../components/CreateAdminModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
-import ActivityHistoryModal from "../components/ActivityHistoryModal";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faBell, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { faBell } from "@fortawesome/free-solid-svg-icons";
 
 /* =========================
    Role-only Edit Modal
@@ -72,7 +71,6 @@ function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
 
 export default function ManageAdmin() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
@@ -246,7 +244,7 @@ export default function ManageAdmin() {
 
   return (
     <div className="app-shell dash mam-shell">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="manage-admin" />
+      <Sidebar open={false} active="manage-admin" />
 
       {/* ✅ Toast */}
       {toast.open && (
@@ -267,15 +265,6 @@ export default function ManageAdmin() {
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
-            <button
-              className="icon-btn"
-              aria-label="Menu"
-              type="button"
-              onClick={() => setMenuOpen(true)}
-            >
-              <FontAwesomeIcon icon={faBars} />
-            </button>
-
             <div>
               <div className="dash-title">Admin Management</div>
               <div className="dash-subtitle">Manage administrator accounts</div>
@@ -287,21 +276,17 @@ export default function ManageAdmin() {
               className="icon-btn"
               aria-label="Notifications"
               type="button"
-              onClick={() => setActivityOpen(true)}
+              ref={notifRef}
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
             >
               <span className="notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
 
-            <button
-              className="icon-btn"
-              aria-label="Logout"
-              type="button"
-              onClick={() => navigate("/")}
-              title="Logout"
-            >
-              <FontAwesomeIcon icon={faRightFromBracket} />
-            </button>
+            {/* topbar logout removed */}
           </div>
         </div>
       </header>
@@ -522,6 +507,7 @@ export default function ManageAdmin() {
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
         items={activity}
+        anchorRect={activityAnchorRect}
       />
     </div>
   );

@@ -6,14 +6,11 @@ import "./ProfessorManagement.css";
 import AddProfessorModal from "../components/AddProfessorModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditProfessorModal from "../components/EditProfessorModal";
-import ActivityHistoryModal from "../components/ActivityHistoryModal";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBars,
   faBell,
-  faRightFromBracket,
   faMagnifyingGlass,
   faPlus,
   faDownload,
@@ -25,7 +22,6 @@ import {
 
 export default function ProfessorManagement() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
@@ -219,13 +215,18 @@ export default function ProfessorManagement() {
 
   return (
     <div className="app-shell pm">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="dashboard" />
+      <Sidebar open={false} active="dashboard" />
 
       {/* Toast */}
       {toast.open && (
         <div className={`pm-toast ${toast.type}`}>
           <span>{toast.message}</span>
-          <button type="button" className="pm-toast-x" onClick={() => setToast((p) => ({ ...p, open: false }))} aria-label="Close">
+          <button
+            type="button"
+            className="pm-toast-x"
+            onClick={() => setToast((p) => ({ ...p, open: false }))}
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
@@ -235,10 +236,6 @@ export default function ProfessorManagement() {
       <header className="pm-topbar">
         <div className="pm-topbar-inner">
           <div className="pm-topbar-left">
-            <button className="pm-icon-btn" onClick={() => setMenuOpen(true)} aria-label="Menu" type="button">
-              <FontAwesomeIcon icon={faBars} />
-            </button>
-
             <div>
               <div className="pm-title">Professor Management</div>
               <div className="pm-subtitle">Review list of professors</div>
@@ -246,14 +243,20 @@ export default function ProfessorManagement() {
           </div>
 
           <div className="pm-topbar-right">
-            <button className="pm-icon-btn" aria-label="Notifications" type="button" onClick={() => setActivityOpen(true)}>
-              <span className="pm-notif-dot" />
+            <button
+              className="icon-btn"
+              aria-label="Notifications"
+              type="button"
+              ref={notifRef}
+              onClick={() => {
+                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
+                setActivityOpen(true);
+              }}
+            >
+              <span className="notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
-
-            <button className="pm-icon-btn" aria-label="Logout" type="button" onClick={() => navigate("/")}>
-              <FontAwesomeIcon icon={faRightFromBracket} />
-            </button>
+            {/* topbar logout removed */}
           </div>
         </div>
       </header>
@@ -261,7 +264,7 @@ export default function ProfessorManagement() {
       <ActivityHistoryModal
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
-        items={[]}
+        items={activity}
         anchorRect={activityAnchorRect}
       />
 
@@ -284,9 +287,8 @@ export default function ProfessorManagement() {
           </div>
         </section>
 
-        {/* TABLE CARD (Admin-layout style) */}
+        {/* TABLE CARD */}
         <section className="pm-card">
-          {/* Controls Row (like screenshot) */}
           <div className="pm-controls">
             <div className="pm-controls-left">
               <span className="pm-controlLabel">Show</span>
@@ -323,7 +325,6 @@ export default function ProfessorManagement() {
             </div>
           </div>
 
-          {/* Table */}
           <div className="pm-table">
             <div className="pm-thead">
               <div>Professor Name</div>
@@ -365,7 +366,6 @@ export default function ProfessorManagement() {
               {paged.length === 0 && <div className="pm-empty">No professors found.</div>}
             </div>
 
-            {/* Footer (like screenshot) */}
             <div className="pm-footer">
               <div className="pm-footerLeft">
                 Showing {showingFrom} to {showingTo} of {filtered.length} entries
@@ -403,24 +403,26 @@ export default function ProfessorManagement() {
       <AddProfessorModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAddSubmit} />
 
       {/* Confirm Add */}
-      <SmallConfirmModal
-        open={confirmOpen}
-        title="Add New Professor?"
-        onYes={confirmYes}
-        onCancel={confirmCancel}
-      />
+      <SmallConfirmModal open={confirmOpen} title="Add New Professor?" onYes={confirmYes} onCancel={confirmCancel} />
 
       {/* Edit Professor Modal */}
-      <EditProfessorModal open={editOpen} professor={editingProf} onClose={() => setEditOpen(false)} onSaveClick={onEditSaveClick} />
+      <EditProfessorModal
+        open={editOpen}
+        professor={editingProf}
+        onClose={() => setEditOpen(false)}
+        onSaveClick={onEditSaveClick}
+      />
 
       {/* Confirm Apply Edit */}
       <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={applyCancel} />
 
       {/* Confirm Delete */}
-      <SmallConfirmModal open={deleteOpen} title={`Delete ${pendingDelete?.name || "this professor"}?`} onYes={deleteYes} onCancel={deleteCancel} />
-
-      {/* Activity Modal (Bell) */}
-      <ActivityHistoryModal open={activityOpen} onClose={() => setActivityOpen(false)} items={activity} />
+      <SmallConfirmModal
+        open={deleteOpen}
+        title={`Delete ${pendingDelete?.name || "this professor"}?`}
+        onYes={deleteYes}
+        onCancel={deleteCancel}
+      />
     </div>
   );
 }

@@ -41,7 +41,17 @@
 .sidebarV2-brand {
   display: flex;
   align-items: center;
-  gap: 80px;
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebarV2-brand img{
+  width: auto;
+  max-width: 80%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 .sidebarV2-title {
@@ -100,10 +110,9 @@
 }
 
 .sidebarV2-icon {
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  font-size: 16px;
+  width: 27px;
+  min-width: 27px;
+  font-size: 21px;
   opacity: 0.85;
   display: inline-flex;
   align-items: center;
@@ -129,40 +138,18 @@
     justify-content: center;
   border-top: 1px solid #eef2f7;
 }
-
-.sidebarV2-logout {
-  width: 65%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: none;
-  background: #f8fafc;
-  cursor: pointer;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-
-  font-size: 15px;
-  font-weight: 800;
-  color: #0f172a;
+.logout-btn{
+    font-size: 20px;
+    border: none;
+    background-color: transparent;
+    text-align: center;
+    padding: 15px 50px;
+    border-radius: 8px;
+    transition: background-color .15s;
 }
-
-.sidebarV2-brand {
-  display: flex;
-  align-items: center;
-  gap: 60px;
-}
-
-.sidebarV2-logo {
-  width: 100px;
-  height: 80px;
-  object-fit: contain;
-}
-
-
-.sidebarV2-logout:hover {
-  background: #eef2f7;
+.logout-btn:hover{
+    background-color: #0a4e86;
+    color: white;
 }
 
 /* ✅ DESKTOP MODE: sidebar always visible like screenshot */
@@ -179,4 +166,3 @@
     display: none; /* no close button on desktop */
   }
 }
-

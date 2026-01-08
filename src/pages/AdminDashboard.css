@@ -1,10 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
 
-
-.dash-topbar-left {
-  transform: translateX(-50px); 
-}
-
 /* ========== Base ========== */
 *,
 *::before,
@@ -41,7 +36,7 @@ body {
   font-family: "Montserrat";
 }
 
-/* ========== Top bar ========== */
+/* ========== Top bar (COPIED ALIGNMENT FROM ar-topbar) ========== */
 .dash-topbar {
   background: #0a4e86;
   color: #fff;
@@ -60,7 +55,7 @@ body {
 .dash-topbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px; /* same as ar */
   min-width: 0;
 }
 
@@ -70,27 +65,28 @@ body {
   gap: 10px;
 }
 
+/* Title/subtitle same sizing style as ar */
 .dash-title {
-  font-size: clamp(20px, 2.2vw + 10px, 30px);
-  font-weight: 600;
-  line-height: 1.1;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.05;
 }
 
 .dash-subtitle {
   margin-top: 4px;
-  font-size: clamp(12px, 1vw + 9px, 14px);
+  font-size: 16px;
   opacity: 0.85;
   font-weight: 500;
 }
 
-/* Icon buttons */
+/* Icon buttons (same sizing as ar) */
 .icon-btn {
   position: relative;
   border: none;
   background: transparent;
   color: #fff;
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   border-radius: 12px;
   display: grid;
   place-items: center;
@@ -104,8 +100,8 @@ body {
 
 .notif-dot {
   position: absolute;
-  right: 10px;
-  top: 10px;
+  right: 11px;
+  top: 11px;
   width: 10px;
   height: 10px;
   background: #ef4444;
@@ -396,6 +392,7 @@ body {
     margin-left: 500px; /* match sidebar width */
   }
 }
+
 /* time/location icons with text */
 .class-meta > span {
   display: inline-flex;
@@ -407,3 +404,12 @@ body {
   display: block;
 }
 
+/* Optional responsive tweak (same vibe as ar) */
+@media (max-width: 620px) {
+  .dash-title {
+    font-size: 26px;
+  }
+  .dash-subtitle {
+    font-size: 14px;
+  }
+}
