@@ -13,7 +13,7 @@
 }
 
 .pm-topbar-inner {
-  width: min(1200px, 92vw);
+  width: min(var(--container-max), 92vw);
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -73,7 +73,7 @@
 
 /* Main */
 .pm-main {
-  width: min(1200px, 92vw);
+  width: min(var(--container-max), 92vw);
   margin: 0 auto;
   padding: 28px 0 60px;
 }

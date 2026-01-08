@@ -44,7 +44,7 @@ body {
 }
 
 .dash-topbar-inner {
-  width: min(1100px, 92%);
+  width: min(var(--container-max), 92vw);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -120,7 +120,7 @@ body {
 
 /* ========== Main container ========== */
 .dash-main {
-  width: min(1100px, 92%);
+  width: min(var(--container-max), 92vw);
   margin: 18px auto 28px;
 }
 

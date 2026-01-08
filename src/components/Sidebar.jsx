@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./Sidebar.css";
 import Logo from '../assets/Logo.png';
+import ConfirmModal from "./ConfirmModal";
 
 export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const navigate = useNavigate();
@@ -20,15 +21,22 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const role = localStorage.getItem("role"); // "Admin" | "Super Admin"
   const isSuperAdmin = role === "Super Admin";
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   const go = (path) => {
     navigate(path);
     onClose?.(); // close drawer on mobile only
   };
 
   const logout = () => {
+    setConfirmOpen(true);
+  };
+
+  const performLogout = () => {
     localStorage.clear();
     navigate("/");
     onClose?.();
+    setConfirmOpen(false);
   };
 
   return (
@@ -103,6 +111,12 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
           </button>
         </div>
       </aside>
+      <ConfirmModal
+        open={confirmOpen}
+        title={"Are you sure you want to log out?"}
+        onYes={performLogout}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </>
   );
 }

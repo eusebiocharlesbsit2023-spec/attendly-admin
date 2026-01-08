@@ -38,7 +38,7 @@ body {
 }
 
 .ar-topbar-inner {
-  width: min(1100px, 92%);
+  width: min(var(--container-max), 92vw);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -101,7 +101,7 @@ body {
 
 /* ---------- Main ---------- */
 .ar-main {
-  width: min(1100px, 92%);
+  width: min(var(--container-max), 92vw);
   margin: 22px auto 28px;
 }
 

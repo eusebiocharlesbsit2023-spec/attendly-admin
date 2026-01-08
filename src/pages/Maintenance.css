@@ -24,7 +24,7 @@
 }
 
 .mnt-topbar-inner {
-  width: min(1200px, 92vw);
+  width: min(var(--container-max), 92vw);
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -78,7 +78,7 @@
 
 /* Main layout */
 .mnt-main {
-  width: min(1200px, 92vw);
+  width: min(var(--container-max), 92vw);
   margin: 0 auto;
   padding: 70px 0 80px;
   display: grid;
