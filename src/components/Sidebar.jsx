@@ -13,13 +13,14 @@ import {
 import "./Sidebar.css";
 import Logo from '../assets/Logo.png';
 import ConfirmModal from "./ConfirmModal";
+import supabase from "../helper/supabaseClient";
 
 export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const navigate = useNavigate();
 
   // ✅ get role from login
-  const role = localStorage.getItem("role"); // "Admin" | "Super Admin"
-  const isSuperAdmin = role === "Super Admin";
+  const adminProfile = JSON.parse(localStorage.getItem("adminProfile")); // "Admin" | "Super Admin"
+  const isSuperAdmin = adminProfile.role === "Super Admin";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -32,12 +33,11 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
     setConfirmOpen(true);
   };
 
-  const performLogout = () => {
-    localStorage.clear();
+  const performLogout = async () => {
+    const {error} = await supabase.auth.signOut();
+    if (error) throw error;
     navigate("/");
-    onClose?.();
-    setConfirmOpen(false);
-  };
+  }
 
   return (
     <>

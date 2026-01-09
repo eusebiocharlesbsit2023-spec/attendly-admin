@@ -22,6 +22,10 @@ export default function AdminDashboard() {
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
+  const adminProfile = JSON.parse(localStorage.getItem('adminProfile')) || [];
+
+  console.log(adminProfile);
+
   const stats = [
     { label: "Total Students", value: 45, icon: faUsers, tint: "blue" },
     { label: "Active Devices", value: 43, icon: faMicrochip, tint: "purple" },
@@ -69,7 +73,7 @@ export default function AdminDashboard() {
           <div className="dash-topbar-left">
             <div>
               <div className="dash-title">Admin Dashboard</div>
-              <div className="dash-subtitle">Welcome back, Admin</div>
+              <div className="dash-subtitle">Welcome back, {adminProfile.role}</div>
             </div>
           </div>
 

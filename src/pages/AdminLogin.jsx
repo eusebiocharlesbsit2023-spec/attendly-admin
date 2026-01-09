@@ -1,49 +1,67 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AdminLogin.css";
 import logo from "../assets/Logo.png";
+import supabase from "../helper/supabaseClient";
 
 function AdminLogin() {
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
 
+  // 🔐 redirect if already logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        setCheckingSession(false);
+      }
+    });
+  }, [navigate]);
 
-  const accounts = [
-    { id: "ADM1", fullName: "John Doe", username: "admin1", role: "Admin", status: "Active", password: "admin1" },
-    { id: "ADM2", fullName: "Jane Smith", username: "admin2", role: "Super Admin", status: "Active", password: "admin2" },
-    { id: "ADM3", fullName: "Michael Johnson", username: "admin3", role: "Admin", status: "Inactive", password: "admin3" },
-    { id: "ADM4", fullName: "Sarah Brown", username: "admin4", role: "Admin", status: "Active", password: "admin4" },
-    { id: "ADM5", fullName: "Emily Clark", username: "admin5", role: "Admin", status: "Active", password: "admin5" },
-  ];
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setErrorMessage("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: `${username}.com`, // ⚠️ must match actual stored email
+      password,
+    });
 
-    const u = username.trim();
-    const p = password;
+    const user = authData.user;
 
-    const found = accounts.find((a) => a.username === u && a.password === p);
-
-    if (!found) {
-      alert("Invalid username or password.");
+    if (authError || !user) {
+      setErrorMessage(authError.message);
       return;
     }
 
-    if (found.status !== "Active") {
-      alert("Your account is Inactive. Please contact the Super Admin.");
-      return;
+    if (authData?.session) {
+      navigate("/dashboard", { replace: true });
     }
 
-    // ✅ Save logged-in info (used by Sidebar + route protection)
-    localStorage.setItem("admin_id", found.id);
-    localStorage.setItem("admin_name", found.fullName);
-    localStorage.setItem("username", found.username);
-    localStorage.setItem("role", found.role); // "Admin" or "Super Admin"
+    const userID = user.id;
 
-    navigate("/dashboard");
+    const { data: profile, error: profileError,} = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userID)
+      .single();
+    
+    if(profileError){
+      setErrorMessage(profileError.message)
+    } else{
+      localStorage.setItem('adminProfile', JSON.stringify(profile));
+    }
+
+    navigate('/dashboard');
   };
+
+  // prevent login page flash
+  if (checkingSession) return null;
 
   return (
     <div className="login-container">
@@ -53,6 +71,8 @@ function AdminLogin() {
         <h2>ADMIN PORTAL</h2>
         <p className="subtitle">Sign in to access admin dashboard</p>
 
+        {errorMessage && <p className="error-text">{errorMessage}</p>}
+
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <input
@@ -61,7 +81,6 @@ function AdminLogin() {
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
             />
           </div>
 
@@ -72,7 +91,6 @@ function AdminLogin() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
             />
           </div>
 
@@ -80,14 +98,6 @@ function AdminLogin() {
             SIGN IN
           </button>
         </form>
-
-        <div className="info-box">
-          <span className="info-icon">ℹ</span>
-          <p>
-            This is a restricted area for authorized administrators only.
-            All login attempts are monitored and logged for security.
-          </p>
-        </div>
       </div>
     </div>
   );

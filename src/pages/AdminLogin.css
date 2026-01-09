@@ -39,6 +39,12 @@ h2 {
   margin-bottom: 22px;
 }
 
+.error-text{
+  height: 12px;
+  font-size: 12px;
+  color: red;
+}
+
 .input-group {
   margin-bottom: 15px;
 }

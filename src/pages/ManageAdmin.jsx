@@ -11,6 +11,7 @@ import SmallConfirmModal from "../components/SmallConfirmModal";
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell } from "@fortawesome/free-solid-svg-icons";
+import supabase from "../helper/supabaseClient";
 
 /* =========================
    Role-only Edit Modal
@@ -110,19 +111,50 @@ export default function ManageAdmin() {
     return () => clearTimeout(t);
   }, [toast.open]);
 
-  // Initial rows
-  const initialRows = useMemo(
-    () => [
-      { id: "ADM1", fullName: "John Doe", username: "admin1", role: "Admin", status: "Active" },
-      { id: "ADM2", fullName: "Jane Smith", username: "admin2", role: "Super Admin", status: "Active" },
-      { id: "ADM3", fullName: "Michael Johnson", username: "admin3", role: "Admin", status: "Inactive" },
-      { id: "ADM4", fullName: "Sarah Brown", username: "admin4", role: "Admin", status: "Active" },
-      { id: "ADM5", fullName: "Emily Clark", username: "admin5", role: "Admin", status: "Active" },
-    ],
-    []
-  );
+  const [rows, setRows] = useState([]); // start empty
+  const [loading, setLoading] = useState(true);
 
-  const [rows, setRows] = useState(initialRows);
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      setLoading(true);
+
+      try {
+        // DEBUG: check who is currently logged in
+        const { data: auth } = await supabase.auth.getUser();
+        console.log("CURRENT USER:", auth?.user?.email, auth?.user?.id);
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, admin_name, username, role, status") // adjust fields to match your table
+          .order("created_at", { ascending: false }); // optional if you have created_at
+
+        // IMPORTANT: Supabase can return empty data with NO error if RLS blocks it
+        console.log("FETCH RESULT:", { rows: data?.length ?? 0, error });
+
+        if (error) {
+          console.log("Fetch admins error:", error.message);
+          return;
+        }
+
+        const mapped = (data || []).map((p, i) => ({
+          id: `ADM${i + 1}`,
+          fullName: p.admin_name ?? "",
+          username: p.username ?? "",
+          role: p.role ?? "Admin",
+          status: p.status ?? "Active",
+          uuid: p.id,
+        }));
+
+        setRows(mapped);
+        localStorage.setItem("allAdmins", JSON.stringify(mapped));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdmins();
+  }, []);
+
 
   // ===== Create Modal =====
   const [createOpen, setCreateOpen] = useState(false);
@@ -401,44 +433,50 @@ export default function ManageAdmin() {
               </thead>
 
               <tbody>
-                {pageRows.map((r) => {
-                  const superAdmin = r.role === "Super Admin";
-                  return (
-                    <tr key={r.id}>
-                      <td>{r.id}</td>
-                      <td>{r.fullName}</td>
-                      <td>{r.username}</td>
-                      <td>{r.role}</td>
-                      <td>
-                        <span className={`mam-status ${r.status === "Active" ? "active" : "inactive"}`}>
-                          {r.status}
-                        </span>
-                      </td>
-                      <td className="mam-actionsCell">
-                        <button className="mam-action edit" onClick={() => onEdit(r)} type="button">
-                          ✎ Edit
-                        </button>
-
-                        <button
-                          className={`mam-action del ${superAdmin ? "disabled" : ""}`}
-                          onClick={() => onDelete(r)}
-                          type="button"
-                          disabled={superAdmin}
-                          title={superAdmin ? "Super Admin can't be deleted" : "Delete"}
-                        >
-                          🗑 Delete
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-
-                {pageRows.length === 0 && (
+                {loading ? (
+                  <tr>
+                    <td className="mam-empty" colSpan={6}>
+                      Loading admins...
+                    </td>
+                  </tr>
+                ) : pageRows.length === 0 ? (
                   <tr>
                     <td className="mam-empty" colSpan={6}>
                       No records found.
                     </td>
                   </tr>
+                ) : (
+                  pageRows.map((r) => {
+                    const superAdmin = r.role === "Super Admin";
+                    return (
+                      <tr key={r.uuid ?? r.id}>
+                        <td>{r.id}</td>
+                        <td>{r.fullName}</td>
+                        <td>{r.username}</td>
+                        <td>{r.role}</td>
+                        <td>
+                          <span className={`mam-status ${r.status === "Active" ? "active" : "inactive"}`}>
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="mam-actionsCell">
+                          <button className="mam-action edit" onClick={() => onEdit(r)} type="button">
+                            ✎ Edit
+                          </button>
+
+                          <button
+                            className={`mam-action del ${superAdmin ? "disabled" : ""}`}
+                            onClick={() => onDelete(r)}
+                            type="button"
+                            disabled={superAdmin}
+                            title={superAdmin ? "Super Admin can't be deleted" : "Delete"}
+                          >
+                            🗑 Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
