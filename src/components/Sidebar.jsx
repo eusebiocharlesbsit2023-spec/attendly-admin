@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -12,13 +12,17 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./Sidebar.css";
 import Logo from '../assets/Logo.png';
+import ConfirmModal from "./ConfirmModal";
+import supabase from "../helper/supabaseClient";
 
 export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const navigate = useNavigate();
 
   // ✅ get role from login
-  const role = localStorage.getItem("role"); // "Admin" | "Super Admin"
-  const isSuperAdmin = role === "Super Admin";
+  const adminProfile = JSON.parse(localStorage.getItem("adminProfile")); // "Admin" | "Super Admin"
+  const isSuperAdmin = adminProfile.role === "Super Admin";
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const go = (path) => {
     navigate(path);
@@ -26,10 +30,14 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
   };
 
   const logout = () => {
-    localStorage.clear();
-    navigate("/");
-    onClose?.();
+    setConfirmOpen(true);
   };
+
+  const performLogout = async () => {
+    const {error} = await supabase.auth.signOut();
+    if (error) throw error;
+    navigate("/");
+  }
 
   return (
     <>
@@ -103,6 +111,12 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
           </button>
         </div>
       </aside>
+      <ConfirmModal
+        open={confirmOpen}
+        title={"Are you sure you want to log out?"}
+        onYes={performLogout}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </>
   );
 }

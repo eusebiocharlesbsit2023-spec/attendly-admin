@@ -4,12 +4,18 @@ import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./AttendanceRecords.css";
 
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBell, faMagnifyingGlass, faCalendarDays, faDownload } from "@fortawesome/free-solid-svg-icons";
+
 export default function AttendanceRecords() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
-  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+
+  // ✅ FIX: missing notifRef + anchor rect
   const notifRef = useRef(null);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+
+  const [activityOpen, setActivityOpen] = useState(false);
 
   const [q, setQ] = useState("");
   const [date, setDate] = useState("");
@@ -17,8 +23,22 @@ export default function AttendanceRecords() {
   const [status, setStatus] = useState("All Status");
   const [prof, setProf] = useState("All Professors");
 
+  // NEW: datatable-like "Show entries"
+  const [pageSize, setPageSize] = useState(10);
+
+  // ===== Activity (SAME AS ADMIN DASHBOARD) =====
+  const activity = [
+    { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
+    { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
+    { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
+    { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
+    { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
+    { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
+    { text: "Maintenance switched to Online", time: "3 days ago" },
+    { text: "Attendance export generated", time: "1 week ago" },
+  ];
+
   const [page, setPage] = useState(1);
-  const pageSize = 6;
 
   const records = useMemo(
     () => [
@@ -121,9 +141,7 @@ export default function AttendanceRecords() {
 
     return records.filter((r) => {
       const matchesQuery =
-        !query ||
-        r.student.toLowerCase().includes(query) ||
-        r.id.toLowerCase().includes(query);
+        !query || r.student.toLowerCase().includes(query) || r.id.toLowerCase().includes(query);
 
       const matchesDate = !date || r.date === date;
       const matchesClass = clazz === "All Classes" || r.className === clazz;
@@ -148,15 +166,16 @@ export default function AttendanceRecords() {
   const paged = useMemo(() => {
     const start = (safePage - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
-  }, [filtered, safePage]);
+  }, [filtered, safePage, pageSize]);
+
+  const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const showingTo = Math.min(filtered.length, safePage * pageSize);
 
   const exportCSV = () => {
     const header = ["Student Name", "Student ID", "Date", "Classes", "Status", "Professors"];
     const rows = filtered.map((r) => [r.student, r.id, r.date, r.className, r.status, r.professor]);
 
-    const csv = [header, ...rows]
-      .map((row) => row.map(csvEscape).join(","))
-      .join("\n");
+    const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -172,11 +191,11 @@ export default function AttendanceRecords() {
 
   useEffect(() => {
     setPage(1);
-  }, [q, date, clazz, status, prof]);
+  }, [q, date, clazz, status, prof, pageSize]);
 
   return (
     <div className="app-shell ar">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="attendance" />
+      <Sidebar open={false} active="attendance" />
 
       {/* Top Bar */}
       <header className="ar-topbar">
@@ -190,17 +209,17 @@ export default function AttendanceRecords() {
 
           <div className="ar-topbar-right">
             <button
-              className="ar-icon-btn bell-btn"
-              ref={notifRef}
+              className="ar-icon-btn"
               type="button"
               aria-label="Notifications"
+              ref={notifRef}
               onClick={() => {
                 setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
                 setActivityOpen(true);
               }}
             >
               <span className="ar-notif-dot" />
-              <Svg name="bell" />
+              <FontAwesomeIcon icon={faBell} />
             </button>
           </div>
         </div>
@@ -231,33 +250,64 @@ export default function AttendanceRecords() {
           </div>
         </section>
 
-        {/* Filters */}
-        <section className="ar-filters card">
-          <div className="ar-searchRow">
-            <div className="ar-search">
-              <span className="ar-searchIcon">
-                <Svg name="search" />
+        {/* DataTable-like controls + table */}
+        <section className="ar-dt card">
+          <div className="ar-dt-top">
+            <div className="ar-dt-search">
+              <span className="ar-dt-searchIcon">
+                <FontAwesomeIcon icon={faMagnifyingGlass} />
               </span>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by name or Id"
-              />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
+            </div>
+
+            <div className="ar-dt-right">
+              <div className="ar-dt-field">
+                <label>Status</label>
+                <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <option>All Status</option>
+                  <option>Present</option>
+                  <option>Absent</option>
+                  <option>Late</option>
+                </select>
+              </div>
+
+              <button className="ar-dt-btn primary" type="button" onClick={exportCSV}>
+                <span className="ar-dt-btnIco">
+                  <FontAwesomeIcon icon={faDownload} />
+                </span>
+                Export CSV
+              </button>
             </div>
           </div>
 
-          <div className="ar-filterGrid">
-            <div className="ar-field">
+          <div className="ar-dt-sub">
+            <div className="ar-dt-showing">
+              Showing {showingFrom} to {showingTo} of {filtered.length} entries
+            </div>
+
+            <div className="ar-dt-entries">
+              <span>Show</span>
+              <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+              </select>
+              <span>entries</span>
+            </div>
+          </div>
+
+          <div className="ar-dt-filters">
+            <div className="ar-dt-mini">
               <label>Date</label>
-              <div className="ar-inputWithIcon">
-                <span className="ar-miniIcon">
-                  <Svg name="calendar" />
+              <div className="ar-dt-date">
+                <span className="ar-dt-miniIcon">
+                  <FontAwesomeIcon icon={faCalendarDays} />
                 </span>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
             </div>
 
-            <div className="ar-field">
+            <div className="ar-dt-mini">
               <label>Class</label>
               <select value={clazz} onChange={(e) => setClazz(e.target.value)}>
                 {classOptions.map((c) => (
@@ -268,17 +318,7 @@ export default function AttendanceRecords() {
               </select>
             </div>
 
-            <div className="ar-field">
-              <label>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option>All Status</option>
-                <option>Present</option>
-                <option>Absent</option>
-                <option>Late</option>
-              </select>
-            </div>
-
-            <div className="ar-field">
+            <div className="ar-dt-mini">
               <label>Professors</label>
               <select value={prof} onChange={(e) => setProf(e.target.value)}>
                 {profOptions.map((p) => (
@@ -289,39 +329,28 @@ export default function AttendanceRecords() {
               </select>
             </div>
           </div>
-        </section>
 
-        {/* Export */}
-        <div className="ar-exportRow">
-          <button className="ar-exportBtn" type="button" onClick={exportCSV}>
-            <span className="ar-exportIcon">
-              <Svg name="download" />
-            </span>
-            Export CSV
-          </button>
-        </div>
-
-        {/* Table */}
-        <section className="ar-tableWrap">
-          <div className="ar-table card">
-            <div className="ar-thead">
+          <div className="ar-dt-table">
+            <div className="ar-dt-thead">
               <div>Student Name</div>
+              <div>Student ID</div>
               <div>Date</div>
               <div>Classes</div>
               <div>Status</div>
               <div>Professors</div>
             </div>
 
-            <div className="ar-tbody">
-              {paged.map((r, idx) => (
-                <div className={`ar-row ${idx % 2 === 1 ? "alt" : ""}`} key={r.id + r.date}>
-                  <div className="ar-studentCell">
-                    <span className="ar-avatar">{initials(r.student)}</span>
-                    <div className="ar-studentName">{r.student}</div>
+            <div className="ar-dt-tbody">
+              {paged.map((r) => (
+                <div className="ar-dt-row" key={r.id + r.date}>
+                  <div className="ar-dt-studentCell">
+                    <span className="ar-dt-avatar">{initials(r.student)}</span>
+                    <div className="ar-dt-studentName">{r.student}</div>
                   </div>
 
+                  <div>{r.id}</div>
                   <div>{r.date}</div>
-                  <div className="ar-classCell">{r.className}</div>
+                  <div className="ar-dt-wrap">{r.className}</div>
 
                   <div>
                     <span className={`ar-pill ${pillClass(r.status)}`}>{r.status}</span>
@@ -331,52 +360,40 @@ export default function AttendanceRecords() {
                 </div>
               ))}
 
-              {paged.length === 0 && <div className="ar-empty">No records found.</div>}
+              {paged.length === 0 && <div className="ar-dt-empty">No records found.</div>}
             </div>
           </div>
 
-          {/* Pagination */}
-          <div className="ar-pagination">
+          <div className="ar-dt-pagination">
             <button
-              className="ar-pageBtn"
+              className="ar-dt-pageBtn"
               disabled={safePage === 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
+              type="button"
             >
-              ‹
+              ‹ Previous
+            </button>
+
+            <button className="ar-dt-pageNum active" type="button">
+              {safePage}
             </button>
 
             <button
-              className={`ar-pageNum ${safePage === 1 ? "active" : ""}`}
-              onClick={() => setPage(1)}
-            >
-              1
-            </button>
-
-            {totalPages > 2 && <span className="ar-ellipsis">…</span>}
-
-            {totalPages >= 2 && (
-              <button
-                className={`ar-pageNum ${safePage === totalPages ? "active" : ""}`}
-                onClick={() => setPage(totalPages)}
-              >
-                {totalPages}
-              </button>
-            )}
-
-            <button
-              className="ar-pageBtn"
+              className="ar-dt-pageBtn"
               disabled={safePage === totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              type="button"
             >
-              ›
+              Next ›
             </button>
           </div>
         </section>
       </main>
+
       <ActivityHistoryModal
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
-        items={[]}
+        items={activity}
         anchorRect={activityAnchorRect}
       />
     </div>
@@ -401,49 +418,4 @@ function initials(name) {
   const a = (parts[0]?.[0] || "").toUpperCase();
   const b = (parts[1]?.[0] || "").toUpperCase();
   return (a + b) || "U";
-}
-
-function Svg({ name }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-  };
-
-  switch (name) {
-    case "bell":
-      return (
-        <svg {...common}>
-          <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" strokeWidth="2" />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" />
-        </svg>
-      );
-    case "search":
-      return (
-        <svg {...common}>
-          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="2" />
-          <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" />
-        </svg>
-      );
-    case "calendar":
-      return (
-        <svg {...common}>
-          <path d="M7 3v2M17 3v2" stroke="currentColor" strokeWidth="2" />
-          <path d="M4 7h16" stroke="currentColor" strokeWidth="2" />
-          <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
-        </svg>
-      );
-    case "download":
-      return (
-        <svg {...common}>
-          <path d="M12 3v10" stroke="currentColor" strokeWidth="2" />
-          <path d="M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2" />
-          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" />
-        </svg>
-      );
-    default:
-      return null;
-  }
 }

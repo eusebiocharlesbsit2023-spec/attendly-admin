@@ -19,7 +19,7 @@
 .mcm-title {
   display: flex;
   justify-content: center;
-  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Montserrat";
   font-size: 16px;
   font-weight: 400; /* not bold */
   margin-bottom: 12px;

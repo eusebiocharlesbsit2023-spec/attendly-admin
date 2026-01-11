@@ -1,5 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
 
+:root {
+  --container-max: 1100px;
+  --sidebar-width: 400px;
+}
+
 /* ===== Global Reset ===== */
 *,
 *::before,
@@ -32,12 +37,14 @@ textarea {
 /* Your pages use .app-shell, so make it responsive globally */
 .app-shell {
   min-height: 100vh;
+  /* reserve space for fixed topbar so page content doesn't sit under it */
+  padding-top: 92px;
 }
 
 /* Desktop: reserve sidebar width */
 @media (min-width: 900px) {
   .app-shell {
-    margin-left: 400px; /* match your sidebar width */
+    margin-left: 400px; /* match sidebar width */
   }
 }
 
@@ -50,7 +57,7 @@ textarea {
 
 /* ===== Global Container Helper (optional) ===== */
 .container {
-  width: min(1200px, 92vw);
+  width: min(var(--container-max), 92vw);
   margin: 0 auto;
 }
 
@@ -101,8 +108,28 @@ textarea {
   display: flex;
   align-items: center;
 }
+
+/* include schedule topbar and make topbars fixed so they stay visible on scroll */
+.dash-topbar, .sm-topbar, .pm-topbar, .ar-topbar, .mnt-topbar, .cm-topbar, .schedule-topbar {
+  position: fixed;
+  top: 0;
+  left: 400px; /* start after sidebar on desktop */
+  right: 0;
+  z-index: 800;
+}
+
+/* Mobile: sidebar overlays so topbar should stretch full width */
+@media (max-width: 899px) {
+  .dash-topbar, .sm-topbar, .pm-topbar, .ar-topbar, .mnt-topbar, .cm-topbar, .schedule-topbar {
+    left: 0;
+    right: 0;
+  }
+  .app-shell {
+    margin-left: 0;
+  }
+}
 .dash-topbar-inner, .sm-topbar-inner, .pm-topbar-inner, .ar-topbar-inner, .mnt-topbar-inner, .cm-topbar-inner {
-  width: min(1200px, 92vw);
+  width: min(var(--container-max), 92vw);
   margin: 0 auto;
   display:flex;
   align-items:center;
@@ -131,8 +158,8 @@ textarea {
 }
 /* larger bell icon (+5px) */
 .bell-btn .svg {
-  width: 27px !important;
-  height: 27px !important;
+  width: 30px !important;
+  height: 30px !important;
 }
 
 /* nudged notification dot for larger icon */

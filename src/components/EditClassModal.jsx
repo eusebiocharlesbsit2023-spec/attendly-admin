@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./EditClassModal.css";
 
+/* Font Awesome */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUser,
+  faLocationDot,
+  faClock,
+  faWifi,
+  faFloppyDisk,
+} from "@fortawesome/free-solid-svg-icons";
+
 export default function EditClassModal({
   open,
   clazz,
@@ -44,8 +54,9 @@ export default function EditClassModal({
   return (
     <div className="ecm-overlay" onMouseDown={onClose}>
       <div className="ecm-card" onMouseDown={(e) => e.stopPropagation()}>
+        {/* ===== Header ===== */}
         <div className="ecm-top">
-          <div className="ecm-titleBlock">
+          <div>
             <div className="ecm-title">{clazz.name}</div>
             <div className="ecm-code">{clazz.code}</div>
           </div>
@@ -54,68 +65,103 @@ export default function EditClassModal({
             <span className={`ecm-pill ${status === "Active" ? "active" : "inactive"}`}>
               {status}
             </span>
-            <select className="ecm-statusSelect" value={status} onChange={(e) => setStatus(e.target.value)}>
+
+            <select
+              className="ecm-statusSelect"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
           </div>
         </div>
 
+        {/* ===== Fields ===== */}
         <div className="ecm-fields">
           <div className="ecm-line">
-            <span className="ecm-ico">👤</span>
-            <select className="ecm-select" value={professor} onChange={(e) => setProfessor(e.target.value)}>
+            <span className="ecm-ico">
+              <FontAwesomeIcon icon={faUser} />
+            </span>
+            <select
+              className="ecm-select"
+              value={professor}
+              onChange={(e) => setProfessor(e.target.value)}
+            >
               {profOptions.map((p) => (
-                <option key={p} value={p}>{p}</option>
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="ecm-line">
-            <span className="ecm-ico">📍</span>
-            <select className="ecm-select" value={room} onChange={(e) => setRoom(e.target.value)}>
+            <span className="ecm-ico">
+              <FontAwesomeIcon icon={faLocationDot} />
+            </span>
+            <select
+              className="ecm-select"
+              value={room}
+              onChange={(e) => setRoom(e.target.value)}
+            >
               {roomOptions.map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>
+                  {r}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="ecm-line">
-            <span className="ecm-ico">🕒</span>
-            <select className="ecm-select" value={schedule} onChange={(e) => setSchedule(e.target.value)}>
+            <span className="ecm-ico">
+              <FontAwesomeIcon icon={faClock} />
+            </span>
+            <select
+              className="ecm-select"
+              value={schedule}
+              onChange={(e) => setSchedule(e.target.value)}
+            >
               {scheduleOptions.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
           </div>
 
-          <div className="ecm-line wifi">
-            <span className="ecm-ico">📶</span>
+          {/* ===== WiFi + Save (SAME ROW) ===== */}
+          <div className="ecm-line ecm-wifiRow">
+            <span className="ecm-ico">
+              <FontAwesomeIcon icon={faWifi} />
+            </span>
+
             <input
               className="ecm-input"
               value={wifi}
               onChange={(e) => setWifi(e.target.value)}
-              placeholder="WiFi name"
+              placeholder="Lab WiFi name"
             />
+
+            <button
+              className="ecm-save inline"
+              type="button"
+              onClick={() =>
+                onSaveClick?.({
+                  ...clazz,
+                  status,
+                  professor,
+                  room,
+                  schedule,
+                  wifi,
+                })
+              }
+            >
+              
+              Save
+            </button>
           </div>
         </div>
-
-        <button
-          className="ecm-save"
-          type="button"
-          onClick={() =>
-            onSaveClick?.({
-              ...clazz,
-              status,
-              professor,
-              room,
-              schedule,
-              wifi,
-            })
-          }
-        >
-          Save
-        </button>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import ClassManagement from "./pages/ClassManagement";
 import ProfessorManagement from "./pages/ProfessorManagement";
 import ManageAdmin from "./pages/ManageAdmin";
 import Reports from "./pages/Reports";
+import Dashboard_Wrapper from "./pages/Wrapper";
 
 import SuperAdminRoute from "./routes/SuperAdminRoute";
 import TodaysSchedule from "./pages/TodaysSchedule";
@@ -18,7 +19,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<AdminLogin />} />
-        <Route path="/dashboard" element={<AdminDashboard />} />
+        <Route element={<Dashboard_Wrapper />}>
+          <Route path="/dashboard" element={<AdminDashboard />} />
+        </Route>
         <Route path="/attendance" element={<AttendanceRecords />} />
         <Route path="/maintenance" element={<Maintenance />} />
         <Route path="/students" element={<StudentManagement />} />

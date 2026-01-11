@@ -2,7 +2,7 @@
 
   
   box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
+  font-family: "Montserrat";
 }
 
 .login-container {
@@ -37,6 +37,12 @@ h2 {
   font-size: 13px;
   color: #555;
   margin-bottom: 22px;
+}
+
+.error-text{
+  height: 12px;
+  font-size: 12px;
+  color: red;
 }
 
 .input-group {
@@ -88,9 +94,10 @@ h2 {
 .info-icon {
   font-size: 14px;
   line-height: 1;
+  color: #004a8f;
 }
 
-.info-text {
+.info-box p{
   font-size: 12px;
   color: #004a8f;
   line-height: 1.4;

@@ -1,24 +1,35 @@
-.cm { min-height: 100vh; background: #eaf6ff; }
 
-/* Topbar */
+.cm { min-height: 100vh; background: #eaf6ff; font-family: "Montserrat", sans-serif; }
+
+/* Topbar - align with Admin Dashboard */
 .cm-topbar{
-  background:#0a4e86; color:#fff; height:92px;
-  display:flex; align-items:center;
+  background:#0a4e86;
+  color:#fff;
+  padding:18px 0;
+  display:flex;
+  align-items:center;
 }
 .cm-topbar-inner{
-  width:min(1200px,92vw);
+  width:min(var(--container-max),92vw);
   margin:0 auto;
-  display:flex; justify-content:space-between; align-items:center;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
 }
-.cm-topbar-left{ display:flex; align-items:center; gap:18px; }
-.cm-title{ font-size: clamp(20px, 2.2vw + 10px, 28px); font-weight:600; }
+.cm-topbar-left{ display:flex; align-items:center; gap:16px; min-width:0; }
+.cm-title{ font-size:34px; font-weight:900; line-height:1.05; }
 
-.cm-topbar-right{ display:flex; align-items:center; gap:16px; }
+.cm-topbar-right{ display:flex; align-items:center; gap:10px; }
 
 .cm-icon-btn{
   width:46px; height:46px; border-radius:12px;
   border:none; background:transparent; color:#fff;
   display:grid; place-items:center; cursor:pointer; position:relative;
+}
+.cm-icon-btn .svg{
+  width:27px !important;
+  height:27px !important;
 }
 .cm-icon-btn:hover{ background:rgba(255,255,255,.12); }
 .cm-notif-dot{
@@ -28,7 +39,7 @@
 
 /* Main */
 .cm-main{
-  width:min(1200px,92vw);
+  width:min(var(--container-max),92vw);
   margin:0 auto;
   padding:28px 0 70px;
 }

@@ -6,7 +6,7 @@
   place-items: center;
   z-index: 3500;
 
-   font-family: "Montserrat", system-ui, -apple-system, "Segoe UI",
+   font-family: "Montserrat",
     Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -19,7 +19,7 @@
   padding: 26px 34px;
 
   /* ✅ add this */
-  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI",
+  font-family: "Montserrat",
     Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -32,14 +32,14 @@
 }
 
 .esm-label {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 600;
   color: #0f172a;
 }
 
 .esm-value {
   text-align: right;
-  font-size: 20px;
+  font-size: 16px;
   color: #0f172a;
 }
 
@@ -47,10 +47,9 @@
   justify-self: end;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  padding: 8px 10px;
+  border-radius: 50px;
+  padding: 5px;
   background: #fff;
 }
 

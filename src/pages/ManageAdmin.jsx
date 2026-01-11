@@ -8,54 +8,88 @@ import "./AdminDashboard.css";
 import CreateAdminModal from "../components/CreateAdminModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBell } from "@fortawesome/free-solid-svg-icons";
+import supabase from "../helper/supabaseClient";
+
 /* =========================
    Role-only Edit Modal
 ========================= */
 function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
   const [role, setRole] = useState(admin?.role || "Admin");
+  const [status, setStatus] = useState(admin?.status || "Active");
 
-  // keep role in sync when opening on different row
   useEffect(() => {
     setRole(admin?.role || "Admin");
+    setStatus(admin?.status || "Active");
   }, [admin, open]);
 
   if (!open) return null;
+
+  const originalRole = admin?.role || "Admin";
+  const originalStatus = admin?.status || "Active";
+
+  const changed = role !== originalRole || status !== originalStatus;
 
   return (
     <div className="esm-overlay" onClick={onClose}>
       <div className="esm-card" onClick={(e) => e.stopPropagation()}>
         <div className="esm-row">
-          <div className="esm-label">Admin ID</div>
+          <div className="esm-label label">Admin ID:</div>
           <div className="esm-value">{admin?.id}</div>
         </div>
 
         <div className="esm-row">
-          <div className="esm-label">Full Name</div>
+          <div className="esm-label">Full Name:</div>
           <div className="esm-value">{admin?.fullName}</div>
         </div>
 
         <div className="esm-row">
-          <div className="esm-label">Username</div>
+          <div className="esm-label">Username:</div>
           <div className="esm-value">{admin?.username}</div>
         </div>
 
+        {/* Role */}
         <div className="esm-row">
-          <div className="esm-label">Role</div>
+          <div className="esm-label">Role:</div>
           <div className="esm-statusWrap">
-            <select className="esm-select" value={role} onChange={(e) => setRole(e.target.value)}>
+            <select
+              className="esm-select"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
               <option>Admin</option>
               <option>Super Admin</option>
             </select>
           </div>
         </div>
 
+        {/* Status */}
+        <div className="esm-row">
+          <div className="esm-label">Status:</div>
+          <div className="esm-statusWrap">
+            <select
+              className="esm-select"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value={'Active'}>Activate</option>
+              <option value={'Inactive'}>Deactivate</option>
+            </select>
+          </div>
+        </div>
+
         <button
-          className="esm-save"
+          className={`esm-save ${!changed ? "disabled" : ""}`}
           type="button"
+          disabled={!changed}
+          title={!changed ? "Change role or status first" : "Save changes"}
           onClick={() =>
             onSaveClick({
               id: admin?.id,
               role,
+              status,
             })
           }
         >
@@ -66,12 +100,39 @@ function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
   );
 }
 
+function SuccessModal({ open, message, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="scm-overlay" onClick={onClose}>
+      <div className="scm-card" onClick={(e) => e.stopPropagation()}>
+        <i class='bx bx-check-circle'></i>
+        <p className="scm-text">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ManageAdmin() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
+
+  // ===== Activity (SAME AS ADMIN DASHBOARD) =====
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activity = useMemo(
+    () => [
+      { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
+      { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
+      { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
+      { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
+      { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
+      { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
+      { text: "Maintenance switched to Online", time: "3 days ago" },
+      { text: "Attendance export generated", time: "1 week ago" },
+    ],
+    []
+  );
 
   // Filters
   const [search, setSearch] = useState("");
@@ -79,6 +140,9 @@ export default function ManageAdmin() {
   const [status, setStatus] = useState("All Status");
   const [entries, setEntries] = useState(10);
   const [page, setPage] = useState(1);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+
 
   // ✅ Toast (temporary notification)
   const [toast, setToast] = useState({ open: false, message: "", type: "info" });
@@ -88,24 +152,52 @@ export default function ManageAdmin() {
   };
 
   useEffect(() => {
-    if (!toast.open) return;
-    const t = setTimeout(() => setToast((p) => ({ ...p, open: false })), 2500);
+    if (!successOpen) return;
+    const t = setTimeout(() => setSuccessOpen(false), 1500);
     return () => clearTimeout(t);
-  }, [toast.open]);
+  }, [successOpen]);
 
-  // Initial rows
-  const initialRows = useMemo(
-    () => [
-      { id: "ADM1", fullName: "John Doe", username: "admin1", role: "Admin", status: "Active" },
-      { id: "ADM2", fullName: "Jane Smith", username: "admin2", role: "Super Admin", status: "Active" },
-      { id: "ADM3", fullName: "Michael Johnson", username: "admin3", role: "Admin", status: "Inactive" },
-      { id: "ADM4", fullName: "Sarah Brown", username: "admin4", role: "Admin", status: "Active" },
-      { id: "ADM5", fullName: "Emily Clark", username: "admin5", role: "Admin", status: "Active" },
-    ],
-    []
-  );
+  const [rows, setRows] = useState([]); // start empty
+  const [loading, setLoading] = useState(true);
 
-  const [rows, setRows] = useState(initialRows);
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      setLoading(true);
+
+      try {
+        // DEBUG: check who is currently logged in
+        const { data: auth } = await supabase.auth.getUser();
+        console.log("CURRENT USER:", auth?.user?.email, auth?.user?.id);
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, admin_name, username, role, status") // adjust fields to match your table
+          .order("created_at", { ascending: false }); // optional if you have created_at
+
+        if (error) {
+          console.log("Fetch admins error:", error.message);
+          return;
+        }
+
+        const mapped = (data || []).map((p, i) => ({
+          id: `ADM${i + 1}`,
+          fullName: p.admin_name ?? "",
+          username: p.username ?? "",
+          role: p.role ?? "Admin",
+          status: p.status ?? "Active",
+          uuid: p.id,
+        }));
+
+        setRows(mapped);
+        localStorage.setItem("allAdmins", JSON.stringify(mapped));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdmins();
+  }, []);
+
 
   // ===== Create Modal =====
   const [createOpen, setCreateOpen] = useState(false);
@@ -125,7 +217,6 @@ export default function ManageAdmin() {
     setRows((prev) => [newRow, ...prev]);
     setCreateOpen(false);
 
-    // ✅ removed alert -> temporary toast
     showToast(`Admin created: ${payload.fullName} (${payload.role})`, "success");
   };
 
@@ -143,23 +234,52 @@ export default function ManageAdmin() {
   };
 
   const onEditSaveClick = (payload) => {
-    // payload: { id, role }
     setPendingRoleChange(payload);
     setEditRoleOpen(false);
     setApplyOpen(true);
   };
 
-  const applyYes = () => {
-    const { id, role: newRole } = pendingRoleChange || {};
-    setRows((prev) => prev.map((x) => (x.id === id ? { ...x, role: newRole } : x)));
+  const applyYes = async () => {
+    const { id, role: newRole, status: newStatus } = pendingRoleChange || {};
+    const target = rows.find((x) => x.id === id);
 
-    setApplyOpen(false);
-    setPendingRoleChange(null);
-    setEditingRow(null);
+    if (!target?.uuid) {
+      showToast("Missing target user UUID.", "danger");
+      setApplyOpen(false);
+      setPendingRoleChange(null);
+      return;
+    }
 
-    // ✅ removed alert -> temporary toast
-    showToast(`Role updated: ${id} → ${newRole}`, "success");
+    console.log(target.uuid);
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ role: newRole, status: newStatus })
+        .eq("id", target.uuid);
+
+      if (error) {
+        console.log("Update role error:", error);
+        showToast(`Update failed: ${error.message}`, "danger");
+        return;
+      }
+
+      // update UI only after DB success
+      setRows((prev) =>
+      prev.map((x) =>
+          x.id === id ? { ...x, role: newRole, status: newStatus } : x
+        )
+      );
+
+      setSuccessMsg(`Updated: ${id} → ${newRole}, ${newStatus}`);
+      setSuccessOpen(true);
+    } finally {
+      setApplyOpen(false);
+      setPendingRoleChange(null);
+      setEditingRow(null);
+    }
   };
+
 
   const applyCancel = () => {
     setApplyOpen(false);
@@ -171,9 +291,7 @@ export default function ManageAdmin() {
   const [pendingDelete, setPendingDelete] = useState(null);
 
   const onDelete = (r) => {
-    // ✅ Hard rule: super admin can't delete (even if user clicks somehow)
     if (r.role === "Super Admin") {
-      // ✅ removed alert -> temporary toast
       showToast("Super Admin accounts cannot be deleted.", "danger");
       return;
     }
@@ -181,22 +299,42 @@ export default function ManageAdmin() {
     setDeleteOpen(true);
   };
 
-  const deleteYes = () => {
-    // ✅ Extra safety: block delete if super admin
-    if (pendingDelete?.role === "Super Admin") {
+  const deleteYes = async () => {
+    if (!pendingDelete?.uuid) {
+      showToast("Missing target user UUID.", "danger");
       setDeleteOpen(false);
       setPendingDelete(null);
-      showToast("Super Admin accounts cannot be deleted.", "danger");
       return;
     }
 
-    const deletedId = pendingDelete?.id;
-    setRows((prev) => prev.filter((x) => x.id !== pendingDelete.id));
-    setDeleteOpen(false);
-    setPendingDelete(null);
+    // extra guard (UI already blocks, but double-safety)
+    if (pendingDelete?.role === "Super Admin") {
+      showToast("Super Admin accounts cannot be deleted.", "danger");
+      setDeleteOpen(false);
+      setPendingDelete(null);
+      return;
+    }
 
-    showToast(`Deleted admin: ${deletedId}`, "danger");
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", pendingDelete.uuid);
+
+      if (error) {
+        console.log("Delete error:", error);
+        showToast(`Delete failed: ${error.message}`, "danger");
+        return;
+      }
+
+      setRows((prev) => prev.filter((x) => x.uuid !== pendingDelete.uuid));
+      showToast(`Deleted admin: ${pendingDelete.id}`, "danger");
+    } finally {
+      setDeleteOpen(false);
+      setPendingDelete(null);
+    }
   };
+
 
   const deleteCancel = () => {
     setDeleteOpen(false);
@@ -232,9 +370,8 @@ export default function ManageAdmin() {
   const showingTo = (safePage - 1) * entries + pageRows.length;
 
   return (
-    // ✅ use app-shell so sidebar fits consistently on ALL pages
     <div className="app-shell dash mam-shell">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="manage-admin" />
+      <Sidebar open={false} active="manage-admin" />
 
       {/* ✅ Toast */}
       {toast.open && (
@@ -263,18 +400,20 @@ export default function ManageAdmin() {
 
           <div className="dash-topbar-right">
             <button
-              className="icon-btn bell-btn"
-              ref={notifRef}
+              className="icon-btn"
               aria-label="Notifications"
               type="button"
+              ref={notifRef}
               onClick={() => {
                 setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
                 setActivityOpen(true);
               }}
             >
               <span className="notif-dot" />
-              <Svg name="bell" />
-            </button> 
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+
+            {/* topbar logout removed */}
           </div>
         </div>
       </header>
@@ -355,7 +494,11 @@ export default function ManageAdmin() {
             </div>
 
             <div className="mam-miniPager">
-              <button className="mam-miniBtn" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+              <button
+                className="mam-miniBtn"
+                disabled={safePage <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
                 ‹
               </button>
               <span className="mam-miniPage">{safePage}</span>
@@ -385,43 +528,50 @@ export default function ManageAdmin() {
               </thead>
 
               <tbody>
-                {pageRows.map((r) => {
-                  const superAdmin = r.role === "Super Admin";
-                  return (
-                    <tr key={r.id}>
-                      <td>{r.id}</td>
-                      <td>{r.fullName}</td>
-                      <td>{r.username}</td>
-                      <td>{r.role}</td>
-                      <td>
-                        <span className={`mam-status ${r.status === "Active" ? "active" : "inactive"}`}>{r.status}</span>
-                      </td>
-                      <td className="mam-actionsCell">
-                        <button className="mam-action edit" onClick={() => onEdit(r)} type="button">
-                          ✎ Edit
-                        </button>
-
-                        {/* ✅ Super Admin can't delete */}
-                        <button
-                          className={`mam-action del ${superAdmin ? "disabled" : ""}`}
-                          onClick={() => onDelete(r)}
-                          type="button"
-                          disabled={superAdmin}
-                          title={superAdmin ? "Super Admin can't be deleted" : "Delete"}
-                        >
-                          🗑 Delete
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-
-                {pageRows.length === 0 && (
+                {loading ? (
+                  <tr>
+                    <td className="mam-empty" colSpan={6}>
+                      Loading admins...
+                    </td>
+                  </tr>
+                ) : pageRows.length === 0 ? (
                   <tr>
                     <td className="mam-empty" colSpan={6}>
                       No records found.
                     </td>
                   </tr>
+                ) : (
+                  pageRows.map((r) => {
+                    const superAdmin = r.role === "Super Admin";
+                    return (
+                      <tr key={r.uuid ?? r.id}>
+                        <td>{r.id}</td>
+                        <td>{r.fullName}</td>
+                        <td>{r.username}</td>
+                        <td>{r.role}</td>
+                        <td>
+                          <span className={`mam-status ${r.status === "Active" ? "active" : "inactive"}`}>
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="mam-actionsCell">
+                          <button className="mam-action edit" onClick={() => onEdit(r)} type="button">
+                            ✎ Edit
+                          </button>
+
+                          <button
+                            className={`mam-action del ${superAdmin ? "disabled" : ""}`}
+                            onClick={() => onDelete(r)}
+                            type="button"
+                            disabled={superAdmin}
+                            title={superAdmin ? "Super Admin can't be deleted" : "Delete"}
+                          >
+                            🗑 Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -477,6 +627,13 @@ export default function ManageAdmin() {
         onCancel={applyCancel}
       />
 
+      {/* Success change modal */}
+      <SuccessModal
+        open={successOpen}
+        message={successMsg}
+        onClose={() => setSuccessOpen(false)}
+      />
+
       {/* Confirm delete */}
       <SmallConfirmModal
         open={deleteOpen}
@@ -484,50 +641,14 @@ export default function ManageAdmin() {
         onYes={deleteYes}
         onCancel={deleteCancel}
       />
+
+      {/* Activity Modal (Bell) */}
+      <ActivityHistoryModal
+        open={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        items={activity}
+        anchorRect={activityAnchorRect}
+      />
     </div>
   );
-}
-
-/* Icons */
-function Svg({ name, small = false }) {
-  const s = small ? 16 : 22;
-  const common = {
-    width: s,
-    height: s,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-    className: small ? "svg small" : "svg",
-  };
-
-  switch (name) {
-    case "menu":
-      return (
-        <svg {...common}>
-          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "bell":
-      return (
-        <svg {...common}>
-          <path
-            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case "logout":
-      return (
-        <svg {...common}>
-          <path d="M10 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    default:
-      return null;
-  }
 }
