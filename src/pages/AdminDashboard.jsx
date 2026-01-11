@@ -24,8 +24,6 @@ export default function AdminDashboard() {
 
   const adminProfile = JSON.parse(localStorage.getItem('adminProfile')) || [];
 
-  console.log(adminProfile);
-
   const stats = [
     { label: "Total Students", value: 45, icon: faUsers, tint: "blue" },
     { label: "Active Devices", value: 43, icon: faMicrochip, tint: "purple" },

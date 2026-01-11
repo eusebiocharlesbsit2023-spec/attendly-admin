@@ -28,7 +28,7 @@ function AdminLogin() {
     setErrorMessage("");
 
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: `${username}.com`, // ⚠️ must match actual stored email
+      email: `${username}.com`,
       password,
     });
 

@@ -35,10 +35,10 @@ export default function StudentManagement() {
   const [entries, setEntries] = useState(10);
   const [page, setPage] = useState(1);
 
-  // ===== Add Student Modal & Confirm =====
+  // ===== Success Modal =====
   const [addOpen, setAddOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingStudent, setPendingStudent] = useState(null);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   // ===== Edit Student + Apply Changes Confirm =====
   const [editOpen, setEditOpen] = useState(false);
@@ -49,6 +49,8 @@ export default function StudentManagement() {
   // ✅ Delete Confirm
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
+
+
 
   const initialStudents = useMemo(
     () => [
@@ -66,34 +68,14 @@ export default function StudentManagement() {
   // ===== ADD =====
   const onAdd = () => setAddOpen(true);
 
-  const handleAddFormSubmit = (payload) => {
-    setPendingStudent(payload);
-    setAddOpen(false);
-    setConfirmOpen(true);
-  };
+  // called by AddStudentModal after successful insert
+  const successModal = ({  displayName, studentNumber }) => {
+    // show success modal (parent-level)
+    setSuccessMsg(`Student added: ${displayName} (${studentNumber})`);
+    setSuccessOpen(true);
 
-  const confirmYes = () => {
-    setConfirmOpen(false);
-
-    if (pendingStudent?.name && pendingStudent?.studentId) {
-      setRows((prev) => [
-        {
-          name: pendingStudent.name,
-          studentId: pendingStudent.studentId,
-          deviceId: pendingStudent.deviceId || "N/A",
-          classes: Number(pendingStudent.classes ?? 0),
-          status: pendingStudent.status || "Active",
-        },
-        ...prev,
-      ]);
-    }
-
-    setPendingStudent(null);
-  };
-
-  const confirmCancel = () => {
-    setConfirmOpen(false);
-    setPendingStudent(null);
+    // auto close success
+    setTimeout(() => setSuccessOpen(false), 3000);
   };
 
   // ===== EDIT =====
@@ -404,14 +386,28 @@ export default function StudentManagement() {
       </main>
 
       {/* Modals */}
-      <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAddFormSubmit} />
-      <SmallConfirmModal open={confirmOpen} title="Add New Student?" onYes={confirmYes} onCancel={confirmCancel} />
+      <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={successModal} />
 
       <EditStudentModal
         open={editOpen}
         student={editingStudent}
         onClose={() => setEditOpen(false)}
         onSaveClick={onEditSaveClick}
+      />
+
+      {successOpen && (
+        <div className="scm-overlay" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="scm-card" onMouseDown={(e) => e.stopPropagation()}>
+            <i className="bx bx-check-circle"></i>
+            <p className="scm-text">{successMsg}</p>
+          </div>
+        </div>
+      )}
+
+      <AddStudentModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onSubmit={successModal}
       />
 
       <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={applyCancel} />

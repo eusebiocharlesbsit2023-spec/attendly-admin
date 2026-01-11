@@ -7,6 +7,23 @@
   z-index: 3000;
 }
 
+.asm-overlay { 
+  z-index: 1000; 
+}
+.asm-modal { 
+  position: relative; 
+  z-index: 1001; 
+}
+
+.scm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000; /* ✅ higher */
+}
+.scm-card { 
+  z-index: 2001; 
+}
+
 .asm-modal {
   width: 480px;
   max-width: 95vw;
@@ -17,6 +34,16 @@
   border-radius: 14px;
   box-shadow: 0 25px 60px rgba(0,0,0,0.25);
   padding: 18px 22px;
+}
+
+.scm-text{
+  text-align: center;
+}
+
+.asm-errorText {
+  color: #ff4d4f;
+  margin: 0 0 10px 0;
+  font-size: 13px;
 }
 
 .asm-title {

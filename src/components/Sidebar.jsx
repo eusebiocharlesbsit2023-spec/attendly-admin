@@ -36,6 +36,7 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const performLogout = async () => {
     const {error} = await supabase.auth.signOut();
     if (error) throw error;
+    localStorage.clear();
     navigate("/");
   }
 
