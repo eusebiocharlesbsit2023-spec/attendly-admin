@@ -5,6 +5,7 @@ import "./CreateAdminModal.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { supabaseCreateUser } from "../helper/supabaseCreateUserClient";
+import supabase from "../helper/supabaseClient";
 
 export default function CreateAdminModal({ open, onClose, onCreate }) {
   const [fullName, setFullName] = useState("");
@@ -48,6 +49,22 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
       email: `${username.trim()}.com`,
       password: tempPassword,
     });
+
+    const adminID = authData.user.id;
+
+    const { data: insertData, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        id: adminID,
+        admin_name: fullName,
+        username: `${username.trim()}.com`,
+        role: role,
+        status: 'Active'
+      })
+
+    if(insertError){
+      console.log(insertError.message);
+    }
 
     if(authError){
       setErrorMessage(authError.message);

@@ -18,53 +18,96 @@ import supabase from "../helper/supabaseClient";
 ========================= */
 function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
   const [role, setRole] = useState(admin?.role || "Admin");
+  const [status, setStatus] = useState(admin?.status || "Active");
 
   useEffect(() => {
     setRole(admin?.role || "Admin");
+    setStatus(admin?.status || "Active");
   }, [admin, open]);
 
   if (!open) return null;
+
+  const originalRole = admin?.role || "Admin";
+  const originalStatus = admin?.status || "Active";
+
+  const changed = role !== originalRole || status !== originalStatus;
 
   return (
     <div className="esm-overlay" onClick={onClose}>
       <div className="esm-card" onClick={(e) => e.stopPropagation()}>
         <div className="esm-row">
-          <div className="esm-label">Admin ID</div>
+          <div className="esm-label label">Admin ID:</div>
           <div className="esm-value">{admin?.id}</div>
         </div>
 
         <div className="esm-row">
-          <div className="esm-label">Full Name</div>
+          <div className="esm-label">Full Name:</div>
           <div className="esm-value">{admin?.fullName}</div>
         </div>
 
         <div className="esm-row">
-          <div className="esm-label">Username</div>
+          <div className="esm-label">Username:</div>
           <div className="esm-value">{admin?.username}</div>
         </div>
 
+        {/* Role */}
         <div className="esm-row">
-          <div className="esm-label">Role</div>
+          <div className="esm-label">Role:</div>
           <div className="esm-statusWrap">
-            <select className="esm-select" value={role} onChange={(e) => setRole(e.target.value)}>
+            <select
+              className="esm-select"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
               <option>Admin</option>
               <option>Super Admin</option>
             </select>
           </div>
         </div>
 
+        {/* Status */}
+        <div className="esm-row">
+          <div className="esm-label">Status:</div>
+          <div className="esm-statusWrap">
+            <select
+              className="esm-select"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value={'Active'}>Activate</option>
+              <option value={'Inactive'}>Deactivate</option>
+            </select>
+          </div>
+        </div>
+
         <button
-          className="esm-save"
+          className={`esm-save ${!changed ? "disabled" : ""}`}
           type="button"
+          disabled={!changed}
+          title={!changed ? "Change role or status first" : "Save changes"}
           onClick={() =>
             onSaveClick({
               id: admin?.id,
               role,
+              status,
             })
           }
         >
           Save
         </button>
+      </div>
+    </div>
+  );
+}
+
+function SuccessModal({ open, message, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="scm-overlay" onClick={onClose}>
+      <div className="scm-card" onClick={(e) => e.stopPropagation()}>
+        <i class='bx bx-check-circle'></i>
+        <p className="scm-text">{message}</p>
       </div>
     </div>
   );
@@ -97,6 +140,9 @@ export default function ManageAdmin() {
   const [status, setStatus] = useState("All Status");
   const [entries, setEntries] = useState(10);
   const [page, setPage] = useState(1);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+
 
   // ✅ Toast (temporary notification)
   const [toast, setToast] = useState({ open: false, message: "", type: "info" });
@@ -106,10 +152,10 @@ export default function ManageAdmin() {
   };
 
   useEffect(() => {
-    if (!toast.open) return;
-    const t = setTimeout(() => setToast((p) => ({ ...p, open: false })), 2500);
+    if (!successOpen) return;
+    const t = setTimeout(() => setSuccessOpen(false), 1500);
     return () => clearTimeout(t);
-  }, [toast.open]);
+  }, [successOpen]);
 
   const [rows, setRows] = useState([]); // start empty
   const [loading, setLoading] = useState(true);
@@ -127,9 +173,6 @@ export default function ManageAdmin() {
           .from("profiles")
           .select("id, admin_name, username, role, status") // adjust fields to match your table
           .order("created_at", { ascending: false }); // optional if you have created_at
-
-        // IMPORTANT: Supabase can return empty data with NO error if RLS blocks it
-        console.log("FETCH RESULT:", { rows: data?.length ?? 0, error });
 
         if (error) {
           console.log("Fetch admins error:", error.message);
@@ -196,16 +239,47 @@ export default function ManageAdmin() {
     setApplyOpen(true);
   };
 
-  const applyYes = () => {
-    const { id, role: newRole } = pendingRoleChange || {};
-    setRows((prev) => prev.map((x) => (x.id === id ? { ...x, role: newRole } : x)));
+  const applyYes = async () => {
+    const { id, role: newRole, status: newStatus } = pendingRoleChange || {};
+    const target = rows.find((x) => x.id === id);
 
-    setApplyOpen(false);
-    setPendingRoleChange(null);
-    setEditingRow(null);
+    if (!target?.uuid) {
+      showToast("Missing target user UUID.", "danger");
+      setApplyOpen(false);
+      setPendingRoleChange(null);
+      return;
+    }
 
-    showToast(`Role updated: ${id} → ${newRole}`, "success");
+    console.log(target.uuid);
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ role: newRole, status: newStatus })
+        .eq("id", target.uuid);
+
+      if (error) {
+        console.log("Update role error:", error);
+        showToast(`Update failed: ${error.message}`, "danger");
+        return;
+      }
+
+      // update UI only after DB success
+      setRows((prev) =>
+      prev.map((x) =>
+          x.id === id ? { ...x, role: newRole, status: newStatus } : x
+        )
+      );
+
+      setSuccessMsg(`Updated: ${id} → ${newRole}, ${newStatus}`);
+      setSuccessOpen(true);
+    } finally {
+      setApplyOpen(false);
+      setPendingRoleChange(null);
+      setEditingRow(null);
+    }
   };
+
 
   const applyCancel = () => {
     setApplyOpen(false);
@@ -225,21 +299,42 @@ export default function ManageAdmin() {
     setDeleteOpen(true);
   };
 
-  const deleteYes = () => {
-    if (pendingDelete?.role === "Super Admin") {
+  const deleteYes = async () => {
+    if (!pendingDelete?.uuid) {
+      showToast("Missing target user UUID.", "danger");
       setDeleteOpen(false);
       setPendingDelete(null);
-      showToast("Super Admin accounts cannot be deleted.", "danger");
       return;
     }
 
-    const deletedId = pendingDelete?.id;
-    setRows((prev) => prev.filter((x) => x.id !== pendingDelete.id));
-    setDeleteOpen(false);
-    setPendingDelete(null);
+    // extra guard (UI already blocks, but double-safety)
+    if (pendingDelete?.role === "Super Admin") {
+      showToast("Super Admin accounts cannot be deleted.", "danger");
+      setDeleteOpen(false);
+      setPendingDelete(null);
+      return;
+    }
 
-    showToast(`Deleted admin: ${deletedId}`, "danger");
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", pendingDelete.uuid);
+
+      if (error) {
+        console.log("Delete error:", error);
+        showToast(`Delete failed: ${error.message}`, "danger");
+        return;
+      }
+
+      setRows((prev) => prev.filter((x) => x.uuid !== pendingDelete.uuid));
+      showToast(`Deleted admin: ${pendingDelete.id}`, "danger");
+    } finally {
+      setDeleteOpen(false);
+      setPendingDelete(null);
+    }
   };
+
 
   const deleteCancel = () => {
     setDeleteOpen(false);
@@ -530,6 +625,13 @@ export default function ManageAdmin() {
         title={`Apply role change for ${pendingRoleChange?.id}?`}
         onYes={applyYes}
         onCancel={applyCancel}
+      />
+
+      {/* Success change modal */}
+      <SuccessModal
+        open={successOpen}
+        message={successMsg}
+        onClose={() => setSuccessOpen(false)}
       />
 
       {/* Confirm delete */}

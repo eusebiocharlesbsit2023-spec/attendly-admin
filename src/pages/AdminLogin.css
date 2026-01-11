@@ -94,9 +94,10 @@ h2 {
 .info-icon {
   font-size: 14px;
   line-height: 1;
+  color: #004a8f;
 }
 
-.info-text {
+.info-box p{
   font-size: 12px;
   color: #004a8f;
   line-height: 1.4;

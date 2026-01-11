@@ -98,6 +98,14 @@ function AdminLogin() {
             SIGN IN
           </button>
         </form>
+
+        <div className="info-box">
+          <span className="info-icon">ℹ</span>
+          <p>
+            This is a restricted area for authorized administrators only.
+            All login attempts are monitored and logged for security.
+          </p>
+        </div>
       </div>
     </div>
   );
