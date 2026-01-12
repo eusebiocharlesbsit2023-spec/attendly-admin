@@ -104,6 +104,10 @@
   margin-bottom: 24px;
 }
 
+td, tr{
+  text-align: center;
+}
+
 .sm-stat {
   padding: 26px 28px;
   border-radius: 14px;
@@ -317,6 +321,7 @@
 .sm-nameTd {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
 }
 
@@ -369,6 +374,7 @@
 /* actions */
 .sm-actionsCell {
   display: flex;
+  justify-content: center;
   gap: 10px;
 }
 

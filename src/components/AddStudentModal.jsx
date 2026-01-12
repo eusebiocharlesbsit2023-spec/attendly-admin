@@ -50,6 +50,7 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     if (!surname.trim()) e.surname = "Required";
     if (!email.trim()) e.email = "Required";
     if (!studentNumber.trim()) e.studentNumber = "Required";
+    if (studentNumber.length < 10) e.studentNumber = "Student Number must be 8 characters above (Remember to include -N)";
     if (!program) e.program = "Required";
     if (!yearLevel) e.yearLevel = "Required";
     if (!section) e.section = "Required";
@@ -299,7 +300,7 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
           />
 
           <label className="asm-label">
-            Student Number <span className="asm-req">*</span>
+            Student Number <span className="remember">(must to include -N)</span><span className="asm-req">*</span>
           </label>
           <input
             className={`asm-input ${errors.studentNumber ? "err" : ""}`}
