@@ -32,6 +32,11 @@
   gap: 12px;
 }
 
+.error-text{
+  margin-bottom: 10px;
+  height: 12px;
+}
+
 /* FIELD */
 .apm-field label {
   font-size: 12px;

@@ -162,7 +162,7 @@ export default function ManageAdmin() {
         console.log("CURRENT USER:", auth?.user?.email, auth?.user?.id);
 
         const { data, error } = await supabase
-          .from("profiles")
+          .from("admins")
           .select("id, admin_name, username, role, status") // adjust fields to match your table
           .order("created_at", { ascending: false }); // optional if you have created_at
 
@@ -243,7 +243,7 @@ export default function ManageAdmin() {
 
     try {
       const { error } = await supabase
-        .from("profiles")
+        .from("admins")
         .update({ role: newRole, status: newStatus })
         .eq("id", target.uuid);
 
@@ -305,7 +305,7 @@ export default function ManageAdmin() {
     setDeleting(true);
 
     try {
-      // delete from AUTH (will cascade to profiles if FK is set)
+      // delete from AUTH (will cascade to admins if FK is set)
       const { error } = await supabase.rpc("admin_delete_user", {
         p_user_id: pendingDelete.uuid,
       });

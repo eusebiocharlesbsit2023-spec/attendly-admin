@@ -134,7 +134,7 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
       };
 
       const { data, error } = await supabase
-        .from("student_users")
+        .from("students")
         .insert(payload)
         .select("*")
         .single();

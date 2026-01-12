@@ -6,6 +6,7 @@ import "./ProfessorManagement.css";
 import AddProfessorModal from "../components/AddProfessorModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditProfessorModal from "../components/EditProfessorModal";
+import supabase from "../helper/supabaseClient";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -43,124 +44,189 @@ export default function ProfessorManagement() {
     { text: "Attendance export generated", time: "1 week ago" },
   ];
 
-  // ===== initial list -> state =====
-  const initialProfessors = useMemo(
-    () => [
-      { name: "John Smith", email: "johnsmith@gmail.com", classes: 6, status: "Active" },
-      { name: "Alice Willson", email: "alicewilson@gmail.com", classes: 6, status: "Inactive" },
-      { name: "Dakota Johnson", email: "dakotajohnson@gmail.com", classes: 6, status: "Active" },
-      { name: "Odette Lancelot", email: "odettelancelot@gmail.com", classes: 6, status: "Active" },
-      { name: "Michal Winger", email: "michalwinger@gmail.com", classes: 6, status: "Inactive" },
-    ],
-    []
-  );
+  
 
-  const [rows, setRows] = useState(initialProfessors);
+  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState([]); // ✅ start empty, DB will fill
 
-  // ===== Toast =====
-  const [toast, setToast] = useState({ open: false, message: "", type: "info" });
-  const showToast = (message, type = "info") => setToast({ open: true, message, type });
+  const fetchProfessors = async () => {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("professors")
+      .select("id, professor_name, email, department, status")
+      .order("professor_name", { ascending: true });
+
+    if (error) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    setRows(
+      (data || []).map((p) => ({
+        id: p.id,
+        name: p.professor_name,
+        email: p.email,
+        classes: 0,
+        status: p.status ?? "Active",
+        department: p.department,
+      }))
+    );
+
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (!toast.open) return;
-    const t = setTimeout(() => setToast((p) => ({ ...p, open: false })), 2500);
-    return () => clearTimeout(t);
-  }, [toast.open]);
+    fetchProfessors();
+  }, []);
 
   // ===== Add + Confirm =====
   const [addOpen, setAddOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingProf, setPendingProf] = useState(null);
+  
+  // ✅ success modal state
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+
+  function SuccessModal({ open, message, onClose }) {
+    useEffect(() => {
+      if (!open) return;
+      const t = setTimeout(() => onClose?.(), 1500);
+      return () => clearTimeout(t);
+    }, [open, onClose]);
+
+    if (!open) return null;
+
+    return (
+      <div className="scm-overlay" onMouseDown={onClose}>
+        <div className="scm-card" onMouseDown={(e) => e.stopPropagation()}>
+          <i className="bx bx-check-circle"></i>
+          <p className="scm-text">{message}</p>
+        </div>
+      </div>
+    );
+  }
 
   const onAdd = () => setAddOpen(true);
 
-  const handleAddSubmit = (payload) => {
-    setPendingProf(payload);
+  const handleAddSubmit = async () => {
     setAddOpen(false);
-    setConfirmOpen(true);
+    setSuccessMsg("Professor added successfully!");
+    setSuccessOpen(true);
+
+    await fetchProfessors();
   };
 
-  const confirmYes = () => {
-    setConfirmOpen(false);
-
-    if (pendingProf?.email) {
-      setRows((prev) => [
-        {
-          name: pendingProf.name,
-          email: pendingProf.email,
-          classes: Number(pendingProf.classes ?? 0),
-          status: pendingProf.status ?? "Active",
-        },
-        ...prev,
-      ]);
-
-      showToast(`Professor added: ${pendingProf.name}`, "success");
-    }
-
-    setPendingProf(null);
-  };
-
-  const confirmCancel = () => {
-    setConfirmOpen(false);
-    setPendingProf(null);
-  };
-
-  // ===== Edit + Apply Confirm =====
-  const [editOpen, setEditOpen] = useState(false);
-  const [applyOpen, setApplyOpen] = useState(false);
-  const [editingProf, setEditingProf] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [applyOpen, setApplyOpen] = useState(false);  
   const [pendingEdit, setPendingEdit] = useState(null);
+
+  // ===== Edit (DB) + Confirm =====
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingProf, setEditingProf] = useState(null);
 
   const onEdit = (profObj) => {
     setEditingProf(profObj);
     setEditOpen(true);
   };
 
+  // called by EditProfessorModal when user clicks save
   const onEditSaveClick = (updatedProf) => {
-    setPendingEdit(updatedProf);
-    setEditOpen(false);
-    setApplyOpen(true);
+    setPendingEdit(updatedProf);   // store changes
+    setApplyOpen(true);           // open confirm
   };
 
-  const applyYes = () => {
-    setApplyOpen(false);
-
-    if (pendingEdit?.email) {
-      setRows((prev) => prev.map((p) => (p.email === pendingEdit.email ? { ...p, ...pendingEdit } : p)));
-      showToast(`Changes applied: ${pendingEdit.name}`, "success");
+  const applyYes = async () => {
+    if (!pendingEdit?.id) {
+      setApplyOpen(false);
+      setPendingEdit(null);
+      return;
     }
 
-    setPendingEdit(null);
-    setEditingProf(null);
+    setActionLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("professors")
+        .update({
+          professor_name: pendingEdit.name,
+          email: pendingEdit.email,
+          department: pendingEdit.department,
+          status: pendingEdit.status,
+        })
+        .eq("id", pendingEdit.id);
+
+      if (error) throw error;
+
+      setApplyOpen(false);
+      setPendingEdit(null);
+      setEditingProf(null);
+      setEditOpen(false);           // close edit modal
+      
+      setSuccessMsg("Professor updated successfully!");
+      setSuccessOpen(true);
+
+      await fetchProfessors();
+    } catch (err) {
+      setApplyOpen(false);
+      setPendingEdit(null);
+      setEditingProf(null);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const applyCancel = () => {
+    if (actionLoading) return;
     setApplyOpen(false);
     setPendingEdit(null);
     setEditingProf(null);
   };
 
-  // ===== Delete confirm =====
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState(null);
 
+  // ===== Delete (DB) Confirm =====
   const onDeleteClick = (profObj) => {
     setPendingDelete(profObj);
     setDeleteOpen(true);
   };
 
-  const deleteYes = () => {
-    const name = pendingDelete?.name;
-    setRows((prev) => prev.filter((p) => p.email !== pendingDelete?.email));
-    setDeleteOpen(false);
-    setPendingDelete(null);
-    if (name) showToast(`Deleted: ${name}`, "danger");
+  const deleteYes = async () => {
+    if (!pendingDelete?.id) {
+      setPendingDelete(null);
+      return;
+    }
+
+    setActionLoading(true);
+
+    try {
+      const { error } = await supabase.rpc("admin_delete_user", {
+        p_user_id: pendingDelete.id, // auth.users.id
+      });
+      if (error) throw error;
+
+      setDeleteOpen(false);
+      setPendingDelete(null);
+
+      setSuccessMsg("Professor deleted successfully!");
+      setSuccessOpen(true);
+
+      await fetchProfessors();
+    } catch (err) {
+      setDeleteOpen(false);
+      setPendingDelete(null);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const deleteCancel = () => {
+    if (actionLoading) return;
     setDeleteOpen(false);
     setPendingDelete(null);
   };
+
 
   // ===== Filtering =====
   const filtered = useMemo(() => {
@@ -209,28 +275,11 @@ export default function ProfessorManagement() {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-
-    showToast("CSV exported successfully", "info");
   };
 
   return (
     <div className="app-shell pm">
       <Sidebar open={false} active="dashboard" />
-
-      {/* Toast */}
-      {toast.open && (
-        <div className={`pm-toast ${toast.type}`}>
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            className="pm-toast-x"
-            onClick={() => setToast((p) => ({ ...p, open: false }))}
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Topbar */}
       <header className="pm-topbar">
@@ -325,47 +374,70 @@ export default function ProfessorManagement() {
             </div>
           </div>
 
-          <div className="pm-table">
-            <div className="pm-thead">
-              <div>Professor Name</div>
-              <div>Email</div>
-              <div>Classes</div>
-              <div>Status</div>
-              <div>Actions</div>
-            </div>
+          <div className="pm-tableWrap">
+            <table className="pm-tableReal">
+              <thead>
+                <tr>
+                  <th>Professor Name</th>
+                  <th>Email</th>
+                  <th>Classes</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            <div className="pm-tbody">
-              {paged.map((p) => (
-                <div className="pm-row" key={p.email}>
-                  <div className="pm-nameCell">
-                    <span className="pm-avatar">{initials(p.name)}</span>
-                    <span>{p.name}</span>
-                  </div>
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan="5" className="pm-emptyCell">
+                      Loading professors...
+                    </td>
+                  </tr>
+                )}
 
-                  <div className="pm-email">{p.email}</div>
-                  <div>{p.classes}</div>
+                {!loading && paged.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="pm-emptyCell">
+                      No professors found.
+                    </td>
+                  </tr>
+                )}
 
-                  <div className="pm-statusCell">
-                    <span className={`pm-pill ${p.status === "Active" ? "active" : "inactive"}`}>{p.status}</span>
-                  </div>
+                {!loading &&
+                  paged.map((p) => (
+                    <tr key={p.id || p.email}>
+                      <td>
+                        <div className="pm-nameCell">
+                          <span className="pm-avatar">{initials(p.name)}</span>
+                          <span>{p.name}</span>
+                        </div>
+                      </td>
 
-                  <div className="pm-actionCell">
-                    <button className="pm-actionBtn edit" onClick={() => onEdit(p)} type="button">
-                      <FontAwesomeIcon icon={faPenToSquare} />
-                      Edit
-                    </button>
+                      <td className="pm-email">{p.email}</td>
 
-                    <button className="pm-actionBtn del" onClick={() => onDeleteClick(p)} type="button">
-                      <FontAwesomeIcon icon={faTrash} />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      <td>{p.classes}</td>
 
-              {paged.length === 0 && <div className="pm-empty">No professors found.</div>}
-            </div>
+                      <td>
+                        <span className={`pm-pill ${p.status === "Active" ? "active" : "inactive"}`}>
+                          {p.status}
+                        </span>
+                      </td>
 
+                      <td>
+                        <div className="pm-actionCell">
+                          <button className="pm-actionBtn edit" onClick={() => onEdit(p)} type="button">
+                            <FontAwesomeIcon icon={faPenToSquare} /> Edit
+                          </button>
+
+                          <button className="pm-actionBtn del" onClick={() => onDeleteClick(p)} type="button">
+                            <FontAwesomeIcon icon={faTrash} /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
             <div className="pm-footer">
               <div className="pm-footerLeft">
                 Showing {showingFrom} to {showingTo} of {filtered.length} entries
@@ -396,14 +468,12 @@ export default function ProfessorManagement() {
               </div>
             </div>
           </div>
+
         </section>
       </main>
 
       {/* Add Professor Modal */}
       <AddProfessorModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAddSubmit} />
-
-      {/* Confirm Add */}
-      <SmallConfirmModal open={confirmOpen} title="Add New Professor?" onYes={confirmYes} onCancel={confirmCancel} />
 
       {/* Edit Professor Modal */}
       <EditProfessorModal
@@ -413,13 +483,28 @@ export default function ProfessorManagement() {
         onSaveClick={onEditSaveClick}
       />
 
+      <SuccessModal
+        open={successOpen}
+        message={successMsg}
+        onClose={() => setSuccessOpen(false)}
+      />
+
       {/* Confirm Apply Edit */}
-      <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={applyCancel} />
+      <SmallConfirmModal
+        open={applyOpen}
+        title={actionLoading ? "Applying changes..." : "Apply Changes?"}
+        onYes={applyYes}
+        onCancel={applyCancel}
+      />
 
       {/* Confirm Delete */}
       <SmallConfirmModal
         open={deleteOpen}
-        title={`Delete ${pendingDelete?.name || "this professor"}?`}
+        title={
+          actionLoading
+            ? "Deleting..."
+            : `Delete ${pendingDelete?.name || "this professor"}?`
+        }
         onYes={deleteYes}
         onCancel={deleteCancel}
       />

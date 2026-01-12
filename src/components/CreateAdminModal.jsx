@@ -52,9 +52,9 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
 
     const adminID = authData.user.id;
 
-    // after insert to profiles:
+    // after insert to admins:
     const { data: prof, error: profErr } = await supabase
-      .from("profiles")
+      .from("admins")
       .insert({
         id: adminID,          // auth.users.id
         admin_name: fullName,

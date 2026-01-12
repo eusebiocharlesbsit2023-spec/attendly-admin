@@ -66,7 +66,7 @@ export default function StudentManagement() {
       setLoading(true);
 
       const { data, error } = await supabase
-        .from("student_users")
+        .from("students")
         .select("*")
         .order("created_at", { ascending: false });
 
@@ -146,7 +146,7 @@ export default function StudentManagement() {
       };
 
       const { error } = await supabase
-        .from("student_users")
+        .from("students")
         .update(updatePayload)
         .eq("id", pendingEdit.uuid);
 
