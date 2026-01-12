@@ -143,14 +143,6 @@ export default function ManageAdmin() {
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
-
-  // ✅ Toast (temporary notification)
-  const [toast, setToast] = useState({ open: false, message: "", type: "info" });
-
-  const showToast = (message, type = "info") => {
-    setToast({ open: true, message, type });
-  };
-
   useEffect(() => {
     if (!successOpen) return;
     const t = setTimeout(() => setSuccessOpen(false), 1500);
@@ -214,7 +206,6 @@ export default function ManageAdmin() {
     };
     setRows((prev) => [newRow, ...prev]);
     setCreateOpen(false);
-    showToast(`Admin created: ${newRow.fullName} (${newRow.role})`, "success");
   };
 
   // ===== Edit Role (only role editable) =====
@@ -243,7 +234,6 @@ export default function ManageAdmin() {
     const target = rows.find((x) => x.id === id);
 
     if (!target?.uuid) {
-      showToast("Missing target user UUID.", "danger");
       setApplyOpen(false);
       setPendingRoleChange(null);
       return;
@@ -259,7 +249,6 @@ export default function ManageAdmin() {
 
       if (error) {
         console.log("Update role error:", error);
-        showToast(`Update failed: ${error.message}`, "danger");
         return;
       }
 
@@ -292,7 +281,6 @@ export default function ManageAdmin() {
 
   const onDelete = (r) => {
     if (r.role === "Super Admin") {
-      showToast("Super Admin accounts cannot be deleted.", "danger");
       return;
     }
     setPendingDelete(r);
@@ -303,14 +291,12 @@ export default function ManageAdmin() {
     if (deleting) return;
 
     if (!pendingDelete?.uuid) {
-      showToast("Missing target user UUID.", "danger");
       setDeleteOpen(false);
       setPendingDelete(null);
       return;
     }
 
     if (pendingDelete?.role === "Super Admin") {
-      showToast("Super Admin accounts cannot be deleted.", "danger");
       setDeleteOpen(false);
       setPendingDelete(null);
       return;
@@ -326,7 +312,6 @@ export default function ManageAdmin() {
 
       if (error) {
         console.log("Auth delete error:", error);
-        showToast(`Delete failed: ${error.message}`, "danger");
         return;
       }
 
@@ -379,21 +364,6 @@ export default function ManageAdmin() {
   return (
     <div className="app-shell dash mam-shell">
       <Sidebar open={false} active="manage-admin" />
-
-      {/* ✅ Toast */}
-      {toast.open && (
-        <div className={`mam-toast ${toast.type}`}>
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            className="mam-toast-x"
-            onClick={() => setToast((p) => ({ ...p, open: false }))}
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Top Bar */}
       <header className="dash-topbar">
