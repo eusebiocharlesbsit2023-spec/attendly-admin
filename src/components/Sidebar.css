@@ -9,7 +9,7 @@
 
 /* Header */
 .sidebarV2-header {
-  height: 130px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center; /* center the brand */
@@ -22,9 +22,10 @@
   top: 0;
   left: 0;
   height: 100vh;
-  width: 500px;  /* changed to 700px */
+  width: 400px;
   display: flex;
   flex-direction: column;
+  z-index: 700;
 }
 
 /* make nav take remaining space so we can push maintenance to the bottom */
@@ -106,13 +107,13 @@
 }
 
 .sidebarV2-text{
-    font-size: 20px;
+  font-size: 16px;
 }
 
 .sidebarV2-icon {
-  width: 27px;
-  min-width: 27px;
-  font-size: 21px;
+  width: 22px;
+  min-width: 22px;
+  font-size: 18px;
   opacity: 0.85;
   display: inline-flex;
   align-items: center;
@@ -139,13 +140,13 @@
   border-top: 1px solid #eef2f7;
 }
 .logout-btn{
-    font-size: 20px;
-    border: none;
-    background-color: transparent;
-    text-align: center;
-    padding: 15px 50px;
-    border-radius: 8px;
-    transition: background-color .15s;
+  font-size: 16px;
+  border: none;
+  background-color: transparent;
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 8px;
+  transition: background-color .15s;
 }
 .logout-btn:hover{
     background-color: #0a4e86;
@@ -166,4 +167,3 @@
     display: none; /* no close button on desktop */
   }
 }
-

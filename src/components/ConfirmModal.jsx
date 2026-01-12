@@ -7,7 +7,7 @@ export default function ConfirmModal({ open, title = "Confirm?", onYes, onCancel
   return (
     <div className="cm-overlay" onMouseDown={onCancel}>
       <div className="cm-modal" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="cm-title">{title}</div>
+        <div className="confirm-title">{title}</div>
         <div className="cm-actions">
           <button className="cm-btn yes" onClick={onYes} type="button">
             Yes

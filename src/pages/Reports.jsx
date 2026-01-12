@@ -1,28 +1,49 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./AdminDashboard.css";
 import "./Reports.css";
 
+/* ===== Font Awesome ===== */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBell, faMagnifyingGlass, faDownload } from "@fortawesome/free-solid-svg-icons";
+
 export default function Reports() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
-  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
-  // Filters (UI only)
+  // ✅ FIX: missing anchor rect state
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+
+  // ===== Activity (SAME AS ADMIN DASHBOARD) =====
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activity = [
+    { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
+    { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
+    { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
+    { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
+    { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
+    { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
+    { text: "Maintenance switched to Online", time: "3 days ago" },
+    { text: "Attendance export generated", time: "1 week ago" },
+  ];
+
+  // datatable-like controls
+  const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const reports = useMemo(
     () => [
       {
         id: 1023,
         name: "Juan Dela Cruz",
-        email: "juan@example.com",
+        email: "20230000-1",
         subject: "Login Issue",
         message: "I can't log into my account.",
         date: "2023-12-15",
@@ -31,7 +52,7 @@ export default function Reports() {
       {
         id: 1022,
         name: "Maria Santos",
-        email: "maria@example.com",
+        email: "20230000-2",
         subject: "App Crash",
         message: "The app keeps crashing.",
         date: "2023-12-10",
@@ -40,16 +61,16 @@ export default function Reports() {
       {
         id: 1021,
         name: "Kevin Reyes",
-        email: "kevin@example.com",
-        subject: "Payment Problem",
-        message: "Payment not going through.",
+        email: "20230000-3",
+        subject: "Attendanace Problem",
+        message: "can't mark attendance.",
         date: "2023-12-05",
         status: "Pending",
       },
       {
         id: 1020,
         name: "Lisa Tan",
-        email: "lisa@example.com",
+        email: "20230000-4",
         subject: "Account Help",
         message: "Need help updating profile.",
         date: "2023-11-28",
@@ -58,7 +79,7 @@ export default function Reports() {
       {
         id: 1019,
         name: "Mark Villanueva",
-        email: "mark@example.com",
+        email: "20230000-5",
         subject: "Bug Report",
         message: "Found a bug in the app.",
         date: "2023-11-20",
@@ -67,7 +88,7 @@ export default function Reports() {
       {
         id: 1018,
         name: "Anna Lim",
-        email: "anna@example.com",
+        email: "20230000-6",
         subject: "Technical Issue",
         message: "Having trouble with notifications.",
         date: "2023-11-15",
@@ -76,7 +97,7 @@ export default function Reports() {
       {
         id: 1017,
         name: "John Perez",
-        email: "john@example.com",
+        email: "20230000-7",
         subject: "General Inquiry",
         message: "Just have a few questions.",
         date: "2023-11-10",
@@ -85,7 +106,7 @@ export default function Reports() {
       {
         id: 1016,
         name: "Grace Mendoza",
-        email: "grace@example.com",
+        email: "20230000-8",
         subject: "Feedback",
         message: "Suggestions for the app.",
         date: "2023-11-05",
@@ -96,29 +117,62 @@ export default function Reports() {
   );
 
   const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase();
+
     return reports.filter((r) => {
+      const okQuery =
+        !query ||
+        String(r.id).includes(query) ||
+        r.name.toLowerCase().includes(query) ||
+        r.email.toLowerCase().includes(query) ||
+        r.subject.toLowerCase().includes(query) ||
+        r.message.toLowerCase().includes(query);
+
       const okStatus = status === "All" || r.status === status;
       const okFrom = !from || r.date >= from;
       const okTo = !to || r.date <= to;
-      return okStatus && okFrom && okTo;
+
+      return okQuery && okStatus && okFrom && okTo;
     });
-  }, [reports, status, from, to]);
+  }, [reports, q, status, from, to]);
 
-  const onFilter = () => {
-    // UI only - filtering already happens by state
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+
+  const paged = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, safePage, pageSize]);
+
+  const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const showingTo = Math.min(filtered.length, safePage * pageSize);
+
+  const exportCSV = () => {
+    const header = ["ID", "Name", "Email", "Subject", "Message", "Submission Date", "Status"];
+    const rows = filtered.map((r) => [r.id, r.name, r.email, r.subject, r.message, r.date, r.status]);
+    const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "reports.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
-  const onClear = () => {
-    setStatus("All");
-    setFrom("");
-    setTo("");
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [q, status, from, to, pageSize]);
 
   return (
     <div className="app-shell rep">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="reports" />
+      <Sidebar open={false} active="reports" />
 
-      {/* SAME TOP BAR AS DASHBOARD */}
+      {/* TOP BAR */}
       <header className="dash-topbar">
         <div className="dash-topbar-inner">
           <div className="dash-topbar-left">
@@ -130,122 +184,158 @@ export default function Reports() {
 
           <div className="dash-topbar-right">
             <button
-              className="icon-btn bell-btn"
-              ref={notifRef}
-              aria-label="Notifications"
+              className="icon-btn"
               type="button"
+              ref={notifRef}
               onClick={() => {
                 setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
                 setActivityOpen(true);
               }}
             >
               <span className="notif-dot" />
-              <Svg name="bell" />
-            </button> 
+              <FontAwesomeIcon icon={faBell} />
+            </button>
+
+            {/* topbar logout removed */}
           </div>
         </div>
       </header>
 
-      {/* Content */}
+      {/* MAIN */}
       <main className="rep-main">
-        <section className="rep-card">
-          {/* Filters row */}
-          <div className="rep-filters">
-            <div className="rep-filter-left">
-              <span className="rep-filter-label">Filter by:</span>
-
-              <div className="rep-field">
-                <label>Status:</label>
-                <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                  <option value="All">All</option>
-                  <option value="Open">Open</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Closed">Closed</option>
-                </select>
+        <div className="rep-card">
+          <div className="rep-dt">
+            <div className="rep-dt-top">
+              <div className="rep-dt-search">
+                <span className="rep-dt-searchIcon">
+                  <FontAwesomeIcon icon={faMagnifyingGlass} />
+                </span>
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
               </div>
 
-              <div className="rep-field">
-                <label>Date Range:</label>
+              <div className="rep-dt-right">
+                <div className="rep-dt-field">
+                  <label>Status</label>
+                  <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                    <option>All</option>
+                    <option>Open</option>
+                    <option>Resolved</option>
+                    <option>Pending</option>
+                    <option>Closed</option>
+                  </select>
+                </div>
+
+                <button className="rep-dt-btn primary" type="button" onClick={exportCSV}>
+                  <span className="rep-dt-btnIco">
+                    <FontAwesomeIcon icon={faDownload} />
+                  </span>
+                  Export CSV
+                </button>
+              </div>
+            </div>
+
+            <div className="rep-dt-sub">
+              <div className="rep-dt-showing">
+                Showing {showingFrom} to {showingTo} of {filtered.length} entries
+              </div>
+
+              <div className="rep-dt-entries">
+                <span>Show</span>
+                <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                </select>
+                <span>entries</span>
+              </div>
+            </div>
+
+            <div className="rep-dt-filters">
+              <div className="rep-dt-mini">
+                <label>From</label>
                 <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-                <span className="rep-dash">-</span>
+              </div>
+
+              <div className="rep-dt-mini">
+                <label>To</label>
                 <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
               </div>
             </div>
 
-            <div className="rep-filter-right">
-              <button className="rep-btn rep-btn-primary" type="button" onClick={onFilter}>
-                <span className="rep-btnIcon">
-                  <SvgMini name="filter" />
-                </span>
-                Filter
-              </button>
+            <div className="rep-dt-table">
+              <div className="rep-dt-thead">
+                <div>ID</div>
+                <div>Name</div>
+                <div>Student ID</div>
+                <div>Subject</div>
+                <div>Message</div>
+                <div>Submission Date</div>
+                <div>Status</div>
+              </div>
 
-              <button className="rep-btn" type="button" onClick={onClear}>
-                <span className="rep-btnIcon">
-                  <SvgMini name="x" />
-                </span>
-                Clear
-              </button>
-            </div>
-          </div>
+              <div className="rep-dt-tbody">
+                {paged.map((r) => (
+                  <div className="rep-dt-row" key={r.id}>
+                    <div>{r.id}</div>
+                    <div className="rep-dt-nameCell">
+                      <span className="rep-dt-avatar">{initials(r.name)}</span>
+                      <div className="rep-dt-name">{r.name}</div>
+                    </div>
 
-          {/* Table */}
-          <div className="rep-table">
-            <div className="rep-thead">
-              <div>ID</div>
-              <div>Name</div>
-              <div>Email</div>
-              <div>Subject</div>
-              <div>Message</div>
-              <div>Submission Date</div>
-              <div>Status</div>
-            </div>
-
-            <div className="rep-tbody">
-              {filtered.map((r) => (
-                <div className="rep-row" key={r.id}>
-                  <div>{r.id}</div>
-                  <div>{r.name}</div>
-                  <div className="rep-email">{r.email}</div>
-                  <div className="rep-subject">{r.subject}</div>
-                  <div className="rep-message">{r.message}</div>
-                  <div>{r.date}</div>
-                  <div>
-                    <span className={`rep-pill ${pillClass(r.status)}`}>{r.status}</span>
+                    <div className="rep-email">{r.email}</div>
+                    <div className="rep-subject">{r.subject}</div>
+                    <div className="rep-message">{r.message}</div>
+                    <div>{r.date}</div>
+                    <div className="rep-dt-statusCell">
+                      <span className={`rep-pill ${pillClass(r.status)}`}>{r.status}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+
+                {paged.length === 0 && <div className="rep-dt-empty">No reports found.</div>}
+              </div>
             </div>
 
-            <div className="rep-footer">
-              <div className="rep-entries">
-                Showing 1 to {filtered.length} of {reports.length} entries
-              </div>
+            <div className="rep-dt-pagination">
+              <button
+                className="rep-dt-pageBtn"
+                disabled={safePage === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                ‹ Previous
+              </button>
 
-              <div className="rep-pagination">
-                <button className="rep-pageBtn" disabled type="button">
-                  Previous
-                </button>
-                <button className="rep-pageBtn active" type="button">
-                  1
-                </button>
-                <button className="rep-pageBtn" disabled type="button">
-                  Next
-                </button>
-              </div>
+              <button className="rep-dt-pageNum active" type="button">
+                {safePage}
+              </button>
+
+              <button
+                className="rep-dt-pageBtn"
+                disabled={safePage === totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next ›
+              </button>
             </div>
           </div>
-        </section>
+        </div>
       </main>
+
       <ActivityHistoryModal
         open={activityOpen}
         onClose={() => setActivityOpen(false)}
-        items={[]}
+        items={activity}
         anchorRect={activityAnchorRect}
       />
     </div>
   );
+}
+
+/* helpers */
+function csvEscape(v) {
+  const s = String(v ?? "");
+  if (/[,"\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
 
 function pillClass(s) {
@@ -256,103 +346,9 @@ function pillClass(s) {
   return "";
 }
 
-/* Same icons used in dashboard */
-function Svg({ name }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-  };
-
-  switch (name) {
-    case "menu":
-      return (
-        <svg {...common}>
-          <path
-            d="M4 6h16M4 12h16M4 18h16"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case "bell":
-      return (
-        <svg {...common}>
-          <path
-            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M10 19a2 2 0 004 0"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case "logout":
-      return (
-        <svg {...common}>
-          <path
-            d="M10 16l-4-4 4-4"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M6 12h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path
-            d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
-
-/* small icons for buttons */
-function SvgMini({ name }) {
-  const common = {
-    width: 16,
-    height: 16,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg",
-  };
-
-  switch (name) {
-    case "filter":
-      return (
-        <svg {...common}>
-          <path
-            d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case "x":
-      return (
-        <svg {...common}>
-          <path
-            d="M6 6l12 12M18 6 6 18"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    default:
-      return null;
-  }
+function initials(name) {
+  const parts = String(name || "").split(" ").filter(Boolean);
+  const a = (parts[0]?.[0] || "").toUpperCase();
+  const b = (parts[1]?.[0] || "").toUpperCase();
+  return (a + b) || "U";
 }

@@ -8,7 +8,6 @@ import EditClassModal from "../components/EditClassModal";
 
 export default function ClassManagement() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
@@ -183,7 +182,7 @@ export default function ClassManagement() {
   return (
     <div className="app-shell cm">
       {/* ✅ Sidebar now fits all pages using app-shell */}
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} active="classes" />
+      <Sidebar open={false} active="classes" />
 
       {/* Topbar */}
       <header className="cm-topbar">

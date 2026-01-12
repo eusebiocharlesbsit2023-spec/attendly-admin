@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from "react";
 import "./ActivityHistoryModal.css";
+import {
+  getNotifications,
+  initNotifications,
+  markAsReadById,
+  markAsUnreadById,
+  deleteNotificationById,
+  markAllAsRead,
+} from "../lib/notifications";
 
 export default function ActivityHistoryModal({
   open,
   onClose,
   items = [],
-  variant = "modal", // "modal" | "dropdown"
+  anchorRect = null,
 }) {
-import { getNotifications, initNotifications, markAsReadById, markAsUnreadById, deleteNotificationById, markAllAsRead } from "../lib/notifications";
-
-export default function ActivityHistoryModal({ open, onClose, items = [], anchorRect = null }) {
   const [posStyle, setPosStyle] = useState(null);
   const [notes, setNotes] = useState(() => getNotifications());
   const [openMoreIndex, setOpenMoreIndex] = useState(null);
@@ -44,7 +49,11 @@ export default function ActivityHistoryModal({ open, onClose, items = [], anchor
         const right = Math.max(8, vw - anchorRect.right + gap);
         setPosStyle({ position: "fixed", top: `${top}px`, right: `${right}px` });
       } else {
-        setPosStyle({ position: "fixed", top: `${top}px`, left: `${Math.max(8, anchorRect.left)}px` });
+        setPosStyle({
+          position: "fixed",
+          top: `${top}px`,
+          left: `${Math.max(8, anchorRect.left)}px`,
+        });
       }
     } else {
       setPosStyle(null); // use centered default
@@ -59,7 +68,11 @@ export default function ActivityHistoryModal({ open, onClose, items = [], anchor
           const right = Math.max(8, vw2 - anchorRect.right + gap);
           setPosStyle({ position: "fixed", top: `${top}px`, right: `${right}px` });
         } else {
-          setPosStyle({ position: "fixed", top: `${top}px`, left: `${Math.max(8, anchorRect.left)}px` });
+          setPosStyle({
+            position: "fixed",
+            top: `${top}px`,
+            left: `${Math.max(8, anchorRect.left)}px`,
+          });
         }
       } else {
         setPosStyle(null);
@@ -98,13 +111,17 @@ export default function ActivityHistoryModal({ open, onClose, items = [], anchor
     markAllAsRead();
     setNotes(getNotifications());
     setOpenMoreIndex(null);
-  }; 
+  };
 
   if (!open) return null;
 
   return (
     <div className="ahm-overlay" onMouseDown={onClose}>
-      <div className="ahm-card" style={posStyle || undefined} onMouseDown={(e) => e.stopPropagation()}>
+      <div
+        className="ahm-card"
+        style={posStyle || undefined}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="ahm-header">
           <div>
             <div className="ahm-title">Activity History</div>
@@ -177,103 +194,7 @@ export default function ActivityHistoryModal({ open, onClose, items = [], anchor
                       Delete
                     </button>
                   </div>
-                )} 
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="ahm-footer">
-          <button className="ahm-markAll" type="button" onClick={handleMarkAllAsRead}>
-            Mark all as read
-          </button>
-
-          <button className="ahm-btn" type="button" onClick={onClose}>
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-    );
-  }
-
-  // DEFAULT MODAL MODE: existing behavior mo (overlay + center)
-  return (
-    <div className="ahm-overlay" onMouseDown={onClose}>
-      <div className="ahm-card" style={posStyle || undefined} onMouseDown={(e) => e.stopPropagation()}>
-        <div className="ahm-header">
-          <div>
-            <div className="ahm-title">Activity History</div>
-            <div className="ahm-sub">All recent actions</div>
-          </div>
-
-          <button className="ahm-close" type="button" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
-        </div>
-
-        <div className="ahm-list">
-          {notes.length === 0 ? (
-            <div className="ahm-empty">No activity yet.</div>
-          ) : (
-            notes.map((a, idx) => (
-              <div className={`ahm-item ${a.read ? "read" : ""}`} key={idx}>
-                <div className="ahm-dot" />
-                <div className="ahm-text">
-                  <div className="ahm-main">{a.text}</div>
-                  <div className="ahm-time">{a.time}</div>
-                </div>
-
-                <button
-                  className="ahm-more"
-                  type="button"
-                  aria-label="More"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMoreIndex(openMoreIndex === idx ? null : idx);
-                  }}
-                >
-                  ⋯
-                </button>
-
-                {openMoreIndex === idx && (
-                  <div className="ahm-more-menu" onMouseDown={(e) => e.stopPropagation()}>
-                    {!a.read ? (
-                      <button
-                        type="button"
-                        className="ahm-more-item"
-                        onClick={() => {
-                          markAsRead(idx);
-                          setOpenMoreIndex(null);
-                        }}
-                      >
-                        Mark as read
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="ahm-more-item"
-                        onClick={() => {
-                          markAsUnread(idx);
-                          setOpenMoreIndex(null);
-                        }}
-                      >
-                        Mark as unread
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      className="ahm-more-item danger"
-                      onClick={() => {
-                        deleteNotification(idx);
-                        setOpenMoreIndex(null);
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )} 
+                )}
               </div>
             ))
           )}

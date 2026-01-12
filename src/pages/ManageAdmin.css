@@ -1,7 +1,7 @@
 /* Uses AdminDashboard topbar + layout, we only style the page content */
 .mam-main {
   background: #eaf4ff;
-  min-height: calc(100vh - 72px);
+  /* min-height: calc(100vh - 72px); */ 
 }
 
 /* White container like screenshot */
@@ -19,6 +19,7 @@
   justify-content: flex-end;
   padding: 14px 16px 6px 16px;
 }
+
 
 .mam-createBtn {
   display: inline-flex;
@@ -167,6 +168,13 @@
   width: 240px;
 }
 
+/* ✅ CENTER STATUS COLUMN (5th column) */
+.mam-table thead th:nth-child(5),
+.mam-table tbody td:nth-child(5) {
+  text-align: center;
+}
+
+/* ✅ Status badge aligned same size */
 .mam-status {
   display: inline-flex;
   align-items: center;
@@ -176,7 +184,11 @@
   font-size: 12px;
   font-weight: 800;
   border: 1px solid transparent;
+
+  min-width: 90px;   /* ✅ same width for Active & Inactive */
+  text-align: center;
 }
+
 .mam-status.active {
   background: #e7f7ee;
   color: #0f7a3d;
@@ -210,18 +222,43 @@
   color: #0a4e86;
   border-color: #cfe3fb;
   background: #f5faff;
+  transition: background-color .15s;
+}
+
+.edit:hover{
+  background-color: #cfe3fb;
 }
 
 .mam-action.del {
   color: #b91c1c;
   border-color: #fecaca;
   background: #fff5f5;
+  transition: background-color .15s;
+}
+
+.del:hover{
+  background-color: #fecaca;
+}
+
+.del.disabled:hover{
+  background-color: #fff5f5;
 }
 
 .mam-empty {
   text-align: center;
   color: #64748b;
   padding: 22px !important;
+}
+
+/* EDIT */
+
+
+
+/* save button display if the role hasn't change */
+.esm-save.disabled,
+.esm-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* footer */
@@ -275,6 +312,21 @@
   cursor: not-allowed;
 }
 
+/* Success Change Modal */
+.scm-card{
+  transition: 1.5s ease-in;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 8px;
+}
+.scm-card i{
+  font-size: 50px;
+  color: green;
+  text-align: center;
+}
 
 /* responsive */
 @media (max-width: 900px) {

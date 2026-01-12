@@ -81,16 +81,32 @@
   flex: 1;
 }
 
+/* ✅ UPDATED: icon-style toggle like screenshot */
 .cam-eye {
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 16px;
   padding: 8px;
   opacity: 0.75;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  line-height: 0;
 }
+
+.cam-eye svg {
+  width: 18px;
+  height: 18px;
+}
+
 .cam-eye:hover {
   opacity: 1;
+  color: #334155;
+}
+
+.cam-eye:focus {
+  outline: none;
 }
 
 .cam-error {
