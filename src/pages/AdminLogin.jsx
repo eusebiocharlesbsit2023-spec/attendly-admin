@@ -12,10 +12,15 @@ function AdminLogin() {
   const [errorMessage, setErrorMessage] = useState("");
   const [checkingSession, setCheckingSession] = useState(true);
 
+  // ✅ NEW: loading after clicking login
+  const [loggingIn, setLoggingIn] = useState(false);
+
   // 🔐 redirect if already logged in
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+      // optional: require profile too before redirect
+      const p = localStorage.getItem("adminProfile");
+      if (session && p) {
         navigate("/dashboard", { replace: true });
       } else {
         setCheckingSession(false);
@@ -26,38 +31,43 @@ function AdminLogin() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage("");
+    setLoggingIn(true);
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: `${username}.com`,
-      password,
-    });
+    try {
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: `${username}.com`,
+          password,
+        });
 
-    const user = authData.user;
+      const user = authData?.user;
 
-    if (authError || !user) {
-      setErrorMessage(authError.message);
-      return;
-    }
+      if (authError || !user) {
+        setErrorMessage(authError?.message || "Login failed.");
+        return;
+      }
 
-    if (authData?.session) {
+      // ✅ fetch profile first
+      const { data: profile, error: profileError } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError || !profile) {
+        setErrorMessage(profileError?.message || "Admin profile not found.");
+        await supabase.auth.signOut(); // optional cleanup
+        return;
+      }
+
+      // ✅ store then navigate
+      localStorage.setItem("adminProfile", JSON.stringify(profile));
       navigate("/dashboard", { replace: true });
+    } catch (e) {
+      setErrorMessage(e?.message || "Something went wrong.");
+    } finally {
+      setLoggingIn(false);
     }
-
-    const userID = user.id;
-
-    const { data: profile, error: profileError,} = await supabase
-      .from("admins")
-      .select("*")
-      .eq("id", userID)
-      .single();
-    
-    if(profileError){
-      setErrorMessage(profileError.message)
-    } else{
-      localStorage.setItem('adminProfile', JSON.stringify(profile));
-    }
-
-    navigate('/dashboard');
   };
 
   // prevent login page flash
@@ -81,6 +91,7 @@ function AdminLogin() {
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              disabled={loggingIn}
             />
           </div>
 
@@ -91,11 +102,12 @@ function AdminLogin() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loggingIn}
             />
           </div>
 
-          <button type="submit" className="login-btn">
-            SIGN IN
+          <button type="submit" className="login-btn" disabled={loggingIn}>
+            {loggingIn ? "SIGNING IN..." : "SIGN IN"}
           </button>
         </form>
 
@@ -107,6 +119,36 @@ function AdminLogin() {
           </p>
         </div>
       </div>
+
+      {/* ✅ Optional overlay loader */}
+      {loggingIn && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.35)",
+            display: "grid",
+            placeItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: "18px 22px",
+              borderRadius: 12,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+              textAlign: "center",
+              minWidth: 240,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Signing in</div>
+            <div style={{ fontSize: 13, opacity: 0.8 }}>
+              Please wait...
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

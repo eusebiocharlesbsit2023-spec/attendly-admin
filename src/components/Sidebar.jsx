@@ -23,6 +23,7 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const isSuperAdmin = adminProfile.role === "Super Admin";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const go = (path) => {
     navigate(path);
@@ -34,11 +35,21 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
   };
 
   const performLogout = async () => {
-    const {error} = await supabase.auth.signOut();
-    if (error) throw error;
-    localStorage.clear();
-    navigate("/");
-  }
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      localStorage.clear();
+      navigate("/", { replace: true });
+    } catch (e) {
+      console.error(e);
+      setLoggingOut(false); // balik kung nag-error
+    }
+  };
 
   return (
     <>
@@ -106,9 +117,13 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
 
         {/* Footer */}
         <div className="sidebarV2-footer">
-          <button className="logout-btn" onClick={logout}>
+          <button
+            className="logout-btn"
+            onClick={logout}
+            disabled={loggingOut}
+          >
             <FontAwesomeIcon icon={faRightFromBracket} />
-            Log out
+            {loggingOut ? "Logging out..." : "Log out"}
           </button>
         </div>
       </aside>
@@ -118,6 +133,34 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
         onYes={performLogout}
         onCancel={() => setConfirmOpen(false)}
       />
+      {loggingOut && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.35)",
+            display: "grid",
+            placeItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: "18px 22px",
+              borderRadius: 12,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+              textAlign: "center",
+              minWidth: 220,
+            }}
+          >
+            <div style={{ fontWeight: 700 }}>Logging out</div>
+            <div style={{ fontSize: 13, opacity: 0.8 }}>
+              Please wait...
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
