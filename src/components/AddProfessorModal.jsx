@@ -1,5 +1,33 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./AddProfessorModal.css";
+import supabase from "../helper/supabaseClient";
+import { supabaseCreateUser } from "../helper/supabaseCreateUserClient";
+import SmallConfirmModal from "../components/SmallConfirmModal";
+
+export async function createProfessorAccount({ professor_name, email, department, password }) {
+
+  // 1) create auth user (temp client)
+  const { data: sign, error: signErr } = await supabaseCreateUser.auth.signUp({
+    email,
+    password,
+  });
+  if (signErr) throw signErr;
+
+  const uuid = sign?.user?.id;
+  if (!uuid) throw new Error("No user id returned from signUp.");
+
+  // 2) insert into professors table (main client)
+  const { error: insErr } = await supabase.from("professors").insert({
+    id: uuid, // usually same as auth.users.id
+    professor_name,
+    email,
+    department,
+    status: "Active", // optional
+  });
+  if (insErr) throw insErr;
+
+  return { uuid };
+}
 
 /* PASSWORD RULES:
    - at least 8 chars
@@ -98,6 +126,7 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [dept, setDept] = useState("");
+  const [error, setError] = useState("");
 
   const [pass, setPass] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -105,17 +134,31 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [saving, setSaving] = useState(false);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const [touched, setTouched] = useState({
+    name: false,
+    email: false,
+    dept: false,
+    pass: false,
+    confirm: false,
+  });
+  const [submitted, setSubmitted] = useState(false);
+
   useEffect(() => {
     if (open) {
-      setName("");
-      setEmail("");
-      setDept("");
-      setPass("");
-      setConfirm("");
-      setShowPass(false);
-      setShowConfirm(false);
+      setName(""); setEmail(""); setDept("");
+      setPass(""); setConfirm("");
+      setShowPass(false); setShowConfirm(false);
+      setTouched({ name:false, email:false, dept:false, pass:false, confirm:false });
+      setSubmitted(false);
+      setError("");
     }
   }, [open]);
+
+  const showErr = (key) => submitted || touched[key];
 
   const errors = useMemo(() => {
     const e = {};
@@ -141,21 +184,50 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
     const p = generateStrongPassword(10);
     setPass(p);
     setConfirm(p);
+    setTouched((prev) => ({ ...prev, pass: true, confirm: true }));
   };
 
   const submit = (e) => {
     e.preventDefault();
+    setSubmitted(true);
+    setError("");
+
     if (!canSubmit) return;
 
-    onSubmit?.({
-      name: name.trim(),
-      email: email.trim(),
-      department: dept.trim(),
-      password: pass,
-      delivery: "email",
-    });
+    // open confirmation modal
+    setConfirmOpen(true);
+  };
 
-    onClose?.();
+  const createCancel = () => {
+    if (saving) return;
+    setConfirmOpen(false);
+  };
+
+  const createYes = async () => {
+    if (saving) return;
+
+    setSaving(true);
+    setError("");
+    
+    // close confirm
+    setConfirmOpen(false);
+
+    try {
+      await createProfessorAccount({
+        professor_name: name.trim(),
+        email: email.trim(),
+        department: dept.trim(),
+        password: pass,
+      });
+
+      onSubmit?.(); // ✅ just tell parent to refresh
+    } catch (err) {
+      const msg = err?.message || "Failed to create professor.";
+      setError(msg);
+      setConfirmOpen(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!open) return null;
@@ -165,17 +237,20 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
       <div className="apm-card" onMouseDown={(e) => e.stopPropagation()}>
         <div className="apm-title">Add New Professor</div>
 
+        <div className="error-text">
+          {error}
+        </div>
         <form className="apm-form" onSubmit={submit}>
           <div className="apm-field">
             <label>
               Professor Name <span className="apm-req">*</span>
             </label>
             <input
-              className={errors.name ? "err" : ""}
+              className={showErr("name") && errors.name ? "err" : ""}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-            {errors.name && <div className="apm-error">{errors.name}</div>}
+            {showErr("name") && errors.name && <div className="apm-error">{errors.name}</div>}
           </div>
 
           <div className="apm-field">
@@ -183,12 +258,12 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Email <span className="apm-req">*</span>
             </label>
             <input
-              className={errors.email ? "err" : ""}
+              className={showErr("email") && errors.email ? "err" : ""}
               placeholder="example@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            {errors.email && <div className="apm-error">{errors.email}</div>}
+            {showErr("email") && errors.email && <div className="apm-error">{errors.email}</div>}
           </div>
 
           <div className="apm-field">
@@ -196,7 +271,7 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Password <span className="apm-req">*</span>
             </label>
 
-            <div className={`apm-passWrap ${errors.pass ? "err" : ""}`}>
+            <div className={`apm-passWrap ${showErr("pass") && errors.pass ? "err" : ""}`}>
               <input
                 type={showPass ? "text" : "password"}
                 placeholder="Click generate password"
@@ -212,7 +287,7 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               </button>
             </div>
 
-            {errors.pass && <div className="apm-error">{errors.pass}</div>}
+            {showErr("pass") && errors.pass && <div className="apm-error">{errors.pass}</div>}
             
           </div>
 
@@ -221,7 +296,7 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Confirm Password <span className="apm-req">*</span>
             </label>
 
-            <div className={`apm-passWrap ${errors.confirm ? "err" : ""}`}>
+            <div className={`apm-passWrap ${showErr("confirm") && errors.confirm ? "err" : ""}`}>
               <input
                 type={showConfirm ? "text" : "password"}
                 value={confirm}
@@ -245,7 +320,7 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Generate Password
             </button>
 
-            {errors.confirm && <div className="apm-error">{errors.confirm}</div>}
+            {showErr("confirm") && errors.confirm && <div className="apm-error">{errors.confirm}</div>}
           </div>
 
           <div className="apm-field">
@@ -253,22 +328,29 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Department <span className="apm-req">*</span>
             </label>
             <input
-              className={errors.dept ? "err" : ""}
+              className={showErr("dept") && errors.dept ? "err" : ""}
               value={dept}
               onChange={(e) => setDept(e.target.value)}
             />
-            {errors.dept && <div className="apm-error">{errors.dept}</div>}
+            {showErr("dept") && errors.dept && <div className="apm-error">{errors.dept}</div>}
           </div>
 
           <div className="apm-actions">
-            <button className="apm-btn primary" disabled={!canSubmit}>
-              Add
+            <button className="apm-btn primary" disabled={saving}>
+              {saving ? "Adding..." : "Add"}
             </button>
-            <button className="apm-btn" type="button" onClick={onClose}>
+            <button className="apm-btn" type="button" onClick={onClose} disabled={saving}>
               Cancel
             </button>
           </div>
         </form>
+        {/* Confirm modal */}
+        <SmallConfirmModal
+          open={confirmOpen}
+          title={saving ? "Adding..." : `Add Professor ${name.trim() || ""}?`}
+          onYes={createYes}
+          onCancel={createCancel}
+        />
       </div>
     </div>
   );

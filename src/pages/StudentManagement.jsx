@@ -6,6 +6,7 @@ import "./StudentManagement.css";
 import AddStudentModal from "../components/AddStudentModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditStudentModal from "../components/EditStudentModal";
+import supabase from "../helper/supabaseClient";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -35,10 +36,10 @@ export default function StudentManagement() {
   const [entries, setEntries] = useState(10);
   const [page, setPage] = useState(1);
 
-  // ===== Add Student Modal & Confirm =====
+  // ===== Success Modal =====
   const [addOpen, setAddOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingStudent, setPendingStudent] = useState(null);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   // ===== Edit Student + Apply Changes Confirm =====
   const [editOpen, setEditOpen] = useState(false);
@@ -49,52 +50,72 @@ export default function StudentManagement() {
   // ✅ Delete Confirm
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
+  
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const initialStudents = useMemo(
-    () => [
-      { name: "John Smith", studentId: "20231547", deviceId: "AA:BB:CC:DD:EE:01", classes: 6, status: "Active" },
-      { name: "Alice Willson", studentId: "20236485", deviceId: "AA:BB:CC:DD:EE:02", classes: 6, status: "Inactive" },
-      { name: "Dakota Johnson", studentId: "20235487", deviceId: "AA:BB:CC:DD:EE:03", classes: 6, status: "Active" },
-      { name: "Odette Lancelot", studentId: "20231544", deviceId: "AA:BB:CC:DD:EE:04", classes: 6, status: "Active" },
-      { name: "Michal Winger", studentId: "20231154", deviceId: "AA:BB:CC:DD:EE:05", classes: 6, status: "Inactive" },
-    ],
-    []
-  );
 
-  const [rows, setRows] = useState(initialStudents);
+
+
+
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("students")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.log("Fetch students error:", error.message);
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+
+      const mapped = (data || []).map((s) => ({
+        uuid: s.id, // auth id
+        name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.replace(/\s+/g, " ").trim(),
+        studentId: (s.student_number ?? "").toString(),
+        deviceId: s.device_id ?? "N/A",
+        classes: Number(s.classes ?? 0),
+        status: s.status ?? "Active",
+      }));
+
+      setRows(mapped);
+      setLoading(false);
+    };
+
+    fetchStudents();
+  }, []);
 
   // ===== ADD =====
   const onAdd = () => setAddOpen(true);
 
-  const handleAddFormSubmit = (payload) => {
-    setPendingStudent(payload);
-    setAddOpen(false);
-    setConfirmOpen(true);
+  // called by AddStudentModal after successful insert
+  const handleStudentAdded = ({ studentRow, displayName, studentNumber }) => {
+    // insert to table immediately (top)
+    setRows((prev) => [
+      {
+        uuid: studentRow.id,
+        name: displayName,
+        studentId: studentNumber,
+        deviceId: studentRow.device_id ?? "N/A",
+        classes: Number(studentRow.classes ?? 0),
+        status: studentRow.status ?? "Active",
+      },
+      ...prev,
+    ]);
+
+    setSuccessMsg(`Student added: ${displayName} (${studentNumber})`);
+    setSuccessOpen(true);
+    setTimeout(() => setSuccessOpen(false), 2500);
   };
 
-  const confirmYes = () => {
-    setConfirmOpen(false);
-
-    if (pendingStudent?.name && pendingStudent?.studentId) {
-      setRows((prev) => [
-        {
-          name: pendingStudent.name,
-          studentId: pendingStudent.studentId,
-          deviceId: pendingStudent.deviceId || "N/A",
-          classes: Number(pendingStudent.classes ?? 0),
-          status: pendingStudent.status || "Active",
-        },
-        ...prev,
-      ]);
-    }
-
-    setPendingStudent(null);
-  };
-
-  const confirmCancel = () => {
-    setConfirmOpen(false);
-    setPendingStudent(null);
-  };
 
   // ===== EDIT =====
   const onEdit = (student) => {
@@ -107,38 +128,94 @@ export default function StudentManagement() {
     setApplyOpen(true);
   };
 
-  const applyYes = () => {
-    setApplyOpen(false);
-    setEditOpen(false);
+  const applyYes = async () => {
+    if (savingEdit) return;
+    setSavingEdit(true);
 
-    if (pendingEdit?.studentId) {
+    try {
+      if (!pendingEdit?.uuid) {
+        console.log("Missing uuid for update");
+        setEditOpen(false);
+        setPendingEdit(null);
+        setEditingStudent(null);
+        return;
+      }
+
+      const updatePayload = {
+        status: pendingEdit.status,
+      };
+
+      const { error } = await supabase
+        .from("students")
+        .update(updatePayload)
+        .eq("id", pendingEdit.uuid);
+
+      if (error) {
+        console.log("Update error:", error.message);
+        return;
+      }
+
       setRows((prev) =>
-        prev.map((s) => (s.studentId === pendingEdit.studentId ? { ...s, ...pendingEdit } : s))
+        prev.map((s) => (s.uuid === pendingEdit.uuid ? { ...s, ...pendingEdit } : s))
       );
-    }
 
-    setPendingEdit(null);
-    setEditingStudent(null);
+      setApplyOpen(false);
+      setEditOpen(false);
+      setPendingEdit(null);
+      setEditingStudent(null);
+
+      setSuccessMsg(`Updated student: ${pendingEdit.name} (${pendingEdit.studentId})`);
+      setSuccessOpen(true);
+      setTimeout(() => setSuccessOpen(false), 2500);
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   const applyCancel = () => {
+    if (savingEdit) return;
     setApplyOpen(false);
     setPendingEdit(null);
   };
 
   // ===== DELETE =====
   const onDeleteClick = (student) => {
-    setPendingDelete(student);
+    setPendingDelete(student); // has uuid
     setDeleteOpen(true);
   };
 
-  const deleteYes = () => {
-    setRows((prev) => prev.filter((s) => s.studentId !== pendingDelete?.studentId));
-    setDeleteOpen(false);
-    setPendingDelete(null);
+  const deleteYes = async () => {
+    if (deleting) return;
+    if (!pendingDelete?.uuid) return;
+
+    setDeleting(true);
+
+    try {
+      const { error } = await supabase.rpc("admin_delete_user", {
+        p_user_id: pendingDelete.uuid,
+      });
+
+      if (error) {
+        console.log("Auth delete error:", error.message);
+        return;
+      }
+
+      // UI update (instant)
+      setRows((prev) => prev.filter((s) => s.uuid !== pendingDelete.uuid));
+
+      setDeleteOpen(false);
+      setPendingDelete(null);
+
+      setSuccessMsg(`Student deleted: ${pendingDelete.name} (${pendingDelete.studentId})`);
+      setSuccessOpen(true);
+      setTimeout(() => setSuccessOpen(false), 2500);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const deleteCancel = () => {
+    if (deleting) return;
     setDeleteOpen(false);
     setPendingDelete(null);
   };
@@ -333,40 +410,46 @@ export default function StudentManagement() {
               </thead>
 
               <tbody>
-                {pageRows.map((s) => (
-                  <tr key={s.studentId}>
-                    <td className="sm-nameTd">
-                      <span className="sm-avatar">{initials(s.name)}</span>
-                      <span className="sm-nameText">{s.name}</span>
-                    </td>
-                    <td>{s.studentId}</td>
-                    <td className="sm-deviceTd">{s.deviceId}</td>
-                    <td>{s.classes}</td>
-                    <td className="sm-td-center">
-                      <span className={`sm-status ${s.status === "Active" ? "active" : "inactive"}`}>
-                        {s.status}
-                      </span>
-                    </td>
-                    <td className="sm-actionsCell">
-                      <button className="sm-action edit" onClick={() => onEdit(s)} type="button">
-                        <FontAwesomeIcon icon={faPenToSquare} />
-                        Edit
-                      </button>
-
-                      <button className="sm-action del" onClick={() => onDeleteClick(s)} type="button">
-                        <FontAwesomeIcon icon={faTrash} />
-                        Delete
-                      </button>
+                {loading ? (
+                  <tr>
+                    <td className="sm-emptyRow" colSpan={6}>
+                      Loading students...
                     </td>
                   </tr>
-                ))}
-
-                {pageRows.length === 0 && (
+                ) : pageRows.length === 0 ? (
                   <tr>
                     <td className="sm-emptyRow" colSpan={6}>
                       No students found.
                     </td>
                   </tr>
+                ) : (
+                  pageRows.map((s) => (
+                    <tr key={s.uuid ?? s.studentId}>
+                      <td className="sm-nameTd">
+                        <span className="sm-avatar">{initials(s.name)}</span>
+                        <span className="sm-nameText">{s.name}</span>
+                      </td>
+                      <td>{s.studentId}</td>
+                      <td className="sm-deviceTd">{s.deviceId}</td>
+                      <td>{s.classes}</td>
+                      <td className="sm-td-center">
+                        <span className={`sm-status ${s.status === "Active" ? "active" : "inactive"}`}>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="sm-actionsCell">
+                        <button className="sm-action edit" onClick={() => onEdit(s)} type="button">
+                          <FontAwesomeIcon icon={faPenToSquare} />
+                          Edit
+                        </button>
+
+                        <button className="sm-action del" onClick={() => onDeleteClick(s)} type="button">
+                          <FontAwesomeIcon icon={faTrash} />
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -404,8 +487,11 @@ export default function StudentManagement() {
       </main>
 
       {/* Modals */}
-      <AddStudentModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAddFormSubmit} />
-      <SmallConfirmModal open={confirmOpen} title="Add New Student?" onYes={confirmYes} onCancel={confirmCancel} />
+      <AddStudentModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onSubmit={handleStudentAdded}
+      />
 
       <EditStudentModal
         open={editOpen}
@@ -414,11 +500,25 @@ export default function StudentManagement() {
         onSaveClick={onEditSaveClick}
       />
 
-      <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={applyCancel} />
+      {successOpen && (
+        <div className="scm-overlay" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="scm-card" onMouseDown={(e) => e.stopPropagation()}>
+            <i className="bx bx-check-circle"></i>
+            <p className="scm-text">{successMsg}</p>
+          </div>
+        </div>
+      )}
+
+      <SmallConfirmModal
+        open={applyOpen}
+        title={savingEdit ? "Saving..." : "Apply Changes?"}
+        onYes={applyYes}
+        onCancel={applyCancel}
+      />
 
       <SmallConfirmModal
         open={deleteOpen}
-        title={`Delete ${pendingDelete?.name || "this student"}?`}
+        title={deleting ? "Deleting..." : `Delete ${pendingDelete?.name || "this student"}?`}
         onYes={deleteYes}
         onCancel={deleteCancel}
       />

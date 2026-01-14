@@ -52,18 +52,22 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
 
     const adminID = authData.user.id;
 
-    const { data: insertData, error: insertError } = await supabase
-      .from('profiles')
+    // after insert to admins:
+    const { data: prof, error: profErr } = await supabase
+      .from("admins")
       .insert({
-        id: adminID,
+        id: adminID,          // auth.users.id
         admin_name: fullName,
-        username: `${username.trim()}.com`,
-        role: role,
-        status: 'Active'
+        username,
+        role,
+        status: "Active",
       })
+      .select("*")
+      .single();
 
-    if(insertError){
-      console.log(insertError.message);
+    if (profErr) {
+      console.log(profErr);
+      return;
     }
 
     if(authError){
@@ -75,6 +79,18 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
       setSubmitted(true); // mark that user tried to submit
       handleClose();
     }
+
+    // ✅ pass saved row back to parent
+    onCreate?.({
+      uuid: prof.id,
+      fullName: prof.admin_name,
+      username: prof.username,
+      role: prof.role,
+      status: prof.status,
+    });
+
+    // ✅ close modal
+    onClose?.();
   };
 
 

@@ -143,14 +143,6 @@ export default function ManageAdmin() {
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
-
-  // ✅ Toast (temporary notification)
-  const [toast, setToast] = useState({ open: false, message: "", type: "info" });
-
-  const showToast = (message, type = "info") => {
-    setToast({ open: true, message, type });
-  };
-
   useEffect(() => {
     if (!successOpen) return;
     const t = setTimeout(() => setSuccessOpen(false), 1500);
@@ -170,7 +162,7 @@ export default function ManageAdmin() {
         console.log("CURRENT USER:", auth?.user?.email, auth?.user?.id);
 
         const { data, error } = await supabase
-          .from("profiles")
+          .from("admins")
           .select("id, admin_name, username, role, status") // adjust fields to match your table
           .order("created_at", { ascending: false }); // optional if you have created_at
 
@@ -189,7 +181,6 @@ export default function ManageAdmin() {
         }));
 
         setRows(mapped);
-        localStorage.setItem("allAdmins", JSON.stringify(mapped));
       } finally {
         setLoading(false);
       }
@@ -205,19 +196,16 @@ export default function ManageAdmin() {
   const onCreate = () => setCreateOpen(true);
 
   const handleCreate = (payload) => {
-    const newId = `ADM${rows.length + 1}`;
     const newRow = {
-      id: newId,
+      id: `ADM${rows.length + 1}`,
       fullName: payload.fullName,
       username: payload.username,
       role: payload.role,
-      status: "Active",
+      status: payload.status ?? "Active",
+      uuid: payload.uuid, // ✅
     };
-
     setRows((prev) => [newRow, ...prev]);
     setCreateOpen(false);
-
-    showToast(`Admin created: ${payload.fullName} (${payload.role})`, "success");
   };
 
   // ===== Edit Role (only role editable) =====
@@ -240,59 +228,59 @@ export default function ManageAdmin() {
   };
 
   const applyYes = async () => {
+    if (savingApply) return;
+
     const { id, role: newRole, status: newStatus } = pendingRoleChange || {};
     const target = rows.find((x) => x.id === id);
 
     if (!target?.uuid) {
-      showToast("Missing target user UUID.", "danger");
       setApplyOpen(false);
       setPendingRoleChange(null);
       return;
     }
 
-    console.log(target.uuid);
+    setSavingApply(true);
 
     try {
       const { error } = await supabase
-        .from("profiles")
+        .from("admins")
         .update({ role: newRole, status: newStatus })
         .eq("id", target.uuid);
 
       if (error) {
         console.log("Update role error:", error);
-        showToast(`Update failed: ${error.message}`, "danger");
         return;
       }
 
-      // update UI only after DB success
       setRows((prev) =>
-      prev.map((x) =>
-          x.id === id ? { ...x, role: newRole, status: newStatus } : x
-        )
+        prev.map((x) => (x.id === id ? { ...x, role: newRole, status: newStatus } : x))
       );
 
       setSuccessMsg(`Updated: ${id} → ${newRole}, ${newStatus}`);
       setSuccessOpen(true);
     } finally {
+      setSavingApply(false);
       setApplyOpen(false);
       setPendingRoleChange(null);
       setEditingRow(null);
     }
   };
 
-
   const applyCancel = () => {
+    if (savingApply) return;
     setApplyOpen(false);
     setPendingRoleChange(null);
   };
 
   // ===== Delete confirm =====
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false); 
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [savingApply, setSavingApply] = useState(false);
+
 
   const onDelete = (r) => {
     if (r.role === "Super Admin") {
-      showToast("Super Admin accounts cannot be deleted.", "danger");
       return;
     }
     setPendingDelete(r);
@@ -300,43 +288,47 @@ export default function ManageAdmin() {
   };
 
   const deleteYes = async () => {
+    if (deleting) return;
+
     if (!pendingDelete?.uuid) {
-      showToast("Missing target user UUID.", "danger");
       setDeleteOpen(false);
       setPendingDelete(null);
       return;
     }
 
-    // extra guard (UI already blocks, but double-safety)
     if (pendingDelete?.role === "Super Admin") {
-      showToast("Super Admin accounts cannot be deleted.", "danger");
       setDeleteOpen(false);
       setPendingDelete(null);
       return;
     }
+
+    setDeleting(true);
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", pendingDelete.uuid);
+      // delete from AUTH (will cascade to admins if FK is set)
+      const { error } = await supabase.rpc("admin_delete_user", {
+        p_user_id: pendingDelete.uuid,
+      });
 
       if (error) {
-        console.log("Delete error:", error);
-        showToast(`Delete failed: ${error.message}`, "danger");
+        console.log("Auth delete error:", error);
         return;
       }
 
+      // update UI
       setRows((prev) => prev.filter((x) => x.uuid !== pendingDelete.uuid));
-      showToast(`Deleted admin: ${pendingDelete.id}`, "danger");
+
+      setSuccessMsg(`Deleted admin: ${pendingDelete.id}`);
+      setSuccessOpen(true);
     } finally {
+      setDeleting(false);
       setDeleteOpen(false);
       setPendingDelete(null);
     }
   };
 
-
   const deleteCancel = () => {
+    if (deleting) return;
     setDeleteOpen(false);
     setPendingDelete(null);
   };
@@ -372,21 +364,6 @@ export default function ManageAdmin() {
   return (
     <div className="app-shell dash mam-shell">
       <Sidebar open={false} active="manage-admin" />
-
-      {/* ✅ Toast */}
-      {toast.open && (
-        <div className={`mam-toast ${toast.type}`}>
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            className="mam-toast-x"
-            onClick={() => setToast((p) => ({ ...p, open: false }))}
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Top Bar */}
       <header className="dash-topbar">
@@ -622,7 +599,7 @@ export default function ManageAdmin() {
       {/* Confirm apply role change */}
       <SmallConfirmModal
         open={applyOpen}
-        title={`Apply role change for ${pendingRoleChange?.id}?`}
+        title={savingApply ? "Saving..." : `Apply role change for ${pendingRoleChange?.id}?`}
         onYes={applyYes}
         onCancel={applyCancel}
       />
@@ -637,7 +614,7 @@ export default function ManageAdmin() {
       {/* Confirm delete */}
       <SmallConfirmModal
         open={deleteOpen}
-        title={`Delete ${pendingDelete?.id}?`}
+        title={deleting ? "Deleting..." : `Delete ${pendingDelete?.id}?`}
         onYes={deleteYes}
         onCancel={deleteCancel}
       />

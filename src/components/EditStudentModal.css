@@ -95,6 +95,12 @@
   font-size: 16px;
   cursor: pointer;
 }
+
+.esm-save.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .esm-save:hover { filter: brightness(1.05); }
 
 @media (max-width: 640px) {

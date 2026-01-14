@@ -149,7 +149,6 @@
 }
 
 .mam-table thead th {
-  text-align: left;
   font-size: 13px;
   color: #334155;
   background: #f8fafc;
@@ -168,9 +167,7 @@
   width: 240px;
 }
 
-/* ✅ CENTER STATUS COLUMN (5th column) */
-.mam-table thead th:nth-child(5),
-.mam-table tbody td:nth-child(5) {
+tr,td{
   text-align: center;
 }
 
