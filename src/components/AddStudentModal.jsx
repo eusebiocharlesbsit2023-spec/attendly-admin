@@ -19,6 +19,53 @@ const programs = [
   "BSEMC - Bachelor of Science in Entertainment and Multimedia Computing ",
 ];
 
+const ALLOWED_EMAIL_DOMAINS = [
+  "gmail.com",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+  "icloud.com",
+  "proton.me",
+  "protonmail.com",
+  "edu.ph",
+  "student.edu.ph", // optional
+];
+
+function validateEmailStrict(raw) {
+  const email = (raw || "").trim().toLowerCase();
+
+  if (!email) return "Email is required";
+  if (!email.includes("@")) return "Email must contain @";
+
+  const [local, domain] = email.split("@");
+
+  if (!local) return `Email invalid` /* "Email is missing username before @" */;
+  if (!domain) return `Email invalid` /* "Email is missing domain after @" */;
+
+  // bawal walang dot sa domain
+  if (!domain.includes(".")) return `Email invalid` /* "Email domain must contain a dot (e.g. gmail.com)" */;
+
+  // bawal .co lang
+  if (domain === "co" || domain.endsWith(".co")) {
+    return `Email invalid` /* "'.co' is not allowed. Use a full domain like .com" */;
+  }
+
+  // basic domain pattern check (no spaces, no invalid chars, needs TLD length >= 2)
+  const domainOk = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domain);
+  if (!domainOk) return `Email invalid` /* "Invalid domain format" */;
+
+  // require last TLD length >= 2 and not exactly 2 with 'co' already handled
+  const tld = domain.split(".").pop();
+  if (!tld || tld.length < 2) return `Email invalid` /* "Invalid domain extension" */;
+
+  // whitelist domains (mali ang domain name -> blocked)
+  if (!ALLOWED_EMAIL_DOMAINS.includes(domain)) {
+    return `Email invalid`;
+  }
+
+  return ""; // valid
+}
+
 function buildPasswordFromSurname(surname) {
   return (surname || "").trim().replace(/\s+/g, "").toUpperCase();
 }
@@ -48,14 +95,20 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     const e = {};
     if (!firstName.trim()) e.firstName = "Required";
     if (!surname.trim()) e.surname = "Required";
-    if (!email.trim()) e.email = "Required";
+
+    // ✅ strict email validation
+    const emailErr = validateEmailStrict(email);
+    if (emailErr) e.email = emailErr;
+
     if (!studentNumber.trim()) e.studentNumber = "Required";
-    if (studentNumber.length < 10) e.studentNumber = "Student Number must be 8 characters above (Remember to include -N)";
+    if (studentNumber.length < 10)
+      e.studentNumber = "Student Number must be 8 characters above (Remember to include -N)";
     if (!program) e.program = "Required";
     if (!yearLevel) e.yearLevel = "Required";
     if (!section) e.section = "Required";
     return e;
   }, [firstName, surname, email, studentNumber, yearLevel, section, program]);
+
 
   const canSubmit = Object.keys(errors).length === 0;
 
@@ -294,10 +347,14 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             Email <span className="asm-req">*</span>
           </label>
           <input
+            type="email"
             className={`asm-input ${errors.email ? "err" : ""}`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@gmail.com"
           />
+          {errors.email && <div className="asm-fieldError">{errors.email}</div>}
+
 
           <label className="asm-label">
             Student Number <span className="remember">(must to include -N)</span><span className="asm-req">*</span>

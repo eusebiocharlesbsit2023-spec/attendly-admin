@@ -80,6 +80,7 @@ export default function StudentManagement() {
       const mapped = (data || []).map((s) => ({
         uuid: s.id, // auth id
         name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.replace(/\s+/g, " ").trim(),
+        email: (s.email ?? "").toString(), // ✅ add this
         studentId: (s.student_number ?? "").toString(),
         deviceId: s.device_id ?? "N/A",
         classes: Number(s.classes ?? 0),
@@ -98,11 +99,11 @@ export default function StudentManagement() {
 
   // called by AddStudentModal after successful insert
   const handleStudentAdded = ({ studentRow, displayName, studentNumber }) => {
-    // insert to table immediately (top)
     setRows((prev) => [
       {
         uuid: studentRow.id,
         name: displayName,
+        email: (studentRow.email ?? "").toString(), // ✅ add this
         studentId: studentNumber,
         deviceId: studentRow.device_id ?? "N/A",
         classes: Number(studentRow.classes ?? 0),
@@ -115,7 +116,6 @@ export default function StudentManagement() {
     setSuccessOpen(true);
     setTimeout(() => setSuccessOpen(false), 2500);
   };
-
 
   // ===== EDIT =====
   const onEdit = (student) => {
@@ -228,7 +228,8 @@ export default function StudentManagement() {
       const matchesQuery =
         !query ||
         s.name.toLowerCase().includes(query) ||
-        s.studentId.toLowerCase().includes(query);
+        s.studentId.toLowerCase().includes(query) ||
+        (s.email || "").toLowerCase().includes(query); // ✅ add this
 
       const matchesStatus = statusFilter === "All Status" || s.status === statusFilter;
 
@@ -261,8 +262,16 @@ export default function StudentManagement() {
   }, [rows]);
 
   const exportCSV = () => {
-    const header = ["Student Name", "Student Id", "Device Id", "Classes", "Status"];
-    const dataRows = filtered.map((s) => [s.name, s.studentId, s.deviceId, s.classes, s.status]);
+    const header = ["Student Name", "Email", "Student Id", "Device Id", "Classes", "Status"]; // ✅
+    const dataRows = filtered.map((s) => [
+      s.name,
+      s.email, // ✅
+      s.studentId,
+      s.deviceId,
+      s.classes,
+      s.status,
+    ]);
+
     const csv = [header, ...dataRows].map((r) => r.map(csvEscape).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -275,6 +284,7 @@ export default function StudentManagement() {
     a.remove();
     URL.revokeObjectURL(url);
   };
+
 
   return (
     <div className="app-shell sm">
@@ -402,6 +412,7 @@ export default function StudentManagement() {
                 <tr>
                   <th>Student Name</th>
                   <th>Student ID</th>
+                  <th>Email</th>
                   <th>Device ID</th>
                   <th>Classes</th>
                   <th className="sm-th-center">Status</th>
@@ -430,6 +441,7 @@ export default function StudentManagement() {
                         <span className="sm-nameText">{s.name}</span>
                       </td>
                       <td>{s.studentId}</td>
+                      <td>{s.email || "—"}</td>
                       <td className="sm-deviceTd">{s.deviceId}</td>
                       <td>{s.classes}</td>
                       <td className="sm-td-center">

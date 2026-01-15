@@ -86,6 +86,10 @@
   border-color: #93c5fd;
   box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
 }
+.asm-fieldError {
+  font-size: 12px;
+  color: #d11a2a;
+}
 
 .asm-disabledPass:disabled {
   background: #e5e7eb;
