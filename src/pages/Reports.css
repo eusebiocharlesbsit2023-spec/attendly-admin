@@ -11,13 +11,13 @@
 }
 
 .rep-main {
-  padding: 22px 28px;
+  padding: 16px 20px;
 }
 
 /* Card wrapper */
 .rep-card {
-  max-width: 1200px;
-  margin: 18px auto;
+  max-width: 1400px;
+  margin: 12px auto;
   background: #fff;
   border: 1px solid #e6ebf2;
   border-radius: 12px;
@@ -179,7 +179,7 @@
 .rep-dt-table {
   border: 1px solid #eef2f7;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .rep-dt-thead {
@@ -191,6 +191,9 @@
   font-size: 14px;
   color: #0f172a;
   border-bottom: 1px solid #e8eef5;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .rep-dt-tbody .rep-dt-row {
@@ -200,6 +203,11 @@
   align-items: center;
   font-size: 14px;
   border-bottom: 1px solid #eef2f7;
+}
+
+.rep-dt-tbody {
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .rep-dt-tbody .rep-dt-row:nth-child(even) {
@@ -363,6 +371,10 @@
 
   .rep-dt-table {
     overflow-x: auto;
+  }
+
+  .rep-dt-tbody {
+    overflow-y: auto;
   }
 
   .rep-dt-thead,

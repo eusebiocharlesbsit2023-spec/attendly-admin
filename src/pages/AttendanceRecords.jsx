@@ -25,8 +25,7 @@ export default function AttendanceRecords() {
 
   // NEW: datatable-like "Show entries"
   const [pageSize, setPageSize] = useState(10);
-
-  // ===== Activity (SAME AS ADMIN DASHBOARD) =====
+  const [page, setPage] = useState(1);
   const activity = [
     { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
     { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
@@ -37,8 +36,6 @@ export default function AttendanceRecords() {
     { text: "Maintenance switched to Online", time: "3 days ago" },
     { text: "Attendance export generated", time: "1 week ago" },
   ];
-
-  const [page, setPage] = useState(1);
 
   const records = useMemo(
     () => [
@@ -168,8 +165,8 @@ export default function AttendanceRecords() {
     return filtered.slice(start, start + pageSize);
   }, [filtered, safePage, pageSize]);
 
-  const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
-  const showingTo = Math.min(filtered.length, safePage * pageSize);
+  const showingFrom = paged.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const showingTo = Math.min(safePage * pageSize, filtered.length);
 
   const exportCSV = () => {
     const header = ["Student Name", "Student ID", "Date", "Classes", "Status", "Professors"];

@@ -40,7 +40,7 @@
 }
 
 .schedule-topbar-inner {
-  width: min(var(--container-max), 92vw);
+  width: min(var(--container-max), 95vw);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -56,8 +56,8 @@
 /* MAIN CONTAINER */
 .schedule-main {
   /* keep main content from extending under the fixed sidebar */
-  width: min(var(--container-max), calc(100% - 440px));
-  margin: 18px auto 28px;
+  width: min(var(--container-max), calc(100% - 400px));
+  margin: 12px auto 20px;
 }
 
 /* DATE + EXPORT ROW */

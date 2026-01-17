@@ -73,9 +73,9 @@
 
 /* Main */
 .pm-main {
-  width: min(var(--container-max), 92vw);
-  margin: 0 auto;
-  padding: 28px 0 60px;
+  width: 100%;
+  margin: 0;
+  padding: 16px 20px 40px;
 }
 
 /* Toast */
@@ -111,6 +111,9 @@
   grid-template-columns: repeat(3, minmax(220px, 1fr));
   gap: 26px;
   margin: 10px 0 24px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pm-stat {
@@ -144,6 +147,8 @@
   border: 1px solid #dbe7f4;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* Controls row */

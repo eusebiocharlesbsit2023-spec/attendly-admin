@@ -15,7 +15,7 @@ body,
 
 body {
   margin: 0;
-  overflow-x: hidden;
+  overflow: hidden;
   font-family: "Montserrat";
 }
 
@@ -38,7 +38,7 @@ body {
 }
 
 .ar-topbar-inner {
-  width: min(var(--container-max), 92vw);
+  width: min(var(--container-max), 95vw);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -101,8 +101,8 @@ body {
 
 /* ---------- Main ---------- */
 .ar-main {
-  width: min(var(--container-max), 92vw);
-  margin: 22px auto 28px;
+  width: min(var(--container-max), 95vw);
+  margin: 16px auto 20px;
 }
 
 /* cards shared */
@@ -166,7 +166,7 @@ body {
    =========================== */
 .ar-dt {
   margin-top: 18px;
-  padding: 16px;
+  padding: 12px;
 }
 
 /* top row: search + right controls */
@@ -342,7 +342,7 @@ body {
 .ar-dt-table {
   border: 1px solid #eef2f7;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .ar-dt-thead {
@@ -354,6 +354,9 @@ body {
   font-size: 14px;
   color: #0f172a;
   border-bottom: 1px solid #e8eef5;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .ar-dt-tbody .ar-dt-row {
@@ -363,6 +366,11 @@ body {
   align-items: center;
   font-size: 14px;
   border-bottom: 1px solid #eef2f7;
+}
+
+.ar-dt-tbody {
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .ar-dt-tbody .ar-dt-row:nth-child(even) {
@@ -650,6 +658,10 @@ body {
 
   .ar-dt-table {
     overflow-x: auto;
+  }
+
+  .ar-dt-tbody {
+    overflow-y: auto;
   }
 
   .ar-dt-thead,

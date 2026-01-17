@@ -39,6 +39,7 @@ textarea {
   min-height: 100vh;
   /* reserve space for fixed topbar so page content doesn't sit under it */
   padding-top: 92px;
+  overflow-y: auto;
 }
 
 /* Desktop: reserve sidebar width */
