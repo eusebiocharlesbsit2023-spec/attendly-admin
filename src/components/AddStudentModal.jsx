@@ -40,6 +40,18 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // ✅ NEW: show errors only after touch or submit attempt
+  const [touched, setTouched] = useState({
+    firstName: false,
+    surname: false,
+    yearLevel: false,
+    section: false,
+    program: false,
+    email: false,
+    studentNumber: false,
+  });
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
   useEffect(() => {
     setPassword(buildPasswordFromSurname(surname));
   }, [surname]);
@@ -50,7 +62,8 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     if (!surname.trim()) e.surname = "Required";
     if (!email.trim()) e.email = "Required";
     if (!studentNumber.trim()) e.studentNumber = "Required";
-    if (studentNumber.length < 10) e.studentNumber = "Student Number must be 8 characters above (Remember to include -N)";
+    if (studentNumber.length < 10)
+      e.studentNumber = "Student Number must be 8 characters above (Remember to include -N)";
     if (!program) e.program = "Required";
     if (!yearLevel) e.yearLevel = "Required";
     if (!section) e.section = "Required";
@@ -58,6 +71,9 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
   }, [firstName, surname, email, studentNumber, yearLevel, section, program]);
 
   const canSubmit = Object.keys(errors).length === 0;
+
+  // ✅ helper: red border only when touched or after submit attempt
+  const showErr = (key) => (submitAttempted || touched[key]) && !!errors[key];
 
   const resetForm = () => {
     setFirstName("");
@@ -73,6 +89,18 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     setErrorMsg("");
     setConfirmOpen(false);
     setSubmitting(false);
+
+    // ✅ reset error display logic
+    setSubmitAttempted(false);
+    setTouched({
+      firstName: false,
+      surname: false,
+      yearLevel: false,
+      section: false,
+      program: false,
+      email: false,
+      studentNumber: false,
+    });
   };
 
   const handleClose = () => {
@@ -84,6 +112,10 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // ✅ mark submit attempt so invalid fields turn red
+    setSubmitAttempted(true);
+
     if (!canSubmit || submitting) return;
     setErrorMsg("");
     setConfirmOpen(true);
@@ -144,7 +176,6 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
         return;
       }
 
-      // ✅ Tell parent (parent will show success modal)
       onSubmit?.({
         authData,
         studentRow: data,
@@ -152,13 +183,28 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
         studentNumber: studentNumber.trim().toUpperCase(),
       });
 
-      // ✅ reset + close THIS modal
       resetForm();
       onClose?.();
     } finally {
       setSubmitting(false);
     }
   };
+
+  // ✅ reset visual errors when modal opens fresh
+  useEffect(() => {
+    if (open) {
+      setSubmitAttempted(false);
+      setTouched({
+        firstName: false,
+        surname: false,
+        yearLevel: false,
+        section: false,
+        program: false,
+        email: false,
+        studentNumber: false,
+      });
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -216,9 +262,10 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             First Name <span className="asm-req">*</span>
           </label>
           <input
-            className={`asm-input ${errors.firstName ? "err" : ""}`}
+            className={`asm-input ${showErr("firstName") ? "err" : ""}`}
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, firstName: true }))}
           />
 
           <label className="asm-label">Middle Name</label>
@@ -232,9 +279,10 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             Surname <span className="asm-req">*</span>
           </label>
           <input
-            className={`asm-input ${errors.surname ? "err" : ""}`}
+            className={`asm-input ${showErr("surname") ? "err" : ""}`}
             value={surname}
             onChange={(e) => setSurname(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, surname: true }))}
           />
 
           <label className="asm-label">Suffix</label>
@@ -248,9 +296,10 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             Year Level <span className="asm-req">*</span>
           </label>
           <select
-            className={`asm-input asm-select ${errors.yearLevel ? "err" : ""}`}
+            className={`asm-input asm-select ${showErr("yearLevel") ? "err" : ""}`}
             value={yearLevel}
             onChange={(e) => setYearLevel(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, yearLevel: true }))}
           >
             <option value="" hidden>
               Select Year
@@ -266,9 +315,10 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             Section <span className="asm-req">*</span>
           </label>
           <select
-            className={`asm-input asm-select ${errors.section ? "err" : ""}`}
+            className={`asm-input asm-select ${showErr("section") ? "err" : ""}`}
             value={section}
             onChange={(e) => setSection(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, section: true }))}
           >
             <option value="">Select Section</option>
             {sections.map((s) => (
@@ -280,9 +330,10 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             Program <span className="asm-req">*</span>
           </label>
           <select
-            className={`asm-input asm-select ${errors.program ? "err" : ""}`}
+            className={`asm-input asm-select ${showErr("program") ? "err" : ""}`}
             value={program}
             onChange={(e) => setProgram(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, program: true }))}
           >
             <option value="">Select Program</option>
             {programs.map((p) => (
@@ -294,18 +345,21 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             Email <span className="asm-req">*</span>
           </label>
           <input
-            className={`asm-input ${errors.email ? "err" : ""}`}
+            className={`asm-input ${showErr("email") ? "err" : ""}`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, email: true }))}
           />
 
           <label className="asm-label">
-            Student Number <span className="remember">(must to include -N)</span><span className="asm-req">*</span>
+            Student Number <span className="remember">(must to include -N)</span>
+            <span className="asm-req">*</span>
           </label>
           <input
-            className={`asm-input ${errors.studentNumber ? "err" : ""}`}
+            className={`asm-input ${showErr("studentNumber") ? "err" : ""}`}
             value={studentNumber}
             onChange={(e) => setStudentNumber(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, studentNumber: true }))}
           />
 
           <label className="asm-label">Password</label>
@@ -329,4 +383,11 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
       </div>
     </div>
   );
+}
+
+/* helpers */
+function csvEscape(v) {
+  const s = String(v ?? "");
+  if (/[,"\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }

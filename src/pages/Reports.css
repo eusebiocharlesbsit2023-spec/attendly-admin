@@ -11,13 +11,13 @@
 }
 
 .rep-main {
-  padding: 22px 28px;
+  padding: 16px 20px;
 }
 
 /* Card wrapper */
 .rep-card {
-  max-width: 1200px;
-  margin: 18px auto;
+  max-width: 1400px;
+  margin: 12px auto;
   background: #fff;
   border: 1px solid #e6ebf2;
   border-radius: 12px;
@@ -179,7 +179,7 @@
 .rep-dt-table {
   border: 1px solid #eef2f7;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .rep-dt-thead {
@@ -191,6 +191,9 @@
   font-size: 14px;
   color: #0f172a;
   border-bottom: 1px solid #e8eef5;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .rep-dt-tbody .rep-dt-row {
@@ -200,6 +203,11 @@
   align-items: center;
   font-size: 14px;
   border-bottom: 1px solid #eef2f7;
+}
+
+.rep-dt-tbody {
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .rep-dt-tbody .rep-dt-row:nth-child(even) {
@@ -365,6 +373,10 @@
     overflow-x: auto;
   }
 
+  .rep-dt-tbody {
+    overflow-y: auto;
+  }
+
   .rep-dt-thead,
   .rep-dt-row {
     min-width: 980px;
@@ -379,4 +391,59 @@
   .rep-dt-filters {
     grid-template-columns: 1fr;
   }
+}
+
+   
+.rep .dash-topbar {
+ 
+}
+
+.rep .dash-topbar-inner {
+  max-width: 1400px;  
+  margin: 0 auto;      
+  padding: 0 20px;     
+  width: 100%;
+  display: flex;
+  align-items: center; 
+  justify-content: space-between;
+}
+
+.rep .dash-topbar-left,
+.rep .dash-topbar-right {
+  display: flex;
+  align-items: center; 
+}
+
+.rep .dash-topbar-right .icon-btn{
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  display: grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.rep .dash-topbar-right .icon-btn:hover{
+  background-color: rgba(255, 255, 255, 0.20) !important; /* same as SM */
+}
+
+/* icon size */
+.rep .dash-topbar-right .icon-btn svg,
+.rep .dash-topbar-right .icon-btn i{
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 22px !important;
+  color: #fff !important;
+}
+
+/* notif dot size/position */
+.rep .dash-topbar-right .notif-dot{
+  top: 10px !important;
+  right: 12px !important;
+  width: 9px !important;
+  height: 9px !important;
 }

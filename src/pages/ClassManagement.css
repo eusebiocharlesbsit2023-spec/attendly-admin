@@ -1,5 +1,12 @@
+.cm {
+  min-height: 100vh;
+  background: #eaf6ff;
+  font-family: "Montserrat", sans-serif;
 
-.cm { min-height: 100vh; background: #eaf6ff; font-family: "Montserrat", sans-serif; }
+  /* Fit tuning (for 1920x1080 + sidebar layouts) */
+  --container-max: 1240px;     /* adjust only width constraint (no UI redesign) */
+  --container-pad: 28px;       /* side padding inside main content */
+}
 
 /* Topbar - align with Admin Dashboard */
 .cm-topbar{
@@ -9,14 +16,20 @@
   display:flex;
   align-items:center;
 }
+
+/* IMPORTANT: use available parent width (NOT vw) to prevent overflow beside Sidebar */
 .cm-topbar-inner{
-  width:min(var(--container-max),92vw);
-  margin:0 auto;
+  width: min(var(--container-max), 100%);
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+  box-sizing: border-box;
+
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:12px;
 }
+
 .cm-topbar-left{ display:flex; align-items:center; gap:16px; min-width:0; }
 .cm-title{ font-size:34px; font-weight:900; line-height:1.05; }
 
@@ -39,9 +52,10 @@
 
 /* Main */
 .cm-main{
-  width:min(var(--container-max),92vw);
-  margin:0 auto;
-  padding:28px 0 70px;
+  width: min(var(--container-max), 100%);
+  margin: 0 auto;
+  padding: 28px var(--container-pad) 70px;
+  box-sizing: border-box;
 }
 
 /* Common card */
@@ -92,7 +106,12 @@
   grid-template-columns: 1.2fr 1fr 1.4fr auto;
   gap:18px;
   align-items:end;
+
+  /* ensure grid behaves inside container without pushing width */
+  width: 100%;
+  box-sizing: border-box;
 }
+
 .cm-field label{ display:block; margin-bottom:8px; color:#111; }
 .cm-field select{
   width:100%;
@@ -119,6 +138,7 @@
   gap:10px;
   justify-content:center;
   min-width:180px;
+  white-space: nowrap;
 }
 .cm-exportBtn:hover{ filter:brightness(.95); }
 .cm-exportIcon{ display:grid; place-items:center; }
@@ -128,6 +148,10 @@
   display:grid;
   grid-template-columns: repeat(2, minmax(280px, 1fr));
   gap:28px;
+
+  /* keep grid contained */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cm-card{
@@ -230,8 +254,205 @@
   .cm-filterGrid{ grid-template-columns:1fr; }
   .cm-exportBtn{ width:100%; }
   .cm-cards{ grid-template-columns:1fr; }
+
+  .cm-topbar-inner{
+    padding: 0 18px;
+  }
+  .cm-main{
+    padding: 24px 18px 60px;
+  }
 }
+
 @media (max-width: 520px){
   .cm-topbar{ height:92px; }
   .cm-title{ font-size:26px; }
+}
+/* =========================================
+   SUBTLE SCROLLBAR (UI UNCHANGED)
+   ========================================= */
+
+/* Allow scrolling */
+.cm {
+  height: 100vh;
+  overflow: hidden; /* prevent page scrollbar */
+}
+
+/* Scroll only main content */
+.cm-main {
+  height: calc(100vh - 82px); /* topbar height */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Chrome / Edge / Safari */
+.cm-main::-webkit-scrollbar {
+  width: 6px;              /* thin scrollbar */
+}
+
+.cm-main::-webkit-scrollbar-track {
+  background: transparent; /* invisible track */
+}
+
+.cm-main::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+}
+
+.cm-main::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Firefox */
+.cm-main {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,.25) transparent;
+}
+/* =========================================================
+   1920x1080 FIT TUNING (NO UI REDESIGN)
+   Paste at VERY BOTTOM
+   ========================================================= */
+
+@media (min-width: 1600px) and (min-height: 900px) {
+
+  /* Use more horizontal space so layout feels tighter/cleaner */
+  .cm{
+    --container-max: 1420px;     /* wider than 1240 */
+  }
+
+  /* Reduce top/bottom padding so content fits vertically */
+  .cm-main{
+    padding-top: 18px !important;
+    padding-bottom: 24px !important;
+  }
+
+  /* Stats: slightly less gap + margin + padding (keep same fonts) */
+  .cm-stats{
+    gap: 18px !important;
+    margin: 6px 0 16px !important;
+  }
+  .cm-stat{
+    padding: 20px 24px !important;
+  }
+
+  /* Filters: slightly tighter */
+  .cm-filters{
+    padding: 18px !important;
+    margin-bottom: 18px !important;
+  }
+  .cm-searchRow{
+    margin-bottom: 12px !important;
+  }
+  .cm-search{
+    padding: 10px 14px !important;
+  }
+  .cm-filterGrid{
+    gap: 14px !important;
+  }
+  .cm-field label{
+    margin-bottom: 6px !important;
+  }
+  .cm-field select{
+    padding: 10px 14px !important;
+  }
+  .cm-exportBtn{
+    height: 44px !important;
+  }
+
+  /* Cards grid: reduce gap so 2 rows fit comfortably */
+  .cm-cards{
+    gap: 20px !important;
+  }
+
+  /* Card internals: reduce vertical whitespace (keep same look) */
+  .cm-card{
+    padding: 16px 20px 14px !important;
+  }
+  .cm-card-top{
+    margin-bottom: 10px !important;
+  }
+  .cm-card-body{
+    gap: 8px !important;
+    margin: 8px 0 12px !important;
+  }
+
+  /* Buttons: just a touch tighter (same style) */
+  .cm-editBtn{
+    padding: 9px 18px !important;
+    min-width: 116px !important;
+  }
+  .cm-trashBtn{
+    width: 42px !important;
+    height: 42px !important;
+  }
+}
+
+
+.cm{
+  height: 100vh;
+  overflow: hidden; 
+}
+
+.cm-topbar{
+  position: sticky;        
+  top: 0;
+  z-index: 999;
+}
+
+
+.cm-main{
+  height: calc(100vh - 82px); 
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+
+.cm-main::-webkit-scrollbar{
+  width: 0;
+  height: 0;
+}
+
+
+.cm-main{
+  scrollbar-width: none;
+}
+
+html, body {
+  overflow: hidden !important;
+}
+
+.cm,
+.cm-main {
+  overflow: hidden !important;
+}
+
+/* button same size */
+.cm .cm-topbar-right .cm-icon-btn{
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  background: transparent !important;
+  color: #fff !important;   /* bell stays white */
+}
+
+/* icon size EXACTLY like report.css */
+.cm .cm-topbar-right .cm-icon-btn svg{
+  width: 22px !important;
+  height: 22px !important;
+  fill: currentColor !important; /* solid white */
+}
+
+/* notif dot same */
+.cm .cm-topbar-right .cm-notif-dot{
+  top: 10px !important;
+  right: 12px !important;
+  width: 9px !important;
+  height: 9px !important;
+}
+
+/* hover stays the same */
+.cm .cm-topbar-right .cm-icon-btn:hover{
+  background: rgba(255,255,255,0.12) !important;
 }

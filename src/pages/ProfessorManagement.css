@@ -13,16 +13,19 @@
 }
 
 .pm-topbar-inner {
-  width: min(var(--container-max), 92vw);
-  margin: 0 auto;
+    width: 100%;
+  max-width: 1400px;   /* SAME width as card & stats */
+  margin: 0 auto;      /* center it */
+  padding: 0 20px;     /* same horizontal padding */
   display: flex;
   justify-content: space-between;
   align-items: center;
+
 }
 
 .pm-topbar-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 18px;
 }
 
@@ -41,6 +44,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  margin-left: auto;
 }
 
 /* Icon buttons */
@@ -73,9 +77,9 @@
 
 /* Main */
 .pm-main {
-  width: min(var(--container-max), 92vw);
-  margin: 0 auto;
-  padding: 28px 0 60px;
+  width: 100%;
+  margin: 0;
+  padding: 16px 20px 40px;
 }
 
 /* Toast */
@@ -111,6 +115,9 @@
   grid-template-columns: repeat(3, minmax(220px, 1fr));
   gap: 26px;
   margin: 10px 0 24px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pm-stat {
@@ -144,6 +151,8 @@
   border: 1px solid #dbe7f4;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* Controls row */
@@ -490,4 +499,89 @@ td{
 @media (max-width: 700px) {
   .pm-card { overflow: auto; }
   .pm-table { min-width: 900px; }
+}
+
+.pm-topbar .pm-topbar-inner{
+  width: 100% !important;
+  max-width: 1400px !important;   /* align with card/stats */
+  margin: 0 auto !important;
+  padding: 0 20px !important;
+
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* title left */
+.pm-topbar .pm-topbar-left{
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
+/* bell right */
+.pm-topbar .pm-topbar-right{
+  margin-left: auto !important;
+  justify-content: flex-end !important;
+}
+/* ===== PM: HARD FORCE topbar layout + bell sizing (put at VERY BOTTOM) ===== */
+
+/* align title left, bell right */
+.pm-topbar .pm-topbar-inner{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+/* left stays left */
+.pm-topbar .pm-topbar-left{
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+/* right stays right */
+.pm-topbar .pm-topbar-right{
+  margin-left: auto !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+}
+
+/* force the bell button (any button inside right area) */
+.pm-topbar .pm-topbar-right button{
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  border: none !important;
+  display: grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease !important;
+  padding: 0 !important; /* prevents it from looking bigger */
+}
+
+.pm-topbar .pm-topbar-right button:hover{
+  background-color: rgba(255, 255, 255, 0.20) !important;
+}
+
+/* icon size (svg or font icon) */
+.pm-topbar .pm-topbar-right button svg{
+  font-size: 22px !important;
+  color: #fff !important;
+}
+
+.pm-topbar .pm-topbar-right button i{
+  font-size: 22px !important;
+  color: #fff !important;
+}
+
+/* notif dot (any element with your class OR common dot class) */
+.pm-topbar .pm-topbar-right .pm-notif-dot,
+.pm-topbar .pm-topbar-right .notif-dot{
+  top: 10px !important;
+  right: 12px !important;
+  width: 9px !important;
+  height: 9px !important;
 }

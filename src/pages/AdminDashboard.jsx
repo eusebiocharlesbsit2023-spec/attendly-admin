@@ -208,4 +208,6 @@ function ManageCard({ title, icon, onClick, tint }) {
       </button>
     </div>
   );
-}
+
+
+  }

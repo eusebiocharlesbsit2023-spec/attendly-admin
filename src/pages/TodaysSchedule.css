@@ -12,24 +12,16 @@
   font-family: "Montserrat", sans-serif;
 }
 
-/* ===== Container widths tuned for 1920 =====
-   - default: 92% width
-   - but cap grows on large screens to reduce side gutters
-*/
+/* ✅ Use the REAL sidebar width */
 :root {
-  --container-max: 1200px; /* default */
-}
+  --sidebar-w: 400px;     /* <-- from your .sidebarV2 width */
+  --gutter: 24px;         /* left/right breathing room */
+  --content-max: 1600px;  /* cap so it doesn't get too stretched */
 
-@media (min-width: 1200px) {
-  :root {
-    --container-max: 1380px;
-  }
-}
-
-@media (min-width: 1600px) {
-  :root {
-    --container-max: 1560px; /* ✅ good for 1920x1080 */
-  }
+  /* ✅ for height fitting */
+  --topbar-h: 78px;       /* approx height of topbar */
+  --main-gap-top: 14px;   /* matches .schedule-main margin top */
+  --main-gap-bottom: 14px;
 }
 
 /* TOP BAR */
@@ -40,7 +32,10 @@
 }
 
 .schedule-topbar-inner {
-  width: min(var(--container-max), 92vw);
+  width: min(
+    var(--content-max),
+    calc(100vw - var(--sidebar-w) - (2 * var(--gutter)))
+  );
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -55,9 +50,11 @@
 
 /* MAIN CONTAINER */
 .schedule-main {
-  /* keep main content from extending under the fixed sidebar */
-  width: min(var(--container-max), calc(100% - 440px));
-  margin: 18px auto 28px;
+  width: min(
+    var(--content-max),
+    calc(100vw - var(--sidebar-w) - (2 * var(--gutter)))
+  );
+  margin: 14px auto 14px;
 }
 
 /* DATE + EXPORT ROW */
@@ -92,20 +89,32 @@
   opacity: 0.92;
 }
 
-/* GRID (2 cols on desktop) */
+/* ✅ GRID: make rows fill the available height so there’s no “dead space” */
 .schedule-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+
+  /* key part: grid takes remaining viewport height */
+  min-height: calc(
+    100vh - var(--topbar-h) - var(--main-gap-top) - var(--main-gap-bottom) - 70px
+  );
+  /* 70px ≈ header row height, keeps it from over-stretching */
+
+  grid-auto-rows: 1fr; /* rows stretch evenly */
+  align-content: stretch;
 }
 
-/* CARD */
+/* ✅ CARD: allow it to stretch nicely without looking huge */
 .schedule-card {
   background: #fff;
   border: 1px solid #e6eef7;
   border-radius: 18px;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
   padding: 16px;
+
+  display: flex;
+  flex-direction: column;
 }
 
 /* STATUS PILL */
@@ -169,9 +178,9 @@
   color: #334155;
 }
 
-/* INFO ROW */
+/* ✅ INFO ROW: slightly tighter vertical spacing so stretched cards don’t feel “empty” */
 .info-row {
-  margin-top: 10px;
+  margin-top: 8px; /* was 10px */
   display: flex;
   align-items: center;
   gap: 10px;
@@ -200,14 +209,67 @@
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
+  .schedule-topbar-inner,
+  .schedule-main {
+    width: 92vw;
+    margin: 0 auto;
+  }
+
+  .schedule-main {
+    margin: 14px auto 14px;
+  }
+
   .schedule-grid {
     grid-template-columns: 1fr;
+
+    /* don’t force height fill on mobile */
+    min-height: auto;
+    grid-auto-rows: auto;
+    align-content: start;
   }
 }
 
-/* ✅ Sidebar offset for schedule ONLY */
-@media (min-width: 900px) {
-  .app-shell.schedule {
-    margin-left: 320px;
-  }
+.schedule-card .course-title {
+  font-size: 18px;       
+  line-height: 1.35;
+}
+
+.schedule-card .course-code {
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+
+.schedule-card .info-row {
+  font-size: 14px;       
+  line-height: 1.5;      
+  margin-top: 12px;      
+}
+
+.schedule-card .status-pill {
+  font-size: 13px;
+  padding: 7px 14px;
+  margin-bottom: 14px;
+}
+
+
+.schedule-card .students-pill {
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.status-pill {
+  display: inline-flex;  
+  align-self: flex-start; 
+  padding: 0;             
+  width: auto;
+}
+
+
+.status-text {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
 }

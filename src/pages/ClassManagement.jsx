@@ -204,7 +204,7 @@ export default function ClassManagement() {
             >
               <span className="cm-notif-dot" />
               <Svg name="bell" />
-            </button> 
+            </button>
           </div>
         </div>
       </header>
@@ -242,7 +242,11 @@ export default function ClassManagement() {
               <span className="cm-searchIcon">
                 <Svg name="search" />
               </span>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or Id" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search by name or Id"
+              />
             </div>
           </div>
 
@@ -400,18 +404,22 @@ function Svg({ name }) {
           <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
+
+    /* ✅ FIXED: SOLID (FILLED) BELL */
     case "bell":
       return (
-        <svg {...common}>
-          <path
-            d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path d="M10 19a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <svg
+          width={20}
+          height={22}
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="currentColor"  /* <<< solid */
+        >
+          <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Z" />
+          <path d="M20 19H4v-1l2-2v-5a6 6 0 1 1 12 0v5l2 2v1Z" />
         </svg>
       );
+
     case "logout":
       return (
         <svg {...common}>
@@ -420,6 +428,7 @@ function Svg({ name }) {
           <path d="M14 7a4 4 0 014 4v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
+
     case "search":
       return (
         <svg {...common}>
@@ -427,6 +436,7 @@ function Svg({ name }) {
           <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
+
     case "download":
       return (
         <svg {...common}>
@@ -435,6 +445,7 @@ function Svg({ name }) {
           <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
+
     case "user":
       return (
         <svg {...common}>
@@ -442,6 +453,7 @@ function Svg({ name }) {
           <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
+
     case "pin":
       return (
         <svg {...common}>
@@ -454,6 +466,7 @@ function Svg({ name }) {
           <circle cx="12" cy="10" r="2" stroke="currentColor" strokeWidth="2" />
         </svg>
       );
+
     case "clock":
       return (
         <svg {...common}>
@@ -461,6 +474,7 @@ function Svg({ name }) {
           <path d="M12 7v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
+
     case "wifi":
       return (
         <svg {...common}>
@@ -469,6 +483,7 @@ function Svg({ name }) {
           <path d="M11 18.5a2 2 0 0 1 2 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
+
     case "edit":
       return (
         <svg {...common}>
@@ -481,6 +496,7 @@ function Svg({ name }) {
           />
         </svg>
       );
+
     case "trash":
       return (
         <svg {...common}>
@@ -490,6 +506,7 @@ function Svg({ name }) {
           <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       );
+
     default:
       return null;
   }

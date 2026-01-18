@@ -85,7 +85,10 @@ export default function TodaysSchedule() {
         <section className="schedule-grid">
           {classes.map((c, idx) => (
             <div className="schedule-card" key={idx}>
-              <div className={`status-pill ${c.statusType}`}>{c.status}</div>
+              <div className={`status-pill ${c.statusType}`}>
+  <span className="status-text">{c.status}</span>
+</div>
+
 
               <div className="card-top">
                 <div className="course-title">{c.title}</div>
@@ -94,24 +97,27 @@ export default function TodaysSchedule() {
 
               <div className="course-code">{c.code}</div>
 
-              <div className="info-row">
-                <Svg name="user" small />
-                <span>{c.professor}</span>
-              </div>
+              {/* ✅ NEW: wrap info rows so we can control vertical spacing */}
+              <div className="card-body">
+                <div className="info-row">
+                  <Svg name="user" small />
+                  <span>{c.professor}</span>
+                </div>
 
-              <div className="info-row">
-                <Svg name="pin" small />
-                <span>{c.room}</span>
-              </div>
+                <div className="info-row">
+                  <Svg name="pin" small />
+                  <span>{c.room}</span>
+                </div>
 
-              <div className="info-row">
-                <Svg name="clock" small />
-                <span>{c.time}</span>
-              </div>
+                <div className="info-row">
+                  <Svg name="clock" small />
+                  <span>{c.time}</span>
+                </div>
 
-              <div className="info-row">
-                <Svg name="wifi" small />
-                <span>{c.wifi}</span>
+                <div className="info-row">
+                  <Svg name="wifi" small />
+                  <span>{c.wifi}</span>
+                </div>
               </div>
             </div>
           ))}
