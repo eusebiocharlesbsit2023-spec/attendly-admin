@@ -1,10 +1,12 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./ClassManagement.css";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditClassModal from "../components/EditClassModal";
+import supabase from "../helper/supabaseClient";
+
 
 export default function ClassManagement() {
   const navigate = useNavigate();
@@ -28,51 +30,9 @@ export default function ClassManagement() {
   const [status, setStatus] = useState("All Status");
   const [prof, setProf] = useState("All Professors");
 
-  // ✅ initial data (memo)
-  const initialClasses = useMemo(
-    () => [
-      {
-        name: "Introduction to Computer Science",
-        code: "CS101",
-        professor: "Mrs. Sadie Mayers",
-        room: "Room 303",
-        schedule: "Monday: 9:00 - 11:00 AM",
-        wifi: "Lab303_Wifi",
-        status: "Active",
-      },
-      {
-        name: "Introduction to Computing",
-        code: "CS102",
-        professor: "Mr. Michael Philips",
-        room: "Room 301",
-        schedule: "Tuesday: 1:00 - 3:00 PM",
-        wifi: "Lab301_Wifi",
-        status: "Active",
-      },
-      {
-        name: "Sports and Fitness",
-        code: "PathFit",
-        professor: "Mr. Leviticus Cornwall",
-        room: "Room 302",
-        schedule: "Friday: 9:00 - 11:00 AM",
-        wifi: "Lab302_Wifi",
-        status: "Active",
-      },
-      {
-        name: "Database Management System",
-        code: "CS103",
-        professor: "Mr. Arthur Morgan",
-        room: "Room 304",
-        schedule: "Monday: 7:00 - 10:00 AM",
-        wifi: "Lab304_Wifi",
-        status: "Active",
-      },
-    ],
-    []
-  );
-
   // ✅ real list (state) so edits/deletes update UI
-  const [rows, setRows] = useState(initialClasses);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // ===== Edit handlers =====
   const onEdit = (clazzObj) => {
@@ -88,10 +48,8 @@ export default function ClassManagement() {
 
   // ✅ Apply YES -> update rows immediately (temporary/local)
   const applyYes = () => {
-    if (pendingEdit?.code) {
-      setRows((prev) =>
-        prev.map((c) => (c.code === pendingEdit.code ? { ...c, ...pendingEdit } : c))
-      );
+    if (pendingEdit?.id) {
+      setRows((prev) => prev.map((c) => (c.id === pendingEdit.id ? { ...c, ...pendingEdit } : c)));
     }
 
     setApplyOpen(false);
@@ -112,7 +70,7 @@ export default function ClassManagement() {
   };
 
   const deleteYes = () => {
-    setRows((prev) => prev.filter((c) => c.code !== pendingDelete?.code));
+    setRows((prev) => prev.filter((c) => c.id !== pendingDelete?.id));
     setDeleteOpen(false);
     setPendingDelete(null);
   };
@@ -121,6 +79,100 @@ export default function ClassManagement() {
     setDeleteOpen(false);
     setPendingDelete(null);
   };
+
+  const fetchClasses = async () => {
+    setLoading(true);
+
+    // 1) get classes
+    const { data: classes, error: clsErr } = await supabase
+      .from("classes")
+      .select("id, course, course_code, room, schedule, day_of_week, start_time, end_time, professor_id, archived, class_code")
+      .order("created_at", { ascending: false });
+
+    if (clsErr) {
+      console.log("Fetch classes error:", clsErr.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    // 2) get professors (to map id -> name)
+    const profIds = Array.from(new Set((classes || []).map((c) => c.professor_id).filter(Boolean)));
+
+    let profMap = {};
+    if (profIds.length) {
+      const { data: profs, error: profErr } = await supabase
+        .from("professors")
+        .select("id, professor_name")
+        .in("id", profIds);
+
+      if (profErr) {
+        console.log("Fetch professors error:", profErr.message);
+      } else {
+        profMap = Object.fromEntries((profs || []).map((p) => [p.id, p.professor_name]));
+      }
+    }
+
+    // helper: build schedule label (optional)
+    const dayName = (d) => {
+      const x = String(d ?? "").toLowerCase();
+      const map = {
+        mon: "Monday",
+        monday: "Monday",
+        tue: "Tuesday",
+        tuesday: "Tuesday",
+        wed: "Wednesday",
+        wednesday: "Wednesday",
+        thu: "Thursday",
+        thursday: "Thursday",
+        fri: "Friday",
+        friday: "Friday",
+        sat: "Saturday",
+        saturday: "Saturday",
+        sun: "Sunday",
+        sunday: "Sunday",
+      };
+      return map[x] || d || "";
+    };
+
+    setRows(
+      (classes || []).map((c) => ({
+        // keep id for edit/delete
+        id: c.id,
+
+        // UI fields you already use
+        name: c.course ?? "Untitled",
+        code: c.course_code ?? "",
+        professor: profMap[c.professor_id] ?? "Unassigned",
+        room: c.room ?? "—",
+
+        // you currently display `schedule` text
+        schedule:
+          c.schedule ??
+          `${dayName(c.day_of_week)}: ${c.start_time ?? ""} - ${c.end_time ?? ""}`.trim(),
+
+        // you have wifi in UI but DB doesn't have it
+        wifi: "N/A",
+
+        // status based on archived
+        status: c.archived ? "Inactive" : "Active",
+
+        // keep raw values for editing if needed
+        professor_id: c.professor_id,
+        day_of_week: c.day_of_week,
+        start_time: c.start_time,
+        end_time: c.end_time,
+        class_code: c.class_code,
+        archived: c.archived,
+      }))
+    );
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
 
   // options (based on current rows)
   const classOptions = useMemo(() => {
@@ -289,66 +341,72 @@ export default function ClassManagement() {
 
         {/* Cards grid */}
         <section className="cm-cards">
-          {filtered.map((c) => (
-            <div className="cm-card" key={c.code + c.name}>
-              <div className="cm-card-top">
-                <div>
-                  <div className="cm-card-name">{c.name}</div>
-                  <div className="cm-card-code">{c.code}</div>
-                </div>
+          {
+            loading ? (
+              <div className="cm-empty">Loading classes...</div>
+            ) : filtered.length === 0 ? (
+              <div className="cm-empty">No classes found.</div>
+            ) : (
+              filtered.map((c) => (
+                <div className="cm-card" key={c.code + c.name}>
+                  <div className="cm-card-top">
+                    <div>
+                      <div className="cm-card-name">{c.name}</div>
+                      <div className="cm-card-code">{c.code}</div>
+                    </div>
 
-                <span className={`cm-pill ${c.status === "Active" ? "active" : "inactive"}`}>
-                  {c.status}
-                </span>
-              </div>
+                    <span className={`cm-pill ${c.status === "Active" ? "active" : "inactive"}`}>
+                      {c.status}
+                    </span>
+                  </div>
 
-              <div className="cm-card-body">
-                <div className="cm-line">
-                  <span className="cm-ico">
-                    <Svg name="user" />
-                  </span>
-                  <span>{c.professor}</span>
-                </div>
-                <div className="cm-line">
-                  <span className="cm-ico">
-                    <Svg name="pin" />
-                  </span>
-                  <span>{c.room}</span>
-                </div>
-                <div className="cm-line">
-                  <span className="cm-ico">
-                    <Svg name="clock" />
-                  </span>
-                  <span>{c.schedule}</span>
-                </div>
-                <div className="cm-line">
-                  <span className="cm-ico">
-                    <Svg name="wifi" />
-                  </span>
-                  <span>{c.wifi}</span>
-                </div>
-              </div>
+                  <div className="cm-card-body">
+                    <div className="cm-line">
+                      <span className="cm-ico">
+                        <Svg name="user" />
+                      </span>
+                      <span>{c.professor}</span>
+                    </div>
+                    <div className="cm-line">
+                      <span className="cm-ico">
+                        <Svg name="pin" />
+                      </span>
+                      <span>{c.room}</span>
+                    </div>
+                    <div className="cm-line">
+                      <span className="cm-ico">
+                        <Svg name="clock" />
+                      </span>
+                      <span>{c.schedule}</span>
+                    </div>
+                    <div className="cm-line">
+                      <span className="cm-ico">
+                        <Svg name="wifi" />
+                      </span>
+                      <span>{c.wifi}</span>
+                    </div>
+                  </div>
 
-              <div className="cm-card-actions">
-                <button className="cm-editBtn" type="button" onClick={() => onEdit(c)}>
-                  <span className="cm-editIco">
-                    <Svg name="edit" />
-                  </span>
-                  Edit
-                </button>
+                  <div className="cm-card-actions">
+                    <button className="cm-editBtn" type="button" onClick={() => onEdit(c)}>
+                      <span className="cm-editIco">
+                        <Svg name="edit" />
+                      </span>
+                      Edit
+                    </button>
 
-                <button
-                  className="cm-trashBtn"
-                  type="button"
-                  onClick={() => onDeleteClick(c)}
-                  aria-label="Delete"
-                >
-                  <Svg name="trash" />
-                </button>
-              </div>
-            </div>
-          ))}
-
+                    <button
+                      className="cm-trashBtn"
+                      type="button"
+                      onClick={() => onDeleteClick(c)}
+                      aria-label="Delete"
+                    >
+                      <Svg name="trash" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           {filtered.length === 0 && <div className="cm-empty">No classes found.</div>}
         </section>
       </main>

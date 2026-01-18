@@ -7,8 +7,33 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { supabaseCreateUser } from "../helper/supabaseCreateUserClient";
 import supabase from "../helper/supabaseClient";
 
+function generateStrongPassword(length = 12) {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const digits = "23456789";
+  const symbols = "!@#$%^&*_-+=";
+
+  const all = upper + lower + digits + symbols;
+
+  // ensure at least one from each set
+  const pick = (s) => s[Math.floor(Math.random() * s.length)];
+  let pwd = pick(upper) + pick(lower) + pick(digits) + pick(symbols);
+
+  for (let i = pwd.length; i < length; i++) pwd += pick(all);
+
+  // shuffle
+  pwd = pwd
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+
+  return pwd;
+}
+
 export default function CreateAdminModal({ open, onClose, onCreate }) {
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("Admin");
   const [tempPassword, setTempPassword] = useState("");
@@ -18,22 +43,26 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
 
   const errors = useMemo(() => {
     const e = {};
-    if (!fullName.trim()) e.fullName = "Full name is required";
-    if (!username.trim()) e.username = "Username is required";
+    if (!firstName.trim()) e.firstName = "First name is required";
+    if (!lastName.trim()) e.lastName = "Last name is required";
+    if (!email.trim()) e.email = "Email is required";
     if (!tempPassword.trim()) e.tempPassword = "Temporary password is required";
-    if (tempPassword.trim() && tempPassword.trim().length < 6) e.tempPassword = "Min 6 characters";
+    if (tempPassword.trim() && tempPassword.trim().length < 6)
+      e.tempPassword = "Min 6 characters";
     return e;
-  }, [fullName, username, tempPassword]);
+  }, [firstName, lastName, email, tempPassword]);
+
 
   const canSubmit = Object.keys(errors).length === 0;
 
   const reset = () => {
-    setFullName("");
-    setUsername("");
+    setFirstName("");
+    setLastName("");
+    setEmail("");
     setRole("Admin");
     setTempPassword("");
     setShowPass(false);
-    setSubmitted(false); // 👈 reset validation state
+    setSubmitted(false);
   };
 
   const handleClose = () => {
@@ -41,55 +70,58 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
     onClose?.();
   };
 
+  const handleGeneratePassword = async () => {
+    const p = generateStrongPassword(8);
+    setTempPassword(p);
+
+    try {
+      await navigator.clipboard.writeText(p);
+    } catch {
+      // ignore if clipboard blocked
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage("");
+    setSubmitted(true);
+    if (!canSubmit) return;
 
-    const { data: authData, error: authError } = await supabaseCreateUser.auth.signUp({
-      email: `${username.trim()}.com`,
-      password: tempPassword,
+    const payload = {
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      email: email.trim().toLowerCase(),
+      temp_password: tempPassword,
+      role: "Admin",
+      status: "Active",
+    };
+
+    const { data, error } = await supabase.functions.invoke("create-admin-and-email", {
+      body: payload,
     });
 
-    const adminID = authData.user.id;
-
-    // after insert to admins:
-    const { data: prof, error: profErr } = await supabase
-      .from("admins")
-      .insert({
-        id: adminID,          // auth.users.id
-        admin_name: fullName,
-        username,
-        role,
-        status: "Active",
-      })
-      .select("*")
-      .single();
-
-    if (profErr) {
-      console.log(profErr);
+    if (error) {
+      const res = error.context?.response;
+      setErrorMessage(res ? await res.text() : error.message);
       return;
     }
 
-    if(authError){
-      setErrorMessage(authError.message);
-      console.log(authError.message);
-    }
-    
-    if(authData){
-      setSubmitted(true); // mark that user tried to submit
-      handleClose();
+    if (!data?.success) {
+      setErrorMessage(`${data?.step ?? "error"}: ${data?.message ?? "Unknown error"}`);
+      return;
     }
 
-    // ✅ pass saved row back to parent
     onCreate?.({
-      uuid: prof.id,
-      fullName: prof.admin_name,
-      username: prof.username,
-      role: prof.role,
-      status: prof.status,
+      uuid: data.admin.id,
+      fullName: data.admin.admin_name,
+      username: data.admin.username,
+      role: data.admin.role,
+      status: data.admin.status,
     });
 
-    // ✅ close modal
+    handleClose();
+
+    reset();
     onClose?.();
   };
 
@@ -103,36 +135,38 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
 
         <form onSubmit={handleSubmit} className="cam-form">
           <p className="error-text">{errorMessage}</p>
-          {/* Full Name */}
+
           <label className="cam-label">
-            Full Name <span className="cam-req">*</span>
+            First Name <span className="cam-req">*</span>
           </label>
           <input
-            className={`cam-input ${submitted && errors.fullName ? "err" : ""}`}
-            placeholder="Enter Full Name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            className={`cam-input ${submitted && errors.firstName ? "err" : ""}`}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
           />
+          {submitted && errors.firstName && <div className="cam-error">{errors.firstName}</div>}
 
-          {submitted && errors.fullName && (
-            <div className="cam-error">{errors.fullName}</div>
-          )}
+          <label className="cam-label">
+            Last Name <span className="cam-req">*</span>
+          </label>
+          <input
+            className={`cam-input ${submitted && errors.lastName ? "err" : ""}`}
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+          {submitted && errors.lastName && <div className="cam-error">{errors.lastName}</div>}
 
           {/* Username */}
           <label className="cam-label">
-            Username <span className="cam-req">*</span>
+            Email <span className="cam-req">*</span>
           </label>
           <input
-            className={`cam-input ${submitted && errors.username ? "err" : ""}`}
-            placeholder="Enter Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            type="email"
+            className={`cam-input ${submitted && errors.email ? "err" : ""}`}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
-
-          {submitted && errors.username && (
-            <div className="cam-error">{errors.username}</div>
-          )}
-
+          {submitted && errors.email && <div className="cam-error">{errors.email}</div>}
 
           {/* Role (Admin only) */}
           <label className="cam-label">Role</label>
@@ -144,15 +178,34 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
           <label className="cam-label">
             Temporary Password <span className="cam-req">*</span>
           </label>
-          <div className={`cam-passWrap ${submitted && errors.tempPassword ? "err" : ""}`}>
-            <input
-              className="cam-pass"
-              type={showPass ? "text" : "password"}
-              placeholder="Enter Temporary Password"
-              value={tempPassword}
-              onChange={(e) => setTempPassword(e.target.value)}
-            />
+
+          <div style={{ display: "grid", gap: 8 }}>
+            <div className={`cam-passWrap ${submitted && errors.tempPassword ? "err" : ""}`}>
+              <input
+                className="cam-pass"
+                type={'text'}
+                placeholder="Enter Temporary Password"
+                value={tempPassword}
+                onChange={(e) => setTempPassword(e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                className="cam-btn"
+                onClick={handleGeneratePassword}
+                style={{ flex: 1 }}
+              >
+                Generate Password
+              </button>
+            </div>
           </div>
+
+          {submitted && errors.tempPassword && (
+            <div className="cam-error">{errors.tempPassword}</div>
+          )}
+
 
           {submitted && errors.tempPassword && (
             <div className="cam-error">{errors.tempPassword}</div>

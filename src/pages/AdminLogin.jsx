@@ -7,7 +7,7 @@ import supabase from "../helper/supabaseClient";
 function AdminLogin() {
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [checkingSession, setCheckingSession] = useState(true);
@@ -36,7 +36,7 @@ function AdminLogin() {
     try {
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
-          email: `${username}.com`,
+          email: email,
           password,
         });
 
@@ -87,10 +87,10 @@ function AdminLogin() {
           <div className="input-group">
             <input
               type="text"
-              placeholder="Admin username"
+              placeholder="Admin email"
               required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               disabled={loggingIn}
             />
           </div>

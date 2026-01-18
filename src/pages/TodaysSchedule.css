@@ -127,9 +127,9 @@
 }
 
 .status-pill.ended {
-  background: #dcfce7;
-  color: #15803d;
-  border-color: #86efac;
+  background: #fcdcdc;
+  color: #801515;
+  border-color: #ef8686;
 }
 
 .status-pill.ongoing {
