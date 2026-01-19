@@ -43,12 +43,11 @@ body {
   flex: 0 0 auto;
 }
 
+/* ✅ UPDATED: match Admin Dashboard container behavior */
 .ar-topbar-inner {
-  /* ✅ follow SM fitment: full width + smaller side padding */
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0 24px;
+  width: min(1480px, 94vw);
+  margin: 0 auto;
+  padding: 0; /* dashboard doesn't add side padding here */
 
   display: flex;
   align-items: center;
@@ -661,7 +660,7 @@ body {
 /* ---------- Responsive ---------- */
 @media (max-width: 980px) {
   .ar-topbar-inner {
-    padding: 0 14px;
+    width: 94vw;
   }
 
   .ar-main {
@@ -738,15 +737,16 @@ body {
     margin-left: 500px;
   }
 }
+
 /* ===== Attendance Records: TOPBAR ALIGNMENT (match Student Management) ===== */
 .ar-topbar-inner{
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
 
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 24px !important; /* same feel as SM */
+  width: min(1480px, calc(100vw - 560px)) !important; /* ✅ match dash override feel */
+  margin: 0 auto !important;
+  padding: 0 !important;
 }
 
 /* Title stays LEFT */
@@ -792,4 +792,123 @@ body {
   right: 12px !important;
   width: 9px !important;
   height: 9px !important;
+}
+
+.ar-dt-thead {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  background: #f8fafc !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+
+  /* align like mam table */
+  text-align: center !important;
+  align-items: center !important;
+}
+
+/* Body rows = like .mam-table tbody td */
+.ar-dt-tbody .ar-dt-row {
+  padding: 12px 14px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #eef2f7 !important;
+
+  /* align like mam table */
+  text-align: center !important;
+  align-items: center !important;
+}
+
+/* Make every grid “cell” centered (equivalent to td center) */
+.ar-dt-thead > div,
+.ar-dt-tbody .ar-dt-row > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Student cell (avatar + name) centered as a group */
+.ar-dt-studentCell {
+  justify-content: center !important;
+}
+
+/* Student name typography (keep it clean but same table sizing) */
+.ar-dt-studentName {
+  font-size: 14px !important;
+  font-weight: 400 !important; /* match mam tbody feel */
+  color: #0f172a !important;
+}
+
+/* Optional: make "wrap" still centered */
+.ar-dt-wrap {
+  text-align: center !important;
+}
+/* =========================================
+   Attendance Records:
+   Name + avatar LEFT aligned like screenshot
+   ========================================= */
+
+/* Student column cell: align content to start */
+.ar-dt-thead > *:nth-child(1),
+.ar-dt-tbody .ar-dt-row > *:nth-child(1) {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  text-align: left !important;
+}
+
+/* Avatar + name row */
+.ar-dt-studentCell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+/* Avatar stays fixed */
+.ar-dt-avatar {
+  flex-shrink: 0;
+}
+
+/* Name text like your screenshot */
+.ar-dt-studentName {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #0f172a !important;
+  text-align: left !important;
+  line-height: 1.2 !important;
+}
+
+.rep-dt-thead > *:nth-child(2),
+.rep-dt-tbody .rep-dt-row > *:nth-child(2) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+/* Avatar + name row */
+.rep-dt-nameCell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+/* Avatar fixed size */
+.rep-dt-avatar {
+  flex-shrink: 0;
+}
+
+/* Name text styling */
+.rep-dt-name {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #0f172a !important;
+  text-align: left !important;
+  line-height: 1.2 !important;
 }

@@ -62,17 +62,13 @@ export default function EditClassModal({
           </div>
 
           <div className="ecm-statusWrap">
-            <span className={`ecm-pill ${status === "Active" ? "active" : "inactive"}`}>
-              {status}
-            </span>
-
             <select
               className="ecm-statusSelect"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+              <option value="Active">Activate</option>
+              <option value="Inactive">Deactivate</option>
             </select>
           </div>
         </div>
@@ -157,7 +153,6 @@ export default function EditClassModal({
                 })
               }
             >
-              
               Save
             </button>
           </div>

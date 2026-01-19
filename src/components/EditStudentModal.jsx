@@ -2,18 +2,21 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./EditStudentModal.css";
 
 export default function EditStudentModal({ open, student, onClose, onSaveClick }) {
-  const [status, setStatus] = useState("Active");
-  const [originalStatus, setOriginalStatus] = useState("Active");
+  const [status, setStatus] = useState("");
+  const [originalStatus, setOriginalStatus] = useState("");
 
   useEffect(() => {
     if (open && student) {
       const s = student.status || "Active";
-      setStatus(s);
-      setOriginalStatus(s); // ✅ store original
+      setStatus(s);          // ✅ show current status
+      setOriginalStatus(s);  // ✅ keep original for comparison
     }
   }, [open, student]);
 
-  const changed = useMemo(() => status !== originalStatus, [status, originalStatus]);
+  const changed = useMemo(
+    () => status !== originalStatus,
+    [status, originalStatus]
+  );
 
   if (!open || !student) return null;
 
@@ -44,25 +47,21 @@ export default function EditStudentModal({ open, student, onClose, onSaveClick }
           <div className="esm-label">Status</div>
 
           <div className="esm-statusWrap">
-            <span className={`esm-pill ${status === "Active" ? "active" : "inactive"}`}>
-              {status}
-            </span>
-
             <select
               className="esm-select"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+              <option value="Active">Activate</option>
+              <option value="Inactive">Deactivate</option>
             </select>
           </div>
         </div>
 
         <button
-          className={`esm-save ${!changed ? "disabled" : ""}`} // ✅ optional class
+          className={`esm-save ${!changed ? "disabled" : ""}`}
           type="button"
-          disabled={!changed} // ✅ disable if no change
+          disabled={!changed}
           title={!changed ? "Change the status first" : "Save changes"}
           onClick={() => onSaveClick?.({ ...student, status })}
         >

@@ -271,6 +271,11 @@ body {
 .activity-list {
   display: grid;
   gap: 12px;
+
+  /* ✅ make it scrollable without changing card UI */
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .activity-item {
@@ -461,7 +466,13 @@ body {
   .panel {
     padding: 12px;
   }
+
+  /* keep scroll behavior on small screens too */
+  .activity-list {
+    max-height: 300px;
+  }
 }
+
 /* =========================
    1920x1080 FIT OVERRIDES
    (paste at VERY BOTTOM)
@@ -507,6 +518,7 @@ body {
     width: min(1560px, calc(100vw - 540px));
   }
 }
+
 /* =========================
    MATCH SCREENSHOT SPACING
    (paste at VERY BOTTOM)
@@ -543,17 +555,14 @@ body {
 .dash .manage-grid,
 .dash .bottom-grid { margin-top: 14px !important; }
 
-
 @media (min-width: 1200px) {
   .dash .dash-main {
-  
     margin-top: 48px !important;
     margin-bottom: 48px !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
   }
 }
-
 
 @media (min-width: 1200px) {
   /* Stats cards */
@@ -576,7 +585,7 @@ body {
   }
 
   .dash .manage-btn {
-    padding: 26px 12px !important; 
+    padding: 26px 12px !important;
   }
 
   .dash .manage-icon {
@@ -588,9 +597,8 @@ body {
     font-size: 15px;
   }
 
- 
   .dash .panel {
-    padding: 20px !important; 
+    padding: 20px !important;
   }
 
   .dash .panel-title {

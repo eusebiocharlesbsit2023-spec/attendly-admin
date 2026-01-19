@@ -49,11 +49,25 @@
   font-size: 16px;
 }
 
-.ahm-list {
-  padding: 12px 18px;
-  overflow: auto;
+/* ✅ SHOW 9 ITEMS BEFORE SCROLL */
+:root {
+  --ahm-row-height: 58px; /* approx height per item */
+  --ahm-visible-rows: 9;  /* show 9, scroll at 10+ */
 }
 
+.ahm-list {
+  padding: 12px 18px;
+  overflow-y: auto;
+
+  /* ✅ important for flex scrolling */
+  flex: 0 0 auto;
+  min-height: 0;
+
+  /* ✅ height for exactly 9 visible entries */
+  max-height: calc(var(--ahm-row-height) * var(--ahm-visible-rows));
+}
+
+/* keep your existing styles */
 .ahm-item {
   display: flex;
   gap: 10px;
@@ -194,8 +208,14 @@
     width: calc(100vw - 24px);
   }
   .ahm-more-menu { right: 8px; left: auto; }
+
+  /* optional: slightly fewer rows on small screens */
+  .ahm-list {
+    max-height: calc(var(--ahm-row-height) * 7);
+  }
 }
 
+/* you can remove this if unused */
 .ahm-body {
   max-height: 320px;
   overflow-y: auto;

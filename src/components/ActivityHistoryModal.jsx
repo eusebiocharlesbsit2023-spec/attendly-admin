@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./ActivityHistoryModal.css";
 import {
   getNotifications,
-  initNotifications,
+  syncNotifications,
   markAsReadById,
   markAsUnreadById,
   deleteNotificationById,
@@ -19,13 +19,29 @@ export default function ActivityHistoryModal({
   const [notes, setNotes] = useState(() => getNotifications());
   const [openMoreIndex, setOpenMoreIndex] = useState(null);
 
-  // If the store is empty and the parent passed seed `items`, initialize the store
+  const sig = (x) => `${(x?.text ?? "").trim()}__${(x?.time ?? "").trim()}`;
+
+  // ✅ Sync notifications with dashboard items
   useEffect(() => {
-    const current = getNotifications();
-    if ((current == null || current.length === 0) && items && items.length > 0) {
-      initNotifications(items);
-      setNotes(getNotifications());
-    }
+    if (!items || items.length === 0) return;
+
+    const current = getNotifications() || [];
+    const currentMap = new Map(current.map((n) => [sig(n), n]));
+
+    const normalized = items.map((it, idx) => {
+      const key = sig(it);
+      const existing = currentMap.get(key);
+
+      return {
+        id: existing?.id ?? `seed_${idx}_${key}`,
+        text: it.text,
+        time: it.time,
+        read: existing?.read ?? false,
+      };
+    });
+
+    syncNotifications(normalized);
+    setNotes(getNotifications());
   }, [items]);
 
   // keep local notes in sync when modal opens
@@ -33,19 +49,17 @@ export default function ActivityHistoryModal({
     if (open) setNotes(getNotifications());
   }, [open]);
 
+  // positioning logic (unchanged)
   useEffect(() => {
-    // compute anchored position if anchorRect is provided and screen is large enough
     if (!open) return;
 
     const gap = 8;
-    const cardWidth = 560; // matches CSS default
+    const cardWidth = 560;
     const vw = window.innerWidth;
 
     if (anchorRect && vw > 620) {
       const top = anchorRect.bottom + gap;
-      // prefer left positioning unless it would overflow, then use right
       if (anchorRect.left + cardWidth + 16 > vw) {
-        // overflow: position by right
         const right = Math.max(8, vw - anchorRect.right + gap);
         setPosStyle({ position: "fixed", top: `${top}px`, right: `${right}px` });
       } else {
@@ -56,10 +70,9 @@ export default function ActivityHistoryModal({
         });
       }
     } else {
-      setPosStyle(null); // use centered default
+      setPosStyle(null);
     }
 
-    // recompute on resize
     function handleResize() {
       if (anchorRect && window.innerWidth > 620) {
         const vw2 = window.innerWidth;
@@ -127,10 +140,7 @@ export default function ActivityHistoryModal({
             <div className="ahm-title">Activity History</div>
             <div className="ahm-sub">All recent actions</div>
           </div>
-
-          <button className="ahm-close" type="button" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
+          {/* ❌ X button removed */}
         </div>
 
         <div className="ahm-list">
@@ -138,7 +148,7 @@ export default function ActivityHistoryModal({
             <div className="ahm-empty">No activity yet.</div>
           ) : (
             notes.map((a, idx) => (
-              <div className={`ahm-item ${a.read ? "read" : ""}`} key={idx}>
+              <div className={`ahm-item ${a.read ? "read" : ""}`} key={a.id || idx}>
                 <div className="ahm-dot" />
                 <div className="ahm-text">
                   <div className="ahm-main">{a.text}</div>

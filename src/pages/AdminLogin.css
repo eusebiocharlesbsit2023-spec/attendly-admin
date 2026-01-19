@@ -1,6 +1,4 @@
 * {
-
-  
   box-sizing: border-box;
   font-family: "Montserrat";
 }
@@ -39,7 +37,7 @@ h2 {
   margin-bottom: 22px;
 }
 
-.error-text{
+.error-text {
   height: 12px;
   font-size: 12px;
   color: red;
@@ -78,10 +76,9 @@ h2 {
   background: #002f5f;
 }
 
-/* ✅ PERFECT ALIGNMENT FIX */
 .info-box {
   display: flex;
-  align-items: baseline; /* ⭐ KEY FIX */
+  align-items: baseline;
   gap: 8px;
   margin-top: 20px;
   padding: 12px;
@@ -97,9 +94,31 @@ h2 {
   color: #004a8f;
 }
 
-.info-box p{
+.info-box p {
   font-size: 12px;
   color: #004a8f;
   line-height: 1.4;
   margin: 0;
+}
+
+/* ✅ password toggle */
+.password-group {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
 }

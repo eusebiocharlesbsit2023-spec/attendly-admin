@@ -551,3 +551,111 @@ tr {
   font-size: 22px !important;
   color: #fff !important;
 }
+/* ===== SIMPLE TOPBAR ALIGNMENT FIX (MATCH ADMIN DASHBOARD HEADER) ===== */
+.sm-topbar-inner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+
+  /* ✅ match dash-topbar-inner container behavior */
+  width: min(1480px, 94vw) !important;
+  margin: 0 auto !important;
+  padding: 0 !important; /* dash doesn't use padding here */
+}
+
+/* Title stays LEFT */
+.sm-topbar-left {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
+/* Bell goes RIGHT */
+.sm-topbar-right {
+  margin-left: auto !important;
+  display: flex !important;
+  align-items: center !important;
+}
+@media (min-width: 1200px) {
+  .sm-topbar-inner{
+    width: min(1500px, calc(100vw - 560px)) !important;
+  }
+}
+
+.sm-table2 thead th {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  background: #f8fafc !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  text-align: center !important;
+}
+
+/* Body cells = same as .mam-table tbody td */
+.sm-table2 tbody td {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #0f172a !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #eef2f7 !important;
+  text-align: center !important;
+}
+
+/* Ensure rows behave like mam-table */
+.sm-table2 tbody tr {
+  text-align: center !important;
+}
+
+/* Name cell (avatar + name) centered as a group */
+.sm-nameTd {
+  justify-content: center !important;
+}
+
+/* Name text weight matches mam tbody */
+.sm-nameText {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #0f172a !important;
+}
+
+/* Device / misc text consistency */
+.sm-deviceTd {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #0f172a !important;
+}
+
+/* Status badge size already matches mam — just lock font */
+.sm-status {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+}
+
+/* Action buttons typography consistency */
+.sm-action {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+
+/* Name cell (avatar + name) align left */
+.sm-nameTd {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  padding-left: 14px !important; /* gives same comfortable inset like screenshot */
+}
+
+/* Make sure name text is left aligned */
+.sm-nameText {
+  text-align: left !important;
+  line-height: 1.2 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+/* Keep avatar fixed so spacing is consistent */
+.sm-avatar {
+  flex-shrink: 0 !important;
+}

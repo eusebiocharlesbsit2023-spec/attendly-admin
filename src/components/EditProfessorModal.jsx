@@ -39,25 +39,21 @@ export default function EditProfessorModal({ open, professor, onClose, onSaveCli
           <div className="epm-label">Status</div>
 
           <div className="epm-statusWrap">
-            <span className={`epm-pill ${status === "Active" ? "active" : "inactive"}`}>
-              {status}
-            </span>
-
             <select
               className="epm-select"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+              <option value="Active">Activate</option>
+              <option value="Inactive">Deactivate</option>
             </select>
           </div>
         </div>
 
         <button
-          className={`epm-save ${!changed ? "disabled" : ""}`} // ✅ optional class
+          className={`epm-save ${!changed ? "disabled" : ""}`}
           type="button"
-          disabled={!changed} // ✅ disable if no change
+          disabled={!changed}
           title={!changed ? "Change the status first" : "Save changes"}
           onClick={() => onSaveClick?.({ ...professor, status })}
         >

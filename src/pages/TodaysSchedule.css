@@ -273,3 +273,19 @@
   border-radius: 999px;
   white-space: nowrap;
 }
+
+
+.schedule-topbar > div {
+  max-width: 1500px !important;
+  width: calc(100vw - 560px) !important; 
+  margin-right: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* mobile fallback */
+@media (max-width: 900px) {
+  .schedule-topbar > div {
+    width: 92vw !important;
+  }
+}

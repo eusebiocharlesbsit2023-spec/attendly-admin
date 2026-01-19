@@ -23,7 +23,6 @@
     Roboto, Helvetica, Arial, sans-serif;
 }
 
-
 .epm-row {
   display: grid;
   grid-template-columns: 200px 1fr;
@@ -43,19 +42,22 @@
   color: #0f172a;
 }
 
+/* ✅ updated to match Edit Student dropdown look */
 .epm-statusWrap {
   justify-self: end;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #cbd5e1;
-  border-radius: 50px;
-  padding: 5px;
-  background: #fff;
+  gap: 10px;
+
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .epm-pill {
   padding: 8px 18px;
-  border-radius: 999px;
+  border-radius: 6px; /* rectangle-ish like student */
   font-weight: 800;
   font-size: 14px;
   border: 1px solid transparent;
@@ -73,13 +75,22 @@
   border-color: #e2e8f0;
 }
 
+/* ✅ updated dropdown style */
 .epm-select {
-  border: none;
+  width: 140px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
   outline: none;
+  font-size: 14px;
   font-weight: 700;
-  background: transparent;
-  padding: 4px 10px;
   cursor: pointer;
+}
+
+.epm-select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .epm-save {

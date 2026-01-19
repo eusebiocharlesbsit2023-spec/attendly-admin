@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AdminDashboard.css";
@@ -16,13 +16,16 @@ import {
   faLocationDot,
 } from "@fortawesome/free-solid-svg-icons";
 
+/* ✅ Notifications store */
+import { getNotifications } from "../lib/notifications";
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activityOpen, setActivityOpen] = useState(false);
   const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
-  const adminProfile = JSON.parse(localStorage.getItem('adminProfile')) || [];
+  const adminProfile = JSON.parse(localStorage.getItem("adminProfile")) || [];
 
   const stats = [
     { label: "Total Students", value: 45, icon: faUsers, tint: "blue" },
@@ -31,14 +34,24 @@ export default function AdminDashboard() {
     { label: "Active Sessions", value: 1, icon: faBookOpen, tint: "yellow" },
   ];
 
-  const activity = [
-    { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
-    { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
-    { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
-    { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
-    { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
-    { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
-  ];
+  const activity = useMemo(
+    () => [
+      { text: "Kirby Prado marked attendance in CS101", time: "2 minutes ago" },
+      { text: "Charles Eusebio marked attendance in CS101", time: "5 minutes ago" },
+      { text: "New Student enrolled: Mark Dave Bagaforo", time: "2 hours ago" },
+      { text: "Joseph Villa marked attendance in CS101", time: "3 hours ago" },
+      { text: "Alfred Valiente marked attendance in CS201", time: "4 hours ago" },
+      { text: "Mr. Jayson Joble updated class schedule for CS101", time: "6 hours ago" },
+      { text: "Ghim Joseph marked attendance in CS201", time: "3 hours ago" },
+      { text: "Professor Jayson Joble created class CS102", time: "Yesterday" },
+      { text: "Admin changed Andrei Cruz to Inactive", time: "2 days ago" },
+      { text: "Allan Guiraldo marked attendance in CS101", time: "3 days ago" },
+      { text: "Professor Michael Tan updated class CS201 syllabus", time: "4 days ago" },
+      { text: "Admin changed Andrei Caranto to Active", time: "5 days ago" },
+
+    ],
+    []
+  );
 
   const todayClasses = [
     {
@@ -59,7 +72,30 @@ export default function AdminDashboard() {
       location: "Court",
       students: 30,
     },
+    {
+      title: "CS102 - Fundamentals of Programming",
+      time: "3:30 PM",
+      location: "Room 305",
+      students: 41,
+    },
   ];
+
+  // ✅ Bell dot should reflect unread notifications
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const refreshUnreadCount = () => {
+    try {
+      const notes = getNotifications() || [];
+      setUnreadCount(notes.filter((n) => !n.read).length);
+    } catch {
+      setUnreadCount(0);
+    }
+  };
+
+  // refresh when dashboard loads
+  useEffect(() => {
+    refreshUnreadCount();
+  }, []);
 
   return (
     <div className="app-shell dash">
@@ -84,7 +120,8 @@ export default function AdminDashboard() {
                 setActivityOpen(true);
               }}
             >
-              <span className="notif-dot" />
+              {/* ✅ only show dot if there are unread notifications */}
+              {unreadCount > 0 && <span className="notif-dot" />}
               <FontAwesomeIcon icon={faBell} />
             </button>
 
@@ -142,7 +179,8 @@ export default function AdminDashboard() {
             </div>
 
             <div className="activity-list">
-              {activity.slice(0, 3).map((a, i) => (
+              {/* ✅ show more items so it becomes scrollable */}
+              {activity.slice(0, 6).map((a, i) => (
                 <div className="activity-item" key={i}>
                   <span className="activity-bullet" />
                   <div>
@@ -178,7 +216,11 @@ export default function AdminDashboard() {
             </div>
 
             <div className="panel-footer">
-              <button className="link-btn" type="button" onClick={() => navigate("/schedule")}>
+              <button
+                className="link-btn"
+                type="button"
+                onClick={() => navigate("/schedule")}
+              >
                 View Schedule
               </button>
             </div>
@@ -186,9 +228,14 @@ export default function AdminDashboard() {
         </section>
       </main>
 
+      {/* ✅ CONNECTED: passing items seeds/merges into the store in your updated modal */}
       <ActivityHistoryModal
         open={activityOpen}
-        onClose={() => setActivityOpen(false)}
+        onClose={() => {
+          setActivityOpen(false);
+          // refresh dot after read/unread/delete actions
+          refreshUnreadCount();
+        }}
         items={activity}
         anchorRect={activityAnchorRect}
       />
@@ -208,6 +255,4 @@ function ManageCard({ title, icon, onClick, tint }) {
       </button>
     </div>
   );
-
-
-  }
+}

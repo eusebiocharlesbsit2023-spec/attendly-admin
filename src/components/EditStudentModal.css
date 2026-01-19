@@ -6,7 +6,7 @@
   place-items: center;
   z-index: 3500;
 
-   font-family: "Montserrat",
+  font-family: "Montserrat",
     Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -18,11 +18,9 @@
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   padding: 26px 34px;
 
-  /* ✅ add this */
   font-family: "Montserrat",
     Roboto, Helvetica, Arial, sans-serif;
 }
-
 
 .esm-row {
   display: grid;
@@ -43,19 +41,22 @@
   color: #0f172a;
 }
 
+/* ✅ keep same layout, but remove wrapper border so the select looks like mam-select */
 .esm-statusWrap {
   justify-self: end;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #cbd5e1;
-  border-radius: 50px;
-  padding: 5px;
-  background: #fff;
+  gap: 10px;
+
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .esm-pill {
   padding: 8px 18px;
-  border-radius: 999px;
+  border-radius: 6px; /* rectangle-ish */
   font-weight: 800;
   font-size: 14px;
   border: 1px solid transparent;
@@ -73,13 +74,22 @@
   border-color: #e2e8f0;
 }
 
+/* ✅ make dropdown match mam-select style */
 .esm-select {
-  border: none;
+  width: 140px;              /* keeps it consistent like admin */
+  border: 1px solid #e2e8f0;  /* same as mam-select */
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
   outline: none;
+  font-size: 14px;
   font-weight: 700;
-  background: transparent;
-  padding: 4px 10px;
   cursor: pointer;
+}
+
+.esm-select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .esm-save {

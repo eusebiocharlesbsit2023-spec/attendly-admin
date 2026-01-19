@@ -585,3 +585,85 @@ td{
   width: 9px !important;
   height: 9px !important;
 }
+/* ==============================
+   PM: Match Manage Admin TABLE style
+   (font size, weight, alignment)
+   ============================== */
+
+/* ---------- If you use the REAL table (.pm-tableReal) ---------- */
+.pm-tableReal th {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  background: #f8fafc !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  text-align: center !important;
+}
+
+.pm-tableReal td {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #0f172a !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #eef2f7 !important;
+  text-align: center !important;
+}
+
+/* ---------- If you use the GRID table (.pm-thead / .pm-row) ---------- */
+.pm-thead {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  background: #f8fafc !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+
+  text-align: center !important;
+  align-items: center !important;
+}
+
+.pm-tbody .pm-row {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #0f172a !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #eef2f7 !important;
+
+  text-align: center !important;
+  align-items: center !important;
+}
+
+/* Center each grid "cell" (like td center) */
+.pm-thead > div,
+.pm-tbody .pm-row > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Name cell (avatar + name) centered as a group */
+.pm-nameCell {
+  justify-content: center !important;
+}
+
+/* Email / text consistency */
+.pm-email {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #0f172a !important;
+}
+
+/* Status badge font like MAM (mam-status uses 12px + 800) */
+.pm-pill {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+}
+
+/* Action buttons already match, just lock typography */
+.pm-actionBtn {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}

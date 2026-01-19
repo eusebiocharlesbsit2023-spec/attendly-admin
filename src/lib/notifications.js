@@ -21,7 +21,11 @@ function save(list) {
 
 // Ensure each notification has a stable `id` and `read` flag
 function normalize(list) {
-  return list.map((n, i) => ({ id: n.id ?? `${Date.now()}-${i}`, read: !!n.read, ...n }));
+  return (list || []).map((n, i) => ({
+    id: n.id ?? `${Date.now()}-${i}`,
+    read: !!n.read,
+    ...n,
+  }));
 }
 
 export function getNotifications() {
@@ -38,6 +42,14 @@ export function initNotifications(seed = []) {
   if (!current || current.length === 0) {
     save(normalize(seed));
   }
+  return getNotifications();
+}
+
+/**
+ * ✅ NEW: overwrite the store with a provided list (used to keep dashboard + modal in sync)
+ */
+export function syncNotifications(list = []) {
+  save(normalize(list));
   return getNotifications();
 }
 
@@ -76,4 +88,4 @@ export function deleteNotificationById(id) {
 export function clearNotifications() {
   save([]);
   return getNotifications();
-} 
+}
