@@ -178,14 +178,15 @@ export default function TodaysSchedule() {
         </div>
 
         <section className="schedule-grid">
-          {classes.map((c, idx) => (
-            <div className="schedule-card" key={idx}>
-              <div className={`status-pill ${c.statusType}`}>
-  <span className="status-text">{c.status}</span>
-</div>
-
-
-                <div className="card-top">
+          {loading ? (
+            <div className="schedule-empty">Loading schedule...</div>
+          ) : rows.length === 0 ? (
+            <div className="schedule-empty">No classes scheduled today.</div>
+          ) : (
+            rows.map((c) => (
+              <div className="schedule-card" key={c.id}>
+                <div className={`status-pill ${c.statusType}`}>{c.status}</div>
+                   <div className="card-top">
                   <div className="course-title">{c.title}</div>
                   <div className="students-pill">{c.students} Students</div>
                 </div>
@@ -223,7 +224,8 @@ export default function TodaysSchedule() {
                 </div>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </section>
       </main>
     </div>

@@ -64,6 +64,7 @@
   border-radius:14px;
   box-shadow:0 10px 22px rgba(0,0,0,.12);
   border:1px solid rgba(0,0,0,.06);
+  max-width:1400px;
 }
 
 /* Stats */
@@ -72,6 +73,9 @@
   grid-template-columns: repeat(3, minmax(220px,1fr));
   gap:26px;
   margin:10px 0 24px;
+  max-width:1400px;
+  margin-left:auto;
+  margin-right:auto;
 }
 .cm-stat{
   padding:26px 28px;

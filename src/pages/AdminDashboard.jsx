@@ -102,18 +102,18 @@ export default function AdminDashboard() {
       <Sidebar open={false} active="dashboard" />
 
       {/* Top Bar */}
-      <header className="dash-topbar">
-        <div className="dash-topbar-inner">
-          <div className="dash-topbar-left">
+      <header className="mnt-topbar">
+        <div className="mnt-topbar-inner">
+          <div className="mnt-topbar-left">
             <div>
               <div className="dash-title">Admin Dashboard</div>
               <div className="dash-subtitle">Welcome back, {adminProfile.role}</div>
             </div>
           </div>
 
-          <div className="dash-topbar-right">
+          <div className="mnt-topbar-right">
             <button
-              className="icon-btn bell-btn"
+              className="mnt-icon-btn"
               ref={notifRef}
               onClick={() => {
                 setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
               }}
             >
               {/* ✅ only show dot if there are unread notifications */}
-              {unreadCount > 0 && <span className="notif-dot" />}
+              {unreadCount > 0 && <span className="mnt-notif-dot" />}
               <FontAwesomeIcon icon={faBell} />
             </button>
 
@@ -255,4 +255,6 @@ function ManageCard({ title, icon, onClick, tint }) {
       </button>
     </div>
   );
-}
+
+
+  }

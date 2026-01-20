@@ -195,8 +195,8 @@ export default function AttendanceRecords() {
       <Sidebar open={false} active="attendance" />
 
       {/* Top Bar */}
-      <header className="ar-topbar">
-        <div className="ar-topbar-inner">
+      <header className="mnt-topbar">
+        <div className="mnt-topbar-inner">
           <div className="ar-topbar-left">
             <div>
               <div className="ar-title">Attendance Records</div>
@@ -215,7 +215,7 @@ export default function AttendanceRecords() {
                 setActivityOpen(true);
               }}
             >
-              <span className="ar-notif-dot" />
+              <span className="mnt-notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
           </div>
@@ -248,7 +248,7 @@ export default function AttendanceRecords() {
         </section>
 
         {/* DataTable-like controls + table */}
-        <section className="ar-dt card">
+        <section className="ar-dt _card">
           <div className="ar-dt-top">
             <div className="ar-dt-search">
               <span className="ar-dt-searchIcon">

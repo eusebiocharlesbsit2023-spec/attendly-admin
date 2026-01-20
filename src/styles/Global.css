@@ -39,6 +39,7 @@ textarea {
   min-height: 100vh;
   /* reserve space for fixed topbar so page content doesn't sit under it */
   padding-top: 92px;
+  overflow-y: auto;
 }
 
 /* Desktop: reserve sidebar width */
@@ -130,7 +131,7 @@ textarea {
 }
 .dash-topbar-inner, .sm-topbar-inner, .pm-topbar-inner, .ar-topbar-inner, .mnt-topbar-inner, .cm-topbar-inner {
   width: min(var(--container-max), 92vw);
-  margin: 0 auto;
+  margin: 0 50px;
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -145,7 +146,7 @@ textarea {
   opacity: .9;
   margin-top: 2px;
 }
-.icon-btn, .sm-icon-btn, .pm-icon-btn, .ar-icon-btn, .mnt-icon-btn, .cm-icon-btn {
+.icon-btn, .sm-icon-btn, .pm-icon-btn, .ar-icon-btn, .mnt-icon-btn, .cm-icon-btn, .icon-btn {
   width: 46px;
   height: 46px;
   border-radius: 12px;

@@ -173,18 +173,18 @@ export default function Reports() {
       <Sidebar open={false} active="reports" />
 
       {/* TOP BAR */}
-      <header className="dash-topbar">
-        <div className="dash-topbar-inner">
-          <div className="dash-topbar-left">
+      <header className="mnt-topbar">
+        <div className="mnt-topbar-inner">
+          <div className="mnt-topbar-left">
             <div>
               <div className="dash-title">Reports</div>
               <div className="dash-subtitle">View submitted reports and status</div>
             </div>
           </div>
 
-          <div className="dash-topbar-right">
+          <div className="mnt-topbar-right">
             <button
-              className="icon-btn"
+              className="mnt-icon-btn"
               type="button"
               ref={notifRef}
               onClick={() => {
@@ -192,7 +192,7 @@ export default function Reports() {
                 setActivityOpen(true);
               }}
             >
-              <span className="notif-dot" />
+              <span className="mnt-notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
 

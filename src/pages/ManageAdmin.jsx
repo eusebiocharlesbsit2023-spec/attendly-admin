@@ -366,18 +366,18 @@ export default function ManageAdmin() {
       <Sidebar open={false} active="manage-admin" />
 
       {/* Top Bar */}
-      <header className="dash-topbar">
-        <div className="dash-topbar-inner">
-          <div className="dash-topbar-left">
+      <header className="mnt-topbar">
+        <div className="mnt-topbar-inner">
+          <div className="mnt-topbar-left">
             <div>
               <div className="dash-title">Admin Management</div>
               <div className="dash-subtitle">Manage administrator accounts</div>
             </div>
           </div>
 
-          <div className="dash-topbar-right">
+          <div className="mnt-topbar-right">
             <button
-              className="icon-btn"
+              className="mnt-icon-btn"
               aria-label="Notifications"
               type="button"
               ref={notifRef}
@@ -386,7 +386,7 @@ export default function ManageAdmin() {
                 setActivityOpen(true);
               }}
             >
-              <span className="notif-dot" />
+              <span className="mnt-notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
 

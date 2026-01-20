@@ -23,6 +23,7 @@ body {
   margin: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  overflow-y: auto;
 
   /* ✅ Global font */
   font-family: "Montserrat";
@@ -33,6 +34,7 @@ body {
   min-height: 100vh;
   background: #eaf4ff;
   color: #0f172a;
+  overflow-y: auto;
   overflow-y: auto;
 
   /* ✅ Ensure dashboard uses Montserrat */
@@ -53,7 +55,7 @@ body {
 
 .dash-topbar-inner {
   width: min(var(--container-max), 94vw); /* was 92vw */
-  margin: 0 auto;
+  margin: 0 50px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -93,8 +95,6 @@ body {
   border: none;
   background: transparent;
   color: #fff;
-  width: 46px;
-  height: 46px;
   border-radius: 12px;
   display: grid;
   place-items: center;
@@ -128,8 +128,7 @@ body {
 
 /* ========== Main container ========== */
 .dash-main {
-  width: min(var(--container-max), 94vw); /* was 92vw */
-  margin: 14px auto 16px; /* was 18px auto 28px (less bottom whitespace) */
+  margin: 50px; /* was 18px auto 28px (less bottom whitespace) */
 }
 
 /* ========== Card base ========== */
@@ -158,7 +157,6 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-width: 0;
   transition: transform 0.2s ease;
 }
 
@@ -261,6 +259,7 @@ body {
   font-size: 18px;
   color: #0f172a;
   margin-bottom: 14px;
+  height: 70px;
 }
 
 .panel-title.plain {
@@ -321,9 +320,6 @@ body {
 .classes-list {
   display: grid;
   gap: 12px;
-  max-width: var(--content-max); /* was 1100px */
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .class-item {
@@ -439,213 +435,4 @@ body {
   .dash-subtitle {
     font-size: 14px;
   }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .manage-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .bottom-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .stat-card {
-    padding: 14px;
-  }
-
-  .manage-card {
-    padding: 12px;
-  }
-
-  .panel {
-    padding: 12px;
-  }
-
-  /* keep scroll behavior on small screens too */
-  .activity-list {
-    max-height: 300px;
-  }
-}
-
-/* =========================
-   1920x1080 FIT OVERRIDES
-   (paste at VERY BOTTOM)
-   ========================= */
-
-/* Make the main content area use more of the available width */
-.dash .dash-topbar-inner,
-.dash .dash-main {
-  width: min(1500px, calc(100vw - 560px)); /* sidebar 500 + some breathing room */
-}
-
-/* Reduce extra bottom whitespace */
-.dash .dash-main {
-  margin: 10px auto 0px !important;
-  padding-bottom: 0 !important;
-}
-
-/* Remove the 1100px clamps so grids can expand */
-.dash .stats-grid,
-.dash .manage-grid,
-.dash .bottom-grid,
-.dash .classes-list {
-  max-width: none !important; /* this is the big one */
-  width: 100%;
-}
-
-/* Slightly tighter spacing between cards */
-.dash .stats-grid,
-.dash .manage-grid,
-.dash .bottom-grid {
-  gap: 12px; /* was 16px */
-}
-
-.dash .manage-grid,
-.dash .bottom-grid {
-  margin-top: 12px; /* was 16px */
-}
-
-/* Optional: a tiny reduction in outer padding feel (without changing card UI) */
-@media (min-width: 1400px) {
-  .dash .dash-topbar-inner,
-  .dash .dash-main {
-    width: min(1560px, calc(100vw - 540px));
-  }
-}
-
-/* =========================
-   MATCH SCREENSHOT SPACING
-   (paste at VERY BOTTOM)
-   ========================= */
-
-/* Keep your side fit, just restore “nice” card heights */
-.dash .stat-card { padding: 18px !important; }
-.dash .stat-icon { width: 52px !important; height: 52px !important; }
-.dash .stat-label { margin-top: 6px !important; }
-
-.dash .manage-card { padding: 16px !important; }
-.dash .manage-btn {
-  padding: 22px 10px !important;   /* taller like screenshot */
-  gap: 10px !important;
-}
-.dash .manage-icon { width: 56px !important; height: 56px !important; }
-
-.dash .panel { padding: 16px !important; }
-.dash .panel-title { margin-bottom: 14px !important; }
-
-.dash .activity-list { gap: 12px !important; }
-.dash .activity-item { padding: 14px !important; }
-
-.dash .class-item { padding: 14px !important; }
-.dash .class-meta { margin-top: 10px !important; }
-
-.dash .panel-footer { margin-top: 14px !important; }
-
-/* Keep the same grid spacing as screenshot */
-.dash .stats-grid,
-.dash .manage-grid,
-.dash .bottom-grid { gap: 14px !important; }
-
-.dash .manage-grid,
-.dash .bottom-grid { margin-top: 14px !important; }
-
-@media (min-width: 1200px) {
-  .dash .dash-main {
-    margin-top: 48px !important;
-    margin-bottom: 48px !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-}
-
-@media (min-width: 1200px) {
-  /* Stats cards */
-  .dash .stat-card {
-    padding: 22px !important; /* was ~18 */
-  }
-
-  .dash .stat-icon {
-    width: 58px !important;
-    height: 58px !important;
-  }
-
-  .dash .stat-value {
-    font-size: clamp(34px, 2.4vw + 18px, 46px);
-  }
-
-  /* Manage cards */
-  .dash .manage-card {
-    padding: 18px !important;
-  }
-
-  .dash .manage-btn {
-    padding: 26px 12px !important;
-  }
-
-  .dash .manage-icon {
-    width: 60px !important;
-    height: 60px !important;
-  }
-
-  .dash .manage-text {
-    font-size: 15px;
-  }
-
-  .dash .panel {
-    padding: 20px !important;
-  }
-
-  .dash .panel-title {
-    font-size: 19px;
-  }
-
-  .dash .activity-item,
-  .dash .class-item {
-    padding: 16px !important;
-  }
-
-  .dash .activity-main {
-    font-size: 15px;
-  }
-
-  .dash .class-title {
-    font-size: 14px;
-  }
-}
-
-/* ===== DASH: Bell button match Student Management ===== */
-.dash .dash-topbar-right .icon-btn{
-  width: 46px !important;
-  height: 46px !important;
-  border-radius: 12px !important;
-  background: transparent !important;
-  border: none !important;
-  display: grid !important;
-  place-items: center !important;
-  cursor: pointer !important;
-  transition: background-color 0.15s ease !important;
-}
-
-.dash .dash-topbar-right .icon-btn:hover{
-  background-color: rgba(255, 255, 255, 0.20) !important; /* SM hover */
-}
-
-/* Make the bell icon size match SM */
-.dash .dash-topbar-right .icon-btn svg{
-  font-size: 22px !important;
-  color: #fff !important;
-}
-
-/* Notification dot match SM sizing/position */
-.dash .dash-topbar-right .notif-dot{
-  top: 10px !important;
-  right: 12px !important;
-  width: 9px !important;
-  height: 9px !important;
 }

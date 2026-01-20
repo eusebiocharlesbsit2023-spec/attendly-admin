@@ -240,22 +240,22 @@
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  background: #d6e7fb;
-  color: #0a4e86;
-  display: grid;
-  place-items: center;
+  transition: background-color .15s;
 }
 
-.pm-addBtn:hover { filter: brightness(0.97); }
+.pm-addBtn:hover { 
+  
+  background: #0e67af;
+}
 
 .pm-exportBtn {
-  background: #0a4e86;
-  color: #fff;
-  border: none;
+  background: #eff6ff;
+  color: #0a4e86;
+  border: 1px solid #bfdbfe;
   border-radius: 10px;
   padding: 12px 16px;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   gap: 10px;
@@ -373,6 +373,18 @@ td{
   font-size: 13px;
   min-width: 110px;
   border: 1px solid transparent;
+}
+
+.pm-addBtn{
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  width: 160px;
+  gap: 20px;
+  padding: 10px;
+  color: white;
+  background: #0a4e86;
+  font-weight: bold;
 }
 
 .pm-pill.active {

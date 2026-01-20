@@ -46,7 +46,7 @@ body {
 /* ✅ UPDATED: match Admin Dashboard container behavior */
 .ar-topbar-inner {
   width: min(1480px, 94vw);
-  margin: 0 auto;
+  margin: 0;
   padding: 0; /* dashboard doesn't add side padding here */
 
   display: flex;
@@ -111,14 +111,10 @@ body {
 /* ---------- Main ---------- */
 .ar-main {
   /* ✅ full width like SM, less side spacing */
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 18px 24px 16px;
+  padding: 18px 24px ;
 
   /* ✅ fit below topbar (no page scroll) */
   flex: 1 1 auto;
-  min-height: 0;
   overflow: hidden;
 
   /* ✅ allow internal sections to size correctly */
@@ -128,7 +124,7 @@ body {
 }
 
 /* cards shared */
-.card {
+._card {
   background: #fff;
   border: 1px solid #e6eef7;
   border-radius: 18px;
@@ -188,14 +184,13 @@ body {
    DataTable-like layout
    =========================== */
 .ar-dt {
-  margin-top: 0;
   padding: 12px;
-
   /* ✅ make this card take remaining height */
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* top row: search + right controls */
@@ -410,6 +405,11 @@ body {
   align-items: center;
   font-size: 14px;
   border-bottom: 1px solid #eef2f7;
+}
+
+.ar-dt-tbody {
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .ar-dt-tbody .ar-dt-row:nth-child(even) {
@@ -663,10 +663,6 @@ body {
     width: 94vw;
   }
 
-  .ar-main {
-    padding: 14px 14px 12px;
-  }
-
   .ar-stats {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -745,7 +741,7 @@ body {
   justify-content: space-between !important;
 
   width: min(1480px, calc(100vw - 560px)) !important; /* ✅ match dash override feel */
-  margin: 0 auto !important;
+  margin: 0 50px!important;
   padding: 0 !important;
 }
 

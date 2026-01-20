@@ -17,7 +17,7 @@
 /* Card wrapper */
 .rep-card {
   max-width: 1400px;
-  margin: 12px auto;
+  margin: 30px auto;
   background: #fff;
   border: 1px solid #e6ebf2;
   border-radius: 12px;
@@ -26,7 +26,7 @@
 }
 
 .rep-dt {
-  padding: 14px 16px 12px;
+  padding: 14px 16px;
 }
 
 /* ===== Top controls (like screenshot) ===== */
@@ -179,7 +179,6 @@
 .rep-dt-table {
   border: 1px solid #eef2f7;
   border-radius: 16px;
-  overflow: visible;
 }
 
 .rep-dt-thead {
@@ -369,10 +368,6 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .rep-dt-table {
-    overflow-x: auto;
-  }
-
   .rep-dt-tbody {
     overflow-y: auto;
   }
@@ -400,7 +395,7 @@
 
 .rep .dash-topbar-inner {
   max-width: 1400px;  
-  margin: 0 auto;      
+  margin: 0 30px;      
   padding: 0 20px;     
   width: 100%;
   display: flex;
