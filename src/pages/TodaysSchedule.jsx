@@ -204,15 +204,7 @@ export default function TodaysSchedule() {
                   <Svg name="pin" small />
                   <span>{c.room}</span>
                 </div>
-                <div className="info-row">
-                  <Svg name="pin" small />
-                  <span>{c.room}</span>
-                </div>
 
-                <div className="info-row">
-                  <Svg name="clock" small />
-                  <span>{c.time}</span>
-                </div>
                 <div className="info-row">
                   <Svg name="clock" small />
                   <span>{c.time}</span>

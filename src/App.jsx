@@ -28,7 +28,10 @@ function App() {
         <Route path="/classes" element={<ClassManagement />} />
         <Route path="/professors" element={<ProfessorManagement />} />
         <Route path="/manage-admin" element={<ManageAdmin />} />
-        <Route path="/reports" element={<Reports />} /> 
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/reports/feedback" element={<Reports />} />
+        <Route path="/reports/archive" element={<Reports />} />
+
         <Route path="/schedule" element={<TodaysSchedule />} />
         <Route
   path="/manage-admin"

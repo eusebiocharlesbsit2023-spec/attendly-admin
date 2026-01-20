@@ -8,8 +8,8 @@ export default function EditStudentModal({ open, student, onClose, onSaveClick }
   useEffect(() => {
     if (open && student) {
       const s = student.status || "Active";
-      setStatus(s);          // ✅ show current status
-      setOriginalStatus(s);  // ✅ keep original for comparison
+      setStatus(s);
+      setOriginalStatus(s);
     }
   }, [open, student]);
 
@@ -45,7 +45,6 @@ export default function EditStudentModal({ open, student, onClose, onSaveClick }
 
         <div className="esm-row">
           <div className="esm-label">Status</div>
-
           <div className="esm-statusWrap">
             <select
               className="esm-select"
@@ -58,15 +57,26 @@ export default function EditStudentModal({ open, student, onClose, onSaveClick }
           </div>
         </div>
 
-        <button
-          className={`esm-save ${!changed ? "disabled" : ""}`}
-          type="button"
-          disabled={!changed}
-          title={!changed ? "Change the status first" : "Save changes"}
-          onClick={() => onSaveClick?.({ ...student, status })}
-        >
-          Save
-        </button>
+        {/* ✅ Action buttons */}
+        <div className="esm-actions">
+          <button
+            className="esm-cancel"
+            type="button"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+
+          <button
+            className={`esm-save ${!changed ? "disabled" : ""}`}
+            type="button"
+            disabled={!changed}
+            title={!changed ? "Change the status first" : "Save changes"}
+            onClick={() => onSaveClick?.({ ...student, status })}
+          >
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );

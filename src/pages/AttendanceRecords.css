@@ -453,21 +453,17 @@ body {
 
 /* pills */
 .ar-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  height: 32px;
-  min-width: 110px;
-  padding: 0 16px;
-
+  width: 140px;
+  height: 34px;
   border-radius: 999px;
-  font-weight: 900;
-  border: 1.5px solid transparent;
-  background: #f8fafc;
-  font-size: 12px;
-  line-height: 1;
-  text-align: center;
+  border: 1px solid #d7e3f1;
+  padding: 6px 12px;
+  outline: none;
+  font-weight: 800;
+  cursor: pointer;
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #b45309;
 }
 
 .ar-pill.Present {

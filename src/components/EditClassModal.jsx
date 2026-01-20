@@ -3,13 +3,7 @@ import "./EditClassModal.css";
 
 /* Font Awesome */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUser,
-  faLocationDot,
-  faClock,
-  faWifi,
-  faFloppyDisk,
-} from "@fortawesome/free-solid-svg-icons";
+import { faUser, faLocationDot, faClock, faWifi } from "@fortawesome/free-solid-svg-icons";
 
 export default function EditClassModal({
   open,
@@ -24,30 +18,55 @@ export default function EditClassModal({
   const [schedule, setSchedule] = useState("");
   const [wifi, setWifi] = useState("");
 
+  const [original, setOriginal] = useState({
+    status: "Active",
+    professor: "",
+    room: "",
+    schedule: "",
+    wifi: "",
+  });
+
   const profOptions = useMemo(() => {
-    const set = new Set((allClasses || []).map((c) => c.professor));
+    const set = new Set((allClasses || []).map((c) => c.professor).filter(Boolean));
     return Array.from(set);
   }, [allClasses]);
 
   const roomOptions = useMemo(() => {
-    const set = new Set((allClasses || []).map((c) => c.room));
+    const set = new Set((allClasses || []).map((c) => c.room).filter(Boolean));
     return Array.from(set);
   }, [allClasses]);
 
   const scheduleOptions = useMemo(() => {
-    const set = new Set((allClasses || []).map((c) => c.schedule));
+    const set = new Set((allClasses || []).map((c) => c.schedule).filter(Boolean));
     return Array.from(set);
   }, [allClasses]);
 
   useEffect(() => {
     if (open && clazz) {
-      setStatus(clazz.status || "Active");
-      setProfessor(clazz.professor || "");
-      setRoom(clazz.room || "");
-      setSchedule(clazz.schedule || "");
-      setWifi(clazz.wifi || "");
+      const next = {
+        status: clazz.status || "Active",
+        professor: clazz.professor || "",
+        room: clazz.room || "",
+        schedule: clazz.schedule || "",
+        wifi: clazz.wifi || "",
+      };
+
+      setStatus(next.status);
+      setProfessor(next.professor);
+      setRoom(next.room);
+      setSchedule(next.schedule);
+      setWifi(next.wifi);
+
+      setOriginal(next);
     }
   }, [open, clazz]);
+
+  const changed =
+    status !== original.status ||
+    professor !== original.professor ||
+    room !== original.room ||
+    schedule !== original.schedule ||
+    wifi !== original.wifi;
 
   if (!open || !clazz) return null;
 
@@ -126,8 +145,7 @@ export default function EditClassModal({
             </select>
           </div>
 
-          {/* ===== WiFi + Save (SAME ROW) ===== */}
-          <div className="ecm-line ecm-wifiRow">
+          <div className="ecm-line">
             <span className="ecm-ico">
               <FontAwesomeIcon icon={faWifi} />
             </span>
@@ -138,24 +156,33 @@ export default function EditClassModal({
               onChange={(e) => setWifi(e.target.value)}
               placeholder="Lab WiFi name"
             />
-
-            <button
-              className="ecm-save inline"
-              type="button"
-              onClick={() =>
-                onSaveClick?.({
-                  ...clazz,
-                  status,
-                  professor,
-                  room,
-                  schedule,
-                  wifi,
-                })
-              }
-            >
-              Save
-            </button>
           </div>
+        </div>
+
+        {/* ✅ Buttons (CENTER like student modal) */}
+        <div className="ecm-actions">
+          <button className="ecm-cancel" type="button" onClick={onClose}>
+            Cancel
+          </button>
+
+          <button
+            className={`ecm-save ${!changed ? "disabled" : ""}`}
+            type="button"
+            disabled={!changed}
+            title={!changed ? "Change something first" : "Save changes"}
+            onClick={() =>
+              onSaveClick?.({
+                ...clazz,
+                status,
+                professor,
+                room,
+                schedule,
+                wifi,
+              })
+            }
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>

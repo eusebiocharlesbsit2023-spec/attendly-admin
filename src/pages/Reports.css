@@ -218,12 +218,15 @@
 }
 
 /* Name cell with avatar like screenshot */
+/* Name cell: avatar + name LEFT aligned */
 .rep-dt-nameCell {
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
   gap: 12px;
 }
 
+/* Avatar stays fixed */
 .rep-dt-avatar {
   width: 34px;
   height: 34px;
@@ -234,12 +237,15 @@
   place-items: center;
   font-size: 12px;
   font-weight: 900;
+  flex: 0 0 34px;
 }
 
+/* Name text */
 .rep-dt-name {
-  font-weight: 800;
-  color: #0f172a;
+  text-align: left !important;
+  white-space: nowrap;
 }
+
 
 .rep-email {
   color: #0a4e86;
@@ -463,6 +469,7 @@
   font-weight: 400 !important;
   color: #0f172a !important;
   border-bottom: 1px solid #eef2f7 !important;
+  justify-content: flex-start !important;
 
   text-align: center !important;
   align-items: center !important;
@@ -502,3 +509,156 @@
   justify-content: center !important;
   align-items: center !important;
 }
+
+.rep-dt-mini select {
+  width: 100%;
+  border: 1.5px solid #d7e3f1;
+  border-radius: 12px;
+  padding: 12px 14px;
+  outline: none;
+  background: #fff;
+  font-size: 14px;
+}
+
+.rep-restoreBtn{
+  border: 1.8px solid #0a4e86;
+  font-weight: 900;
+  border-radius: 999px;
+  height: 32px;
+  padding: 0 16px;
+  cursor: pointer;
+  
+    color: #0a4e86;
+    border-color: #cfe3fb;
+    background: #f5faff;
+  
+}
+.rep-restoreBtn:hover{
+  background: #0a4e86;
+  color: #fff;
+}
+
+
+/* ✅ Name column should be LEFT aligned (start → end) */
+.rep-dt-thead > div:first-child,
+.rep-dt-tbody .rep-dt-row > div:first-child {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+/* avatar + name group left */
+.rep-dt-nameCell {
+  justify-content: flex-start !important;
+}
+
+/* name text left */
+.rep-dt-name {
+  text-align: left !important;
+}
+
+/* ✅ Reduce overall padding (less airy) */
+.rep-dt {
+  padding: 10px 12px !important;
+}
+
+.rep-dt-thead,
+.rep-dt-tbody .rep-dt-row {
+  padding: 10px 12px !important;   /* was 14px 14px */
+  column-gap: 10px !important;     /* add small gap */
+}
+
+/* ✅ Make table container scroll horizontally if needed */
+.rep-dt-table {
+  overflow-x: auto;
+}
+
+/* ✅ Reduce card spacing */
+.rep-card {
+  margin: 18px auto !important;    /* was 30px */
+}
+
+/* ✅ Filters + top spacing smaller */
+.rep-dt-top {
+  padding: 4px 2px 8px !important;
+}
+
+.rep-dt-sub {
+  padding: 4px 2px 8px !important;
+}
+
+.rep-dt-filters {
+  padding: 4px 2px 10px !important;
+  gap: 10px !important;
+}
+
+/* ✅ Left align NAME column only */
+.rep-dt-thead > div:first-child,
+.rep-dt-tbody .rep-dt-row > div:first-child {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.rep-dt-nameCell {
+  justify-content: flex-start !important;
+}
+
+/* ✅ Make long text not force big columns */
+.rep-email,
+.rep-subject,
+.rep-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rep-statusSelect {
+  width: 140px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #d7e3f1;
+  padding: 6px 12px;
+  outline: none;
+  background: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* ✅ Rectangle dropdown */
+.rep-statusSelect {
+  width: 150px;
+  height: 36px;
+  border-radius: 10px;              /* rectangle (not pill) */
+  padding: 6px 12px;
+  outline: none;
+  background: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* ✅ Colors match your pill theme */
+.rep-status-open {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.rep-status-resolved {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #15803d;
+}
+
+.rep-status-pending {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #b45309;
+}
+
+.rep-status-closed {
+  background: #eef2f7;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+
+

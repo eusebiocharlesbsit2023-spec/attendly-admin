@@ -41,24 +41,28 @@
   margin-top: 2px;
 }
 
-/* ================= STATUS (KEEP ROUNDED) ================= */
+/* ================= STATUS ================= */
 .ecm-statusWrap {
   display: inline-flex;
   align-items: center;
   gap: 10px;
 }
 
-.ecm-pill {
-  padding: 8px 18px;
-  border-radius: 999px;
-  font-weight: 900;
-  font-size: 13px;
-  border: 1px solid #a7f3d0;
+.ecm-statusSelect {
+  width: 140px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  outline: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.ecm-pill.active {
-  background: #e7f7ee;
-  color: #0f7a3d;
+.ecm-statusSelect:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 /* ================= FIELDS ================= */
@@ -69,7 +73,6 @@
   gap: 12px;
 }
 
-/* Force SAME WIDTH + HEIGHT */
 .ecm-line {
   display: flex;
   align-items: center;
@@ -87,9 +90,9 @@
 /* ✅ ALL RECTANGLE INPUTS (same size) */
 .ecm-select,
 .ecm-input {
-  width: 100%;               /* same width */
-  max-width: 420px;          /* controls column size */
-  height: 44px;              /* same height */
+  width: 100%;
+  max-width: 420px;
+  height: 44px;
 
   border: 1px solid #cbd5e1;
   border-radius: 6px;
@@ -101,13 +104,40 @@
   font-size: 14px;
 }
 
-.ecm-wifiRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.ecm-select:focus,
+.ecm-input:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+/* ================= ACTIONS (CENTER) ================= */
+.ecm-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
 
+/* Cancel */
+.ecm-cancel {
+  min-width: 120px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.ecm-cancel:hover {
+  background: #f8fafc;
+}
+
+/* Save */
 .ecm-save {
   min-width: 160px;
   height: 44px;
@@ -117,17 +147,18 @@
   background: #0a4e86;
   color: #fff;
   font-weight: 900;
+  font-size: 15px;
   cursor: pointer;
+  margin: 0;
 }
 
 .ecm-save:hover {
   filter: brightness(1.05);
 }
 
-.ecm-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 18px;
+.ecm-save.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -139,5 +170,15 @@
   .ecm-select,
   .ecm-input {
     max-width: 100%;
+  }
+
+  .ecm-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .ecm-save,
+  .ecm-cancel {
+    width: 100%;
   }
 }

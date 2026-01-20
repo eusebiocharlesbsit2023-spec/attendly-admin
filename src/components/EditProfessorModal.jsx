@@ -9,7 +9,7 @@ export default function EditProfessorModal({ open, professor, onClose, onSaveCli
     if (open && professor) {
       const s = professor.status || "Active";
       setStatus(s);
-      setOriginalStatus(s); // ✅ store original
+      setOriginalStatus(s);
     }
   }, [open, professor]);
 
@@ -21,7 +21,7 @@ export default function EditProfessorModal({ open, professor, onClose, onSaveCli
     <div className="epm-overlay" onMouseDown={onClose}>
       <div className="epm-card" onMouseDown={(e) => e.stopPropagation()}>
         <div className="epm-row">
-          <div className="epm-label">Student Name</div>
+          <div className="epm-label">Professor Name</div>
           <div className="epm-value">{professor.name}</div>
         </div>
 
@@ -50,15 +50,22 @@ export default function EditProfessorModal({ open, professor, onClose, onSaveCli
           </div>
         </div>
 
-        <button
-          className={`epm-save ${!changed ? "disabled" : ""}`}
-          type="button"
-          disabled={!changed}
-          title={!changed ? "Change the status first" : "Save changes"}
-          onClick={() => onSaveClick?.({ ...professor, status })}
-        >
-          Save
-        </button>
+        {/* ✅ Center buttons (Cancel + Save) */}
+        <div className="epm-actions">
+          <button className="epm-cancel" type="button" onClick={onClose}>
+            Cancel
+          </button>
+
+          <button
+            className={`epm-save ${!changed ? "disabled" : ""}`}
+            type="button"
+            disabled={!changed}
+            title={!changed ? "Change the status first" : "Save changes"}
+            onClick={() => onSaveClick?.({ ...professor, status })}
+          >
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -6,7 +6,7 @@
   place-items: center;
   z-index: 3500;
 
-   font-family: "Montserrat",
+  font-family: "Montserrat",
     Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -18,7 +18,6 @@
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   padding: 26px 34px;
 
-  /* ✅ add this */
   font-family: "Montserrat",
     Roboto, Helvetica, Arial, sans-serif;
 }
@@ -55,26 +54,6 @@
   background: transparent;
 }
 
-.epm-pill {
-  padding: 8px 18px;
-  border-radius: 6px; /* rectangle-ish like student */
-  font-weight: 800;
-  font-size: 14px;
-  border: 1px solid transparent;
-}
-
-.epm-pill.active {
-  background: #e7f7ee;
-  color: #0f7a3d;
-  border-color: #a7f3d0;
-}
-
-.epm-pill.inactive {
-  background: #f1f5f9;
-  color: #475569;
-  border-color: #e2e8f0;
-}
-
 /* ✅ updated dropdown style */
 .epm-select {
   width: 140px;
@@ -93,9 +72,34 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+/* ✅ Actions (CENTER like other modals) */
+.epm-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+/* Cancel button */
+.epm-cancel {
+  min-width: 120px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.epm-cancel:hover {
+  background: #f8fafc;
+}
+
+/* Save button */
 .epm-save {
-  display: block;
-  margin: 28px auto 0;
   min-width: 170px;
   padding: 14px 18px;
   border: none;
@@ -105,6 +109,8 @@
   font-weight: 800;
   font-size: 16px;
   cursor: pointer;
+
+  margin: 0; /* ✅ remove auto centering */
 }
 
 .epm-save.disabled {
@@ -112,11 +118,36 @@
   cursor: not-allowed;
 }
 
-.epm-save:hover { filter: brightness(1.05); }
+.epm-save:hover {
+  filter: brightness(1.05);
+}
 
+/* Responsive */
 @media (max-width: 640px) {
-  .epm-card { width: calc(100vw - 28px); padding: 18px; }
-  .epm-row { grid-template-columns: 140px 1fr; }
-  .epm-label { font-size: 18px; }
-  .epm-value { font-size: 16px; }
+  .epm-card {
+    width: calc(100vw - 28px);
+    padding: 18px;
+  }
+
+  .epm-row {
+    grid-template-columns: 140px 1fr;
+  }
+
+  .epm-label {
+    font-size: 15px;
+  }
+
+  .epm-value {
+    font-size: 14px;
+  }
+
+  .epm-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .epm-save,
+  .epm-cancel {
+    width: 100%;
+  }
 }

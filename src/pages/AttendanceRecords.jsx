@@ -5,8 +5,13 @@ import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./AttendanceRecords.css";
 
 /* ===== Font Awesome ===== */
+import {
+  faBell,
+  faMagnifyingGlass,
+  faCalendarDays,
+  faDownload,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell, faMagnifyingGlass, faCalendarDays, faDownload } from "@fortawesome/free-solid-svg-icons";
 import supabase from "../helper/supabaseClient";
 
 function toDateOnly(d) {
@@ -21,20 +26,21 @@ function toDateOnly(d) {
 async function fetchAttendance({ q, date, clazz, status, prof }) {
   let query = supabase
     .from("v_attendance_records")
-    .select("attendance_id,status,time_in,session_date,session_started_at,class_name,student_name,student_number,professor_name")
+    .select(
+      "attendance_id,status,time_in,session_date,session_started_at,class_name,student_name,student_number,professor_name"
+    )
     .order("session_started_at", { ascending: false });
 
   // search (student_name or student_number)
   const search = q.trim();
   if (search) {
     // ilike on both columns
-    query = query.or(
-      `student_name.ilike.%${search}%,student_number.ilike.%${search}%`
-    );
+    query = query.or(`student_name.ilike.%${search}%,student_number.ilike.%${search}%`);
   }
 
   // date filter (based on session_started_at)
   if (date) query = query.eq("session_date", date);
+
   // class filter
   if (clazz !== "All Classes") query = query.eq("class_name", clazz);
 
@@ -58,7 +64,6 @@ async function fetchAttendance({ q, date, clazz, status, prof }) {
   }));
 }
 
-
 export default function AttendanceRecords() {
   const navigate = useNavigate();
 
@@ -78,10 +83,10 @@ export default function AttendanceRecords() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
-
   // NEW: datatable-like "Show entries"
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+
   const activity = [
     { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
     { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
@@ -108,7 +113,9 @@ export default function AttendanceRecords() {
 
     return records.filter((r) => {
       const matchesQuery =
-        !query || r.student.toLowerCase().includes(query) || r.id.toLowerCase().includes(query);
+        !query ||
+        r.student.toLowerCase().includes(query) ||
+        r.id.toLowerCase().includes(query);
 
       const matchesDate = !date || r.date === date;
       const matchesClass = clazz === "All Classes" || r.className === clazz;
@@ -139,8 +146,22 @@ export default function AttendanceRecords() {
   const showingTo = Math.min(safePage * pageSize, filtered.length);
 
   const exportCSV = () => {
-    const header = ["Student Name", "Student ID", "Date", "Classes", "Status", "Professors"];
-    const rows = filtered.map((r) => [r.student, r.id, r.date, r.className, r.status, r.professor]);
+    const header = [
+      "Student Name",
+      "Student ID",
+      "Date",
+      "Classes",
+      "Status",
+      "Professors",
+    ];
+    const rows = filtered.map((r) => [
+      r.student,
+      r.id,
+      r.date,
+      r.className,
+      r.status,
+      r.professor,
+    ]);
 
     const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
 
@@ -177,9 +198,10 @@ export default function AttendanceRecords() {
       }
     })();
 
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [q, date, clazz, status, prof]);
-
 
   return (
     <div className="app-shell ar">
@@ -323,14 +345,17 @@ export default function AttendanceRecords() {
               <div>Student ID</div>
               <div>Date</div>
               <div>Classes</div>
-              <div>Status</div>
               <div>Professors</div>
+              <div>Status</div>
             </div>
 
             <div className="ar-dt-tbody">
               {loading && <div className="ar-dt-empty">Loading...</div>}
               {!loading && err && <div className="ar-dt-empty">Error: {err}</div>}
-              {!loading && !err && paged.length === 0 && <div className="ar-dt-empty">No records found.</div>}
+              {!loading && !err && paged.length === 0 && (
+                <div className="ar-dt-empty">No records found.</div>
+              )}
+
               {paged.map((r) => (
                 <div className="ar-dt-row" key={r.id + r.date}>
                   <div className="ar-dt-studentCell">
@@ -342,11 +367,13 @@ export default function AttendanceRecords() {
                   <div>{r.date}</div>
                   <div className="ar-dt-wrap">{r.className}</div>
 
+                  {/* ✅ SWAPPED: professor muna */}
+                  <div>{r.professor}</div>
+
+                  {/* ✅ SWAPPED: status last */}
                   <div>
                     <span className={`ar-pill ${pillClass(r.status)}`}>{pillClass(r.status)}</span>
                   </div>
-
-                  <div>{r.professor}</div>
                 </div>
               ))}
             </div>

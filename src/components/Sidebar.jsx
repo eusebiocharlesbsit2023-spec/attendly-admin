@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHouse,
@@ -8,35 +8,31 @@ import {
   faUserShield,
   faRightFromBracket,
   faFileLines,
-  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import "./Sidebar.css";
-import Logo from '../assets/Logo.png';
+import Logo from "../assets/Logo.png";
 import ConfirmModal from "./ConfirmModal";
 import supabase from "../helper/supabaseClient";
 
 export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // ✅ get role from login
-  const adminProfile = JSON.parse(localStorage.getItem("adminProfile")); // "Admin" | "Super Admin"
-  const isSuperAdmin = adminProfile.role === "Super Admin";
+  const adminProfile = JSON.parse(localStorage.getItem("adminProfile") || "{}");
+  const isSuperAdmin = adminProfile?.role === "Super Admin";
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   const go = (path) => {
     navigate(path);
-    onClose?.(); // close drawer on mobile only
+    onClose?.();
   };
 
-  const logout = () => {
-    setConfirmOpen(true);
-  };
+  const logout = () => setConfirmOpen(true);
 
   const performLogout = async () => {
     if (loggingOut) return;
-
     setLoggingOut(true);
 
     try {
@@ -47,24 +43,29 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
       navigate("/", { replace: true });
     } catch (e) {
       console.error(e);
-      setLoggingOut(false); // balik kung nag-error
+      setLoggingOut(false);
     }
   };
 
+  const pathname = location.pathname || "";
+  const reportsOpen = active === "reports";
+
+  // highlight sub tab based on URL even if same component
+  const reportsSubActive = pathname.includes("/reports/archive")
+    ? "archive"
+    : "feedback";
+
   return (
     <>
-      {/* Mobile overlay */}
       {open && <div className="sidebar-overlay" onClick={onClose} />}
 
-      <aside className='sidebarV2 navbar'>
-        {/* Header */}
+      <aside className="sidebarV2 navbar">
         <div className="sidebarV2-header">
           <div className="sidebarV2-brand">
             <img src={Logo} alt="" />
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="sidebarV2-nav">
           <button
             className={`sidebarV2-item ${active === "dashboard" ? "active" : ""}`}
@@ -73,7 +74,7 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
           >
             <FontAwesomeIcon icon={faHouse} className="sidebarV2-icon" />
             <span className="sidebarV2-text">Dashboard</span>
-          </button> 
+          </button>
 
           <button
             className={`sidebarV2-item ${active === "attendance" ? "active" : ""}`}
@@ -84,14 +85,41 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
             <span className="sidebarV2-text">Attendance Record</span>
           </button>
 
-          <button
-            className={`sidebarV2-item ${active === "reports" ? "active" : ""}`}
-            onClick={() => go("/reports")}
-            type="button"
-          >
-            <FontAwesomeIcon icon={faFileLines} className="sidebarV2-icon" />
-            <span className="sidebarV2-text">Reports</span>
-          </button>
+          {/* Reports + sub buttons */}
+          <div className="sidebarV2-group">
+            <button
+              className={`sidebarV2-item ${active === "reports" ? "active" : ""}`}
+              onClick={() => go("/reports/feedback")} // ✅ default
+              type="button"
+            >
+              <FontAwesomeIcon icon={faFileLines} className="sidebarV2-icon" />
+              <span className="sidebarV2-text">Reports</span>
+            </button>
+
+            {reportsOpen && (
+              <div className="sidebarV2-subnav">
+                <button
+                  className={`sidebarV2-subitem ${
+                    reportsSubActive === "feedback" ? "active" : ""
+                  }`}
+                  onClick={() => go("/reports/feedback")}
+                  type="button"
+                >
+                  Feedback
+                </button>
+
+                <button
+                  className={`sidebarV2-subitem ${
+                    reportsSubActive === "archive" ? "active" : ""
+                  }`}
+                  onClick={() => go("/reports/archive")}
+                  type="button"
+                >
+                  Archive
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             className={`sidebarV2-item ${active === "maintenance" ? "active" : ""}`}
@@ -102,7 +130,6 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
             <span className="sidebarV2-text">Maintenance</span>
           </button>
 
-          {/* ✅ ONLY SUPER ADMIN CAN SEE THIS */}
           {isSuperAdmin && (
             <button
               className={`sidebarV2-item ${active === "manage-admin" ? "active" : ""}`}
@@ -115,24 +142,21 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
           )}
         </nav>
 
-        {/* Footer */}
         <div className="sidebarV2-footer">
-          <button
-            className="logout-btn"
-            onClick={logout}
-            disabled={loggingOut}
-          >
+          <button className="logout-btn" onClick={logout} disabled={loggingOut}>
             <FontAwesomeIcon icon={faRightFromBracket} />
             {loggingOut ? "Logging out..." : "Log out"}
           </button>
         </div>
       </aside>
+
       <ConfirmModal
         open={confirmOpen}
         title={"Are you sure you want to log out?"}
         onYes={performLogout}
         onCancel={() => setConfirmOpen(false)}
       />
+
       {loggingOut && (
         <div
           style={{
@@ -155,9 +179,7 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
             }}
           >
             <div style={{ fontWeight: 700 }}>Logging out</div>
-            <div style={{ fontSize: 13, opacity: 0.8 }}>
-              Please wait...
-            </div>
+            <div style={{ fontSize: 13, opacity: 0.8 }}>Please wait...</div>
           </div>
         </div>
       )}

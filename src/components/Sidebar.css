@@ -167,3 +167,39 @@
     display: none; /* no close button on desktop */
   }
 }
+
+.sidebarV2-group{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebarV2-subnav{
+  margin-left: 46px;
+  display: grid;
+  gap: 6px;
+}
+
+.sidebarV2-subitem{
+  width: calc(100% - 10px);
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+  color: #0f172a;
+  opacity: .85;
+}
+
+.sidebarV2-subitem:hover{
+  background: #f1f5f9;
+  opacity: 1;
+}
+
+.sidebarV2-subitem.active{
+  background: rgba(10,78,134,0.12);
+  color: #0a4e86;
+  opacity: 1;
+}

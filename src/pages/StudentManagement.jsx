@@ -412,7 +412,7 @@ export default function StudentManagement() {
                   <th>Student Name</th>
                   <th>Student ID</th>
                   <th>Device ID</th>
-                  <th>Classes</th>
+                  <th>Email</th>
                   <th className="sm-th-center">Status</th>
                   <th className="sm-actionsHead">Actions</th>
                 </tr>
