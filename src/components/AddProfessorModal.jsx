@@ -123,35 +123,38 @@ function validateEmail(emailRaw) {
 }
 
 export default function AddProfessorModal({ open, onClose, onSubmit }) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
   const [email, setEmail] = useState("");
   const [dept, setDept] = useState("");
   const [error, setError] = useState("");
 
   const [pass, setPass] = useState("");
-  const [confirm, setConfirm] = useState("");
 
   const [showPass, setShowPass] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const [touched, setTouched] = useState({
-    name: false,
+    firstName: false,
+    lastName: false,
     email: false,
     dept: false,
     pass: false,
-    confirm: false,
   });
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setName(""); setEmail(""); setDept("");
-      setPass(""); setConfirm("");
-      setShowPass(false); setShowConfirm(false);
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setDept("");
+      setPass("");
+      setShowPass(false);
       setTouched({ name:false, email:false, dept:false, pass:false, confirm:false });
       setSubmitted(false);
       setError("");
@@ -163,7 +166,8 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
   const errors = useMemo(() => {
     const e = {};
 
-    if (!name.trim()) e.name = "Professor name is required.";
+    if (!firstName.trim()) e.firstName = "First name is required.";
+    if (!lastName.trim()) e.lastName = "Last name is required.";
     if (!dept.trim()) e.dept = "Department is required.";
 
     const emailErr = validateEmail(email);
@@ -171,20 +175,17 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
 
     const passErr = validatePassword(pass);
     if (passErr) e.pass = passErr;
-
-    if (!confirm) e.confirm = "Confirm password is required.";
     if (pass && confirm && pass !== confirm) e.confirm = "Passwords do not match.";
 
     return e;
-  }, [name, email, dept, pass, confirm]);
+  }, [firstName, lastName, email, dept, pass, confirm]);
 
   const canSubmit = Object.keys(errors).length === 0;
 
   const handleGenerate = () => {
     const p = generateStrongPassword(10);
     setPass(p);
-    setConfirm(p);
-    setTouched((prev) => ({ ...prev, pass: true, confirm: true }));
+    setTouched((prev) => ({ ...prev, pass: true}));
   };
 
   const submit = (e) => {
@@ -213,14 +214,32 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
     setConfirmOpen(false);
 
     try {
-      await createProfessorAccount({
-        professor_name: name.trim(),
-        email: email.trim(),
+      const payload = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim().toLowerCase(),
         department: dept.trim(),
         password: pass,
+        status: "Active",
+      };
+
+      const { data, error } = await supabase.functions.invoke("create-prof-email", {
+        body: payload,
       });
 
-      onSubmit?.(); // ✅ just tell parent to refresh
+      if (error) {
+        const res = error.context?.response;
+        setError(res ? await res.text() : error.message);
+        return;
+      }
+
+      if (!data?.success) {
+        setError(`${data?.step ?? "error"}: ${data?.message ?? "Unknown error"}`);
+        return;
+      }
+
+      onSubmit?.(); // refresh list
+      
     } catch (err) {
       const msg = err?.message || "Failed to create professor.";
       setError(msg);
@@ -243,14 +262,32 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
         <form className="apm-form" onSubmit={submit}>
           <div className="apm-field">
             <label>
-              Professor Name <span className="apm-req">*</span>
+              First Name <span className="apm-req">*</span>
             </label>
             <input
-              className={showErr("name") && errors.name ? "err" : ""}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              className={showErr("firstName") && errors.firstName ? "err" : ""}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, firstName: true }))}
             />
-            {showErr("name") && errors.name && <div className="apm-error">{errors.name}</div>}
+            {showErr("firstName") && errors.firstName && (
+              <div className="apm-error">{errors.firstName}</div>
+            )}
+          </div>
+
+          <div className="apm-field">
+            <label>
+              Last Name <span className="apm-req">*</span>
+            </label>
+            <input
+              className={showErr("lastName") && errors.lastName ? "err" : ""}
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, lastName: true }))}
+            />
+            {showErr("lastName") && errors.lastName && (
+              <div className="apm-error">{errors.lastName}</div>
+            )}
           </div>
 
           <div className="apm-field">
@@ -287,30 +324,6 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               </button>
             </div>
 
-            {showErr("pass") && errors.pass && <div className="apm-error">{errors.pass}</div>}
-            
-          </div>
-
-          <div className="apm-field">
-            <label>
-              Confirm Password <span className="apm-req">*</span>
-            </label>
-
-            <div className={`apm-passWrap ${showErr("confirm") && errors.confirm ? "err" : ""}`}>
-              <input
-                type={showConfirm ? "text" : "password"}
-                value={confirm}
-                disabled
-              />
-              <button
-                type="button"
-                className="apm-eye"
-                onClick={() => setShowConfirm((v) => !v)}
-              >
-                {showConfirm ? <EyeOpen /> : <EyeOff />}
-              </button>
-            </div>
-
             {/* Generate button under Confirm Password */}
             <button
               type="button"
@@ -320,7 +333,8 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Generate Password
             </button>
 
-            {showErr("confirm") && errors.confirm && <div className="apm-error">{errors.confirm}</div>}
+            {showErr("pass") && errors.pass && <div className="apm-error">{errors.pass}</div>}
+            
           </div>
 
           <div className="apm-field">
@@ -347,7 +361,11 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
         {/* Confirm modal */}
         <SmallConfirmModal
           open={confirmOpen}
-          title={saving ? "Adding..." : `Add Professor ${name.trim() || ""}?`}
+         title={
+            saving
+              ? "Adding..."
+              : `Add Professor ${firstName.trim()} ${lastName.trim()}?`
+          }
           onYes={createYes}
           onCancel={createCancel}
         />

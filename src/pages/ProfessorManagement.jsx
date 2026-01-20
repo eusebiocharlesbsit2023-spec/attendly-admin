@@ -54,10 +54,18 @@ export default function ProfessorManagement() {
 
     const { data, error } = await supabase
       .from("professors")
-      .select("id, professor_name, email, department, status")
+      .select(`
+        id,
+        professor_name,
+        email,
+        department,
+        status,
+        classes:classes(count)
+      `)
       .order("professor_name", { ascending: true });
 
     if (error) {
+      console.error("fetchProfessors error:", error);
       setRows([]);
       setLoading(false);
       return;
@@ -68,9 +76,10 @@ export default function ProfessorManagement() {
         id: p.id,
         name: p.professor_name,
         email: p.email,
-        classes: 0,
-        status: p.status ?? "Active",
         department: p.department,
+        status: p.status ?? "Active",
+        // ✅ ACTUAL NUMBER OF CLASSES
+        classes: Number(p.classes?.[0]?.count ?? 0),
       }))
     );
 
@@ -362,7 +371,7 @@ export default function ProfessorManagement() {
 
             <div className="pm-controls-right">
               <button className="pm-addBtn" type="button" onClick={onAdd} aria-label="Add">
-                <FontAwesomeIcon icon={faPlus} />
+                <FontAwesomeIcon icon={faPlus} /> Add Professor
               </button>
 
               <button className="pm-exportBtn" type="button" onClick={exportCSV}>

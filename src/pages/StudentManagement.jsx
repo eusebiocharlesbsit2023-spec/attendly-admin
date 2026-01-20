@@ -67,8 +67,16 @@ export default function StudentManagement() {
 
       const { data, error } = await supabase
         .from("students")
-        .select("*")
+        .select(`
+          id,
+          first_name,
+          last_name,
+          student_number,
+          status,
+          class_enrollments:class_enrollments(count)
+        `)
         .order("created_at", { ascending: false });
+
 
       if (error) {
         console.log("Fetch students error:", error.message);
@@ -78,11 +86,12 @@ export default function StudentManagement() {
       }
 
       const mapped = (data || []).map((s) => ({
-        uuid: s.id, // auth id
+        uuid: s.id,
         name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.replace(/\s+/g, " ").trim(),
         studentId: (s.student_number ?? "").toString(),
         deviceId: s.device_id ?? "N/A",
-        classes: Number(s.classes ?? 0),
+        // ✅ classes enrolled
+        classes: Number(s.class_enrollments?.[0]?.count ?? 0),
         status: s.status ?? "Active",
       }));
 

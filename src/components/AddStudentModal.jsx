@@ -132,79 +132,72 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     setErrorMsg("");
 
     try {
-      const generatedEmail = `${studentNumber.trim()}@attendly.com`;
-      const generatedPass = `${password}${studentNumber.toUpperCase()}`;
-
-      const { data: authData, error: authError } =
-        await supabaseCreateUser.auth.signUp({
-          email: generatedEmail,
-          password: generatedPass,
-        });
-
-      if (authError) {
-        setErrorMsg(authError.message);
-        return;
-      }
-
-      const studentID = authData?.user?.id;
-      if (!studentID) {
-        setErrorMsg("No user id returned from signup.");
-        return;
-      }
+      const generatedPass = `${password}${studentNumber.trim().toUpperCase()}`;
 
       const payload = {
-        id: studentID,
+        student_number: studentNumber.trim().toUpperCase(),
+        student_email: email.trim().toLowerCase(),
+        login_password: generatedPass,
+
         first_name: firstName.trim(),
         middle_name: middleName.trim() || null,
         last_name: `${surname.trim()} ${suffix.trim()}`.trim(),
-        student_number: studentNumber.trim().toUpperCase(),
         year_level: yearLevel,
         section,
         program,
-        email: email.trim(),
         status: "Active",
       };
 
-      const { data, error } = await supabase
-        .from("students")
-        .insert(payload)
-        .select("*")
-        .single();
+      const { data, error } = await supabase.functions.invoke(
+        "create-student-and-email",
+        { body: payload }
+      );
 
+      console.log("invoke:", { data, error });
+
+      // ✅ network / non-2xx
       if (error) {
-        setErrorMsg(error.message);
+        // try read JSON body
+        const res = error.context?.response;
+        if (res) {
+          const text = await res.text();
+          console.log("edge error body:", text);
+          setErrorMsg(text);
+        } else {
+          setErrorMsg(error.message);
+        }
         return;
       }
 
+      // ✅ function returned but not success
+      if (!data?.success) {
+        setErrorMsg(`${data?.step ?? "error"}: ${data?.message ?? "Unknown error"}`);
+        return;
+      }
+
+      // ✅ success
       onSubmit?.({
-        authData,
-        studentRow: data,
+        studentRow: {
+          id: data.auth_user_id,
+          student_number: payload.student_number,
+          email: payload.student_email,
+          first_name: payload.first_name,
+          last_name: payload.last_name,
+        },
         displayName: `${firstName} ${surname}`.trim(),
-        studentNumber: studentNumber.trim().toUpperCase(),
+        studentNumber: payload.student_number,
+        sentTo: payload.student_email,
       });
 
       resetForm();
       onClose?.();
+    } catch (e) {
+      setErrorMsg(String(e));
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ✅ reset visual errors when modal opens fresh
-  useEffect(() => {
-    if (open) {
-      setSubmitAttempted(false);
-      setTouched({
-        firstName: false,
-        surname: false,
-        yearLevel: false,
-        section: false,
-        program: false,
-        email: false,
-        studentNumber: false,
-      });
-    }
-  }, [open]);
 
   if (!open) return null;
 
