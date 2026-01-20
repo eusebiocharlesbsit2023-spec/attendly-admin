@@ -445,6 +445,7 @@ body {
 }
 
 .ar-dt-empty {
+  text-align: center  ;
   padding: 16px;
   color: #64748b;
   font-weight: 600;
@@ -469,17 +470,17 @@ body {
   text-align: center;
 }
 
-.ar-pill.present {
+.ar-pill.Present {
   background: #dcfce7;
   color: #15803d;
   border-color: #15803d;
 }
-.ar-pill.absent {
+.ar-pill.Absent {
   background: #ffe4e6;
   color: #dc2626;
   border-color: #dc2626;
 }
-.ar-pill.late {
+.ar-pill.Late {
   background: #fef3c7;
   color: #b45309;
   border-color: #b45309;

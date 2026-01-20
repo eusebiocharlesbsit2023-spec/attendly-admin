@@ -175,7 +175,6 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
 
     const passErr = validatePassword(pass);
     if (passErr) e.pass = passErr;
-    if (pass && confirm && pass !== confirm) e.confirm = "Passwords do not match.";
 
     return e;
   }, [firstName, lastName, email, dept, pass, confirm]);

@@ -7,6 +7,57 @@ import "./AttendanceRecords.css";
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell, faMagnifyingGlass, faCalendarDays, faDownload } from "@fortawesome/free-solid-svg-icons";
+import supabase from "../helper/supabaseClient";
+
+function toDateOnly(d) {
+  // turn timestamp -> YYYY-MM-DD (local)
+  const dt = new Date(d);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+async function fetchAttendance({ q, date, clazz, status, prof }) {
+  let query = supabase
+    .from("v_attendance_records")
+    .select("attendance_id,status,time_in,session_date,session_started_at,class_name,student_name,student_number,professor_name")
+    .order("session_started_at", { ascending: false });
+
+  // search (student_name or student_number)
+  const search = q.trim();
+  if (search) {
+    // ilike on both columns
+    query = query.or(
+      `student_name.ilike.%${search}%,student_number.ilike.%${search}%`
+    );
+  }
+
+  // date filter (based on session_started_at)
+  if (date) query = query.eq("session_date", date);
+  // class filter
+  if (clazz !== "All Classes") query = query.eq("class_name", clazz);
+
+  // status filter
+  if (status !== "All Status") query = query.eq("status", status);
+
+  // prof filter
+  if (prof !== "All Professors") query = query.eq("professor_name", prof);
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  // map to your UI format
+  return (data ?? []).map((row) => ({
+    id: row.student_number ?? row.attendance_id, // UI "Student ID"
+    student: row.student_name ?? "Unknown",
+    date: row.session_date ?? "",
+    className: row.class_name ?? "",
+    status: row.status ?? "",
+    professor: row.professor_name ?? "—",
+  }));
+}
+
 
 export default function AttendanceRecords() {
   const navigate = useNavigate();
@@ -23,6 +74,11 @@ export default function AttendanceRecords() {
   const [status, setStatus] = useState("All Status");
   const [prof, setProf] = useState("All Professors");
 
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+
+
   // NEW: datatable-like "Show entries"
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -36,92 +92,6 @@ export default function AttendanceRecords() {
     { text: "Maintenance switched to Online", time: "3 days ago" },
     { text: "Attendance export generated", time: "1 week ago" },
   ];
-
-  const records = useMemo(
-    () => [
-      {
-        id: "S-1001",
-        student: "Jane Smith",
-        date: "2025-12-16",
-        className: "Intro to Human Computer Interaction",
-        status: "Present",
-        professor: "Michael Guerrero",
-      },
-      {
-        id: "S-1002",
-        student: "John Smith",
-        date: "2025-12-12",
-        className: "Database System",
-        status: "Present",
-        professor: "Juan Dela Cruz",
-      },
-      {
-        id: "S-1003",
-        student: "Nicole Margarette",
-        date: "2025-12-10",
-        className: "System Analysis and Design",
-        status: "Absent",
-        professor: "Felix Tan",
-      },
-      {
-        id: "S-1004",
-        student: "Trisha Nicole",
-        date: "2025-12-09",
-        className: "Software Engineering",
-        status: "Late",
-        professor: "Leonardo Davinci",
-      },
-      {
-        id: "S-1005",
-        student: "Emma Wilson",
-        date: "2025-12-08",
-        className: "Information Assurance Security",
-        status: "Present",
-        professor: "Juan Dela Cruz",
-      },
-      {
-        id: "S-1006",
-        student: "Mark Lee",
-        date: "2025-12-08",
-        className: "Introduction to Computer Science",
-        status: "Present",
-        professor: "Michael Guerrero",
-      },
-      {
-        id: "S-1007",
-        student: "Sarah Kim",
-        date: "2025-12-07",
-        className: "Database System",
-        status: "Present",
-        professor: "Felix Tan",
-      },
-      {
-        id: "S-1008",
-        student: "Noah Garcia",
-        date: "2025-12-07",
-        className: "Software Engineering",
-        status: "Late",
-        professor: "Leonardo Davinci",
-      },
-      {
-        id: "S-1009",
-        student: "Ava Santos",
-        date: "2025-12-06",
-        className: "System Analysis and Design",
-        status: "Present",
-        professor: "Felix Tan",
-      },
-      {
-        id: "S-1010",
-        student: "Liam Cruz",
-        date: "2025-12-06",
-        className: "Information Assurance Security",
-        status: "Present",
-        professor: "Juan Dela Cruz",
-      },
-    ],
-    []
-  );
 
   const classOptions = useMemo(() => {
     const set = new Set(records.map((r) => r.className));
@@ -187,8 +157,29 @@ export default function AttendanceRecords() {
   };
 
   useEffect(() => {
-    setPage(1);
-  }, [q, date, clazz, status, prof, pageSize]);
+    let alive = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setErr(null);
+
+        const rows = await fetchAttendance({ q, date, clazz, status, prof });
+        if (!alive) return;
+        setRecords(rows);
+      } catch (e) {
+        if (!alive) return;
+        setErr(e.message ?? String(e));
+        setRecords([]);
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    })();
+
+    return () => { alive = false; };
+  }, [q, date, clazz, status, prof]);
+
 
   return (
     <div className="app-shell ar">
@@ -259,7 +250,6 @@ export default function AttendanceRecords() {
 
             <div className="ar-dt-right">
               <div className="ar-dt-field">
-                <label>Status</label>
                 <select value={status} onChange={(e) => setStatus(e.target.value)}>
                   <option>All Status</option>
                   <option>Present</option>
@@ -338,6 +328,9 @@ export default function AttendanceRecords() {
             </div>
 
             <div className="ar-dt-tbody">
+              {loading && <div className="ar-dt-empty">Loading...</div>}
+              {!loading && err && <div className="ar-dt-empty">Error: {err}</div>}
+              {!loading && !err && paged.length === 0 && <div className="ar-dt-empty">No records found.</div>}
               {paged.map((r) => (
                 <div className="ar-dt-row" key={r.id + r.date}>
                   <div className="ar-dt-studentCell">
@@ -350,14 +343,12 @@ export default function AttendanceRecords() {
                   <div className="ar-dt-wrap">{r.className}</div>
 
                   <div>
-                    <span className={`ar-pill ${pillClass(r.status)}`}>{r.status}</span>
+                    <span className={`ar-pill ${pillClass(r.status)}`}>{pillClass(r.status)}</span>
                   </div>
 
                   <div>{r.professor}</div>
                 </div>
               ))}
-
-              {paged.length === 0 && <div className="ar-dt-empty">No records found.</div>}
             </div>
           </div>
 
@@ -405,8 +396,8 @@ function csvEscape(v) {
 }
 
 function pillClass(status) {
-  if (status === "Present") return "present";
-  if (status === "Absent") return "absent";
+  if (status === "present") return "Present";
+  if (status === "absent") return "Absent";
   return "late";
 }
 
