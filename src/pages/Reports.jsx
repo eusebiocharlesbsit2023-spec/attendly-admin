@@ -5,12 +5,116 @@ import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import ConfirmModal from "../components/ConfirmModal";
 import "./AdminDashboard.css";
 import "./Reports.css";
+import supabase from "../helper/supabaseClient";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell, faMagnifyingGlass, faDownload } from "@fortawesome/free-solid-svg-icons";
 
 export default function Reports() {
+  // ===== REAL REPORTS DATA (from Supabase) =====
+const [reports, setReports] = useState([]);
+const [reportsLoading, setReportsLoading] = useState(false);
+const [reportsErr, setReportsErr] = useState(null);
+
+const [successOpen, setSuccessOpen] = useState(false);
+const [successMsg, setSuccessMsg] = useState("");
+const [savingStatusId, setSavingStatusId] = useState(null);
+
+const loadReports = async () => {
+  setReportsLoading(true);
+  setReportsErr(null);
+
+  try {
+    const { data, error } = await supabase
+      .from("support_requests")
+      .select("id, user_id, email, subject, message, status, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const mapped = (data ?? []).map((r) => ({
+      id: r.id,
+      name: r.email || "Unknown",
+      studentId: r.user_id || "—",
+      subject: r.subject,
+      message: r.message,
+      date: (r.created_at || "").slice(0, 10),
+      status: normalizeStatus(r.status),
+    }));
+
+    setReports(mapped);
+  } catch (e) {
+    setReportsErr(e.message || String(e));
+  } finally {
+    setReportsLoading(false);
+  }
+};
+
+function normalizeStatus(s) {
+  const v = String(s || "").toLowerCase();
+  if (v === "open") return "Open";
+  if (v === "resolved") return "Resolved";
+  if (v === "pending" || v === "in_progress") return "Pending";
+  if (v === "closed") return "Closed";
+  return "Open";
+}
+
+const toDbStatus = (uiStatus) => {
+  const v = String(uiStatus || "").toLowerCase();
+  if (v === "open") return "open";
+  if (v === "resolved") return "resolved";
+  if (v === "pending") return "in_progress"; // ✅ mapping mo
+  if (v === "closed") return "closed";
+  return "open";
+};
+
+const saveFeedbackStatus = async (id, nextUiStatus) => {
+  setSavingStatusId(id);
+  try {
+    const { error } = await supabase
+      .from("support_requests")
+      .update({ status: toDbStatus(nextUiStatus) })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    // ✅ update UI state
+    setReports((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: nextUiStatus } : r))
+    );
+
+    setSuccessMsg(`Status updated to ${nextUiStatus}`);
+    setSuccessOpen(true);
+  } catch (e) {
+    alert(`Update failed: ${e.message || e}`);
+    // ✅ reload para bumalik sa tamang value
+    await loadReports();
+  } finally {
+    setSavingStatusId(null);
+  }
+};
+
+
+function SuccessModal({ open, message, onClose }) {
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => onClose?.(), 1500);
+    return () => clearTimeout(t);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="scm-overlay" onMouseDown={onClose}>
+      <div className="scm-card" onMouseDown={(e) => e.stopPropagation()}>
+        <i className="bx bx-check-circle"></i>
+        <p className="scm-text">{message}</p>
+      </div>
+    </div>
+  );
+}
+
   const navigate = useNavigate();
   const location = useLocation();
   const notifRef = useRef(null);
@@ -35,7 +139,16 @@ export default function Reports() {
   ];
 
   // ===== TAB (same file, route-based) =====
+
+  // ✅ declare tab FIRST
   const tab = location.pathname.includes("/reports/archive") ? "archive" : "feedback";
+
+  // ✅ saka gamitin sa useEffect
+  useEffect(() => {
+    if (tab === "feedback") loadReports();
+    if (tab === "archive") loadArchived();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   // datatable controls
   const [q, setQ] = useState("");
@@ -52,129 +165,60 @@ export default function Reports() {
   // ✅ Status options for dropdown
   const STATUS_OPTIONS = ["Open", "Resolved", "Pending", "Closed"];
 
-  // ===== FEEDBACK DATA (✅ changed to useState so status can update) =====
-  const [reports, setReports] = useState(() => [
-    {
-      id: 1023,
-      name: "Juan Dela Cruz",
-      studentId: "20230000-1",
-      subject: "Login Issue",
-      message: "I can't log into my account.",
-      date: "2023-12-15",
-      status: "Open",
-    },
-    {
-      id: 1022,
-      name: "Maria Santos",
-      studentId: "20230000-2",
-      subject: "App Crash",
-      message: "The app keeps crashing.",
-      date: "2023-12-10",
-      status: "Resolved",
-    },
-    {
-      id: 1021,
-      name: "Kevin Reyes",
-      studentId: "20230000-3",
-      subject: "Attendance Problem",
-      message: "can't mark attendance.",
-      date: "2023-12-05",
-      status: "Pending",
-    },
-    {
-      id: 1020,
-      name: "Lisa Tan",
-      studentId: "20230000-4",
-      subject: "Account Help",
-      message: "Need help updating profile.",
-      date: "2023-11-28",
-      status: "Open",
-    },
-    {
-      id: 1019,
-      name: "Mark Villanueva",
-      studentId: "20230000-5",
-      subject: "Bug Report",
-      message: "Found a bug in the app.",
-      date: "2023-11-20",
-      status: "Resolved",
-    },
-    {
-      id: 1018,
-      name: "Anna Lim",
-      studentId: "20230000-6",
-      subject: "Technical Issue",
-      message: "Having trouble with notifications.",
-      date: "2023-11-15",
-      status: "Open",
-    },
-    {
-      id: 1017,
-      name: "John Perez",
-      studentId: "20230000-7",
-      subject: "General Inquiry",
-      message: "Just have a few questions.",
-      date: "2023-11-10",
-      status: "Closed",
-    },
-    {
-      id: 1016,
-      name: "Grace Mendoza",
-      studentId: "20230000-8",
-      subject: "Feedback",
-      message: "Suggestions for the app.",
-      date: "2023-11-05",
-      status: "Resolved",
-    },
-  ]);
-
   // ===== ARCHIVE (deleted students & professors) =====
-  const archived = useMemo(
-    () => [
-      // Students
-      {
-        kind: "Student",
-        name: "Alfred Valiente",
-        studentId: "20231564-N",
-        deviceId: "N/A",
-        email: "alfred@email.com",
-        deletedAt: "2026-01-15",
-      },
-      {
-        kind: "Student",
-        name: "Gillian Kirby Prado",
-        studentId: "20230038-N",
-        deviceId: "N/A",
-        email: "gillian@email.com",
-        deletedAt: "2026-01-14",
-      },
-      {
-        kind: "Student",
-        name: "Kerby Valen",
-        studentId: "20230034-N",
-        deviceId: "N/A",
-        email: "kerby@email.com",
-        deletedAt: "2026-01-13",
-      },
+  const [archived, setArchived] = useState([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
+  const [archivedErr, setArchivedErr] = useState(null);
 
-      // Professors
-      {
+  const loadArchived = async () => {
+    setArchivedLoading(true);
+    setArchivedErr(null);
+
+    try {
+      const [studentsRes, profRes] = await Promise.all([
+        supabase
+          .from("students")
+          .select("id, first_name, middle_name, last_name, student_number, email, archived_at")
+          .eq("archived", true)
+          .order("archived_at", { ascending: false }),
+
+        supabase
+          .from("professors")
+          .select("id, professor_name, email, archived_at")
+          .eq("archived", true)
+          .order("archived_at", { ascending: false }),
+      ]);
+
+      if (studentsRes.error) throw studentsRes.error;
+      if (profRes.error) throw profRes.error;
+
+      const studentsMapped = (studentsRes.data ?? []).map((s) => ({
+        id: s.id, // ✅ REQUIRED
+        kind: "Student",
+        name: [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" "),
+        studentId: s.student_number,
+        email: s.email || "—",
+        deletedAt: (s.archived_at || "").slice(0, 10),
+        deviceId: "—",
+      }));
+
+      const profMapped = (profRes.data ?? []).map((p) => ({
+        id: p.id, // ✅ REQUIRED
         kind: "Professor",
-        name: "Michael Guerrero",
-        profId: "P-0001",
-        email: "michael@email.com",
-        deletedAt: "2026-01-12",
-      },
-      {
-        kind: "Professor",
-        name: "Juan Dela Cruz",
-        profId: "P-0002",
-        email: "juan@email.com",
-        deletedAt: "2026-01-10",
-      },
-    ],
-    []
-  );
+        profId: p.id,
+        name: p.professor_name,
+        email: p.email || "—",
+        deletedAt: (p.archived_at || "").slice(0, 10),
+      }));
+
+      setArchived([...studentsMapped, ...profMapped]);
+    } catch (e) {
+      setArchivedErr(e.message || String(e));
+    } finally {
+      setArchivedLoading(false);
+    }
+  };
+
 
   // ===== helper: apply colored class to the status select =====
   const applySelectStatusClass = (el, value) => {
@@ -199,13 +243,18 @@ export default function Reports() {
     setFbStatusConfirmOpen(true);
   };
 
-  const confirmFeedbackStatusChange = () => {
-    setReports((prev) => prev.map((r) => (r.id === fbTargetId ? { ...r, status: fbNextStatus } : r)));
-
-    // keep dropdown colored based on final confirmed value
-    if (fbSelectRef.current) applySelectStatusClass(fbSelectRef.current, fbNextStatus);
+  const confirmFeedbackStatusChange = async () => {
+    const id = fbTargetId;
+    const next = fbNextStatus;
 
     setFbStatusConfirmOpen(false);
+
+    await saveFeedbackStatus(id, next);
+
+    if (fbSelectRef.current) {
+      applySelectStatusClass(fbSelectRef.current, next);
+    }
+
     setFbTargetId(null);
     setFbPrevStatus("");
     setFbNextStatus("");
@@ -333,9 +382,44 @@ export default function Reports() {
   };
 
   const confirmRestore = async () => {
-    setRestoreOpen(false);
-    setRestoreTarget(null);
-    alert("Restored! (hardcoded)");
+    if (!restoreTarget) return;
+
+    try {
+      // Student restore
+      if (restoreTarget.kind === "Student") {
+        const { error } = await supabase
+          .from("students")
+          .update({ archived: false })
+          .eq("id", restoreTarget.id);
+
+        if (error) throw error;
+
+        setSuccessMsg(`Student restored: ${restoreTarget.name} (${restoreTarget.studentId})`);
+      }
+
+      // Professor restore
+      if (restoreTarget.kind === "Professor") {
+        const { error } = await supabase
+          .from("professors")
+          .update({ archived: false })
+          .eq("id", restoreTarget.id);
+
+        if (error) throw error;
+
+        setSuccessMsg(`Professor restored: ${restoreTarget.name}`);
+      }
+
+      setSuccessOpen(true);
+
+      // ✅ close confirm modal
+      setRestoreOpen(false);
+      setRestoreTarget(null);
+
+      // ✅ refresh archive list (if you fetch archive from DB)
+      await loadArchive(); 
+    } catch (e) {
+      alert(`Restore failed: ${e.message || e}`);
+    }
   };
 
   return (
@@ -458,7 +542,6 @@ export default function Reports() {
                   <div className="rep-dt-thead">
                     <div>ID</div>
                     <div>Name</div>
-                    <div>Student ID</div>
                     <div>Subject</div>
                     <div>Message</div>
                     <div>Submission Date</div>
@@ -466,23 +549,29 @@ export default function Reports() {
                   </div>
 
                   <div className="rep-dt-tbody">
-                    {paged.map((r) => (
+                    {reportsLoading && (
+                      <div className="rep-dt-empty">Loading reports...</div>
+                    )}
+
+                    {reportsErr && (
+                      <div className="rep-dt-empty">Error: {reportsErr}</div>
+                    )}
+
+                    {!reportsLoading && !reportsErr && paged.map((r) => (
                       <div className="rep-dt-row" key={r.id}>
-                        <div>{r.id}</div>
+                        <div>{String(r.id).slice(0, 8)}</div>
 
                         <div className="rep-dt-nameCell">
                           <span className="rep-dt-avatar">{initials(r.name)}</span>
                           <div className="rep-dt-name">{r.name}</div>
                         </div>
-
-                        <div className="rep-email">{r.studentId}</div>
                         <div className="rep-subject">{r.subject}</div>
                         <div className="rep-message">{r.message}</div>
                         <div>{r.date}</div>
 
-                        {/* ✅ Rectangle dropdown + colored like pills */}
                         <div className="rep-dt-statusCell">
                           <select
+                            disabled={savingStatusId === r.id}
                             className={`rep-statusSelect rep-status-${String(r.status).toLowerCase()}`}
                             defaultValue={r.status}
                             onChange={(e) => {
@@ -491,16 +580,15 @@ export default function Reports() {
                             }}
                           >
                             {STATUS_OPTIONS.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
+                              <option key={opt} value={opt}>{opt}</option>
                             ))}
                           </select>
                         </div>
                       </div>
                     ))}
-
-                    {paged.length === 0 && <div className="rep-dt-empty">No reports found.</div>}
+                    {!reportsLoading && !reportsErr && paged.length === 0 && (
+                      <div className="rep-dt-empty">No reports found.</div>
+                    )}
                   </div>
                 </>
               ) : (
@@ -538,46 +626,48 @@ export default function Reports() {
                         </div>
 
                         <div className="rep-dt-tbody">
-                          {paged.map((r, idx) => {
-                            const studentIdValue = r.studentId ?? "—";
-                            const deviceValue = r.deviceId ?? "—";
-                            const emailValue = r.email ?? "—";
+                          {archivedLoading && <div className="rep-dt-empty">Loading archive...</div>}
+                          {archivedErr && <div className="rep-dt-empty">Error: {archivedErr}</div>}
+                          {!archivedLoading && !archivedErr && paged.map(
+                            (r, idx) => {
+                              const studentIdValue = r.studentId ?? "—";
+                              const deviceValue = r.deviceId ?? "—";
+                              const emailValue = r.email ?? "—";
 
-                            return (
-                              <div
-                                className="rep-dt-row"
-                                key={(r.kind || "") + (r.studentId || r.profId || "") + idx}
-                                style={{ gridTemplateColumns: rowGrid }}
-                              >
-                                {isAll && <div className="rep-typeCell">{r.kind}</div>}
+                              return (
+                                <div
+                                  className="rep-dt-row"
+                                  key={(r.kind || "") + (r.studentId || r.profId || "") + idx}
+                                  style={{ gridTemplateColumns: rowGrid }}
+                                >
+                                  {isAll && <div className="rep-typeCell">{r.kind}</div>}
 
-                                <div className="rep-dt-nameCell">
-                                  <span className="rep-dt-avatar">{initials(r.name)}</span>
-                                  <div className="rep-dt-name">{r.name}</div>
+                                  <div className="rep-dt-nameCell">
+                                    <span className="rep-dt-avatar">{initials(r.name)}</span>
+                                    <div className="rep-dt-name">{r.name}</div>
+                                  </div>
+
+                                  {isStudent ? (
+                                    <div className="rep-email">{studentIdValue}</div>
+                                  ) : (
+                                    <div className="rep-email">{emailValue}</div>
+                                  )}
+
+                                  {isStudent && <div>{deviceValue}</div>}
+
+                                  {isStudent && <div className="rep-email">{emailValue}</div>}
+
+                                  <div>{r.deletedAt}</div>
+
+                                  <div>
+                                    <button className="rep-restoreBtn" type="button" onClick={() => openRestore(r)}>
+                                      Restore
+                                    </button>
+                                  </div>
                                 </div>
-
-                                {isStudent ? (
-                                  <div className="rep-email">{studentIdValue}</div>
-                                ) : (
-                                  <div className="rep-email">{emailValue}</div>
-                                )}
-
-                                {isStudent && <div>{deviceValue}</div>}
-
-                                {isStudent && <div className="rep-email">{emailValue}</div>}
-
-                                <div>{r.deletedAt}</div>
-
-                                <div>
-                                  <button className="rep-restoreBtn" type="button" onClick={() => openRestore(r)}>
-                                    Restore
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-
-                          {paged.length === 0 && <div className="rep-dt-empty">No archived records found.</div>}
+                              );
+                            }
+                          )}
                         </div>
                       </>
                     );
@@ -623,6 +713,13 @@ export default function Reports() {
           setRestoreOpen(false);
           setRestoreTarget(null);
         }}
+      />
+
+      {/* ✅ Restore result modal (success/error) */}
+      <SuccessModal
+        open={successOpen}
+        message={successMsg}
+        onClose={() => setSuccessOpen(false)}
       />
 
       {/* ✅ Feedback status change confirm */}

@@ -184,7 +184,7 @@
 .rep-dt-thead {
   background: #f3f6fb;
   display: grid;
-  grid-template-columns: 90px 200px 240px 170px 1fr 160px 140px;
+  grid-template-columns: 90px 1fr 240px 170px 1fr 160px;
   padding: 14px 14px;
   font-weight: 900;
   font-size: 14px;
@@ -197,7 +197,7 @@
 
 .rep-dt-tbody .rep-dt-row {
   display: grid;
-  grid-template-columns: 90px 200px 240px 170px 1fr 160px 140px;
+  grid-template-columns: 90px 1fr 240px 170px 1fr 160px;
   padding: 14px 14px;
   align-items: center;
   font-size: 14px;
@@ -540,11 +540,11 @@
 
 
 /* ✅ Name column should be LEFT aligned (start → end) */
-.rep-dt-thead > div:first-child,
+/* .rep-dt-thead > div:first-child,
 .rep-dt-tbody .rep-dt-row > div:first-child {
   justify-content: flex-start !important;
   text-align: left !important;
-}
+} */
 
 /* avatar + name group left */
 .rep-dt-nameCell {

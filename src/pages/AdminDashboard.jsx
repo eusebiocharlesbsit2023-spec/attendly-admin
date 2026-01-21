@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AdminDashboard.css";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
+import supabase from "../helper/supabaseClient";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,12 +28,38 @@ export default function AdminDashboard() {
 
   const adminProfile = JSON.parse(localStorage.getItem("adminProfile")) || [];
 
-  const stats = [
-    { label: "Total Students", value: 45, icon: faUsers, tint: "blue" },
-    { label: "Active Devices", value: 43, icon: faMicrochip, tint: "purple" },
-    { label: "Professors", value: 6, icon: faGraduationCap, tint: "green" },
-    { label: "Active Sessions", value: 1, icon: faBookOpen, tint: "yellow" },
-  ];
+  const [stats, setStats] = useState([
+    { label: "Total Students", value: "—", icon: faUsers, tint: "blue" },
+    { label: "Active Devices", value: "N/A", icon: faMicrochip, tint: "purple" },
+    { label: "Professors", value: "—", icon: faGraduationCap, tint: "green" },
+    { label: "Active Sessions", value: "—", icon: faBookOpen, tint: "yellow" },
+  ]);
+
+  const fetchStats = async () => {
+    try {
+      const [studentsRes, profsRes, sessionsRes] = await Promise.all([
+        supabase.from("students").select("id", { count: "exact", head: true }).eq("archived", false),
+        supabase.from("professors").select("id", { count: "exact", head: true }).eq("archived", false),
+
+        // ✅ optional: active sessions
+        supabase.from("class_sessions").select("id", { count: "exact", head: true }).eq("status", "active"),
+        // alt if wala kang status: .is("ended_at", null)
+      ]);
+
+      if (studentsRes.error) throw studentsRes.error;
+      if (profsRes.error) throw profsRes.error;
+      if (sessionsRes.error) throw sessionsRes.error;
+
+      setStats([
+        { label: "Total Students", value: studentsRes.count ?? 0, icon: faUsers, tint: "blue" },
+        { label: "Active Devices", value: "0", icon: faMicrochip, tint: "purple" },
+        { label: "Professors", value: profsRes.count ?? 0, icon: faGraduationCap, tint: "green" },
+        { label: "Active Sessions", value: sessionsRes.count ?? 0, icon: faBookOpen, tint: "yellow" },
+      ]);
+    } catch (e) {
+      console.log("fetchStats error:", e?.message || e);
+    }
+  };
 
   const activity = useMemo(
     () => [
@@ -53,32 +80,73 @@ export default function AdminDashboard() {
     []
   );
 
-  const todayClasses = [
-    {
-      title: "CS101 - Introduction to Computer Science",
-      time: "9:00 AM",
-      location: "Room 301",
-      students: 45,
-    },
-    {
-      title: "CS201 - Information Assurance Security",
-      time: "9:00 AM",
-      location: "Room 301",
-      students: 39,
-    },
-    {
-      title: "PathFit - Sports and Fitness",
-      time: "2:00 PM",
-      location: "Court",
-      students: 30,
-    },
-    {
-      title: "CS102 - Fundamentals of Programming",
-      time: "3:30 PM",
-      location: "Room 305",
-      students: 41,
-    },
-  ];
+  const [todayClasses, setTodayClasses] = useState([]);
+  const [todayLoading, setTodayLoading] = useState(false);
+  const [todayErr, setTodayErr] = useState(null);
+
+  const fetchTodayClasses = async () => {
+    setTodayLoading(true);
+    setTodayErr(null);
+
+    try {
+      const day = todayName();
+
+      const { data, error } = await supabase
+        .from("classes")
+        .select(`
+          id,
+          course,
+          course_code,
+          room,
+          day_of_week,
+          start_time,
+          end_time,
+          archived,
+          class_enrollments(count)
+        `)
+        .eq("archived", false)
+        .eq("day_of_week", day)
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+
+      const mapped = (data ?? []).map((c) => ({
+        id: c.id,
+        title: `${c.course} (${c.course_code})`,
+        time: formatTimeFromDB(c.start_time),
+        location: c.room ? `Room ${c.room}` : "—",
+        students: Number(c.class_enrollments?.[0]?.count ?? 0), // ✅ enrolled count
+      }));
+      setTodayClasses(mapped);
+    } catch (e) {
+      setTodayErr(e.message || String(e));
+      setTodayClasses([]);
+    } finally {
+      setTodayLoading(false);
+    }
+  };
+
+  function todayName() {
+    // JS: 0=Sun..6=Sat
+    const names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return names[new Date().getDay()];
+  }
+
+  function formatTimeFromDB(t) {
+    if (!t) return "—";
+    const [hh, mm] = String(t).split(":");
+    let h = Number(hh);
+    const m = String(mm ?? "00").padStart(2, "0");
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  }
+
+// load on mount
+useEffect(() => {
+  fetchTodayClasses();
+  fetchStats();
+}, []);
 
   // ✅ Bell dot should reflect unread notifications
   const [unreadCount, setUnreadCount] = useState(0);
@@ -197,8 +265,15 @@ export default function AdminDashboard() {
             <div className="panel-title plain">Today Classes</div>
 
             <div className="classes-list">
-              {todayClasses.map((c) => (
-                <div className="class-item" key={c.title}>
+            {todayLoading ? (
+              <div className="activity-sub">Loading today classes...</div>
+            ) : todayErr ? (
+              <div className="activity-sub">Error: {todayErr}</div>
+            ) : todayClasses.length === 0 ? (
+              <div className="activity-sub">No classes scheduled today.</div>
+            ) : (
+              todayClasses.map((c) => (
+                <div className="class-item" key={c.id}>
                   <div>
                     <div className="class-title">{c.title}</div>
                     <div className="class-meta">
@@ -210,10 +285,13 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                   </div>
+
+                  {/* optional button */}
                   <div className="badge">{c.students} Students</div>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
+          </div>
 
             <div className="panel-footer">
               <button

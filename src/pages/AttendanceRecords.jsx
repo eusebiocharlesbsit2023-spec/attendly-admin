@@ -425,7 +425,7 @@ function csvEscape(v) {
 function pillClass(status) {
   if (status === "present") return "Present";
   if (status === "absent") return "Absent";
-  return "late";
+  return "Late";
 }
 
 function initials(name) {

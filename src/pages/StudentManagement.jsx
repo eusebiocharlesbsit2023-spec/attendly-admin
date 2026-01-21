@@ -66,16 +66,19 @@ export default function StudentManagement() {
       setLoading(true);
 
       const { data, error } = await supabase
-        .from("students")
-        .select(`
-          id,
-          first_name,
-          last_name,
-          student_number,
-          status,
-          class_enrollments:class_enrollments(count)
-        `)
-        .order("created_at", { ascending: false });
+      .from("students")
+      .select(`
+        id,
+        first_name,
+        last_name,
+        student_number,
+        status,
+        email,
+        class_enrollments:class_enrollments(count)
+      `)
+      .eq("archived", false) // ✅ hide archived
+      .order("created_at", { ascending: false });
+
 
 
       if (error) {
@@ -200,22 +203,26 @@ export default function StudentManagement() {
     setDeleting(true);
 
     try {
-      const { error } = await supabase.rpc("admin_delete_user", {
-        p_user_id: pendingDelete.uuid,
-      });
+      const { error } = await supabase
+        .from("students")
+        .update({
+          archived: true,
+          status: "Inactive", // optional pero recommended
+        })
+        .eq("id", pendingDelete.uuid);
 
       if (error) {
-        console.log("Auth delete error:", error.message);
+        console.log("Archive error:", error.message);
         return;
       }
 
-      // UI update (instant)
+      // ✅ UI update (remove row instantly)
       setRows((prev) => prev.filter((s) => s.uuid !== pendingDelete.uuid));
 
       setDeleteOpen(false);
       setPendingDelete(null);
 
-      setSuccessMsg(`Student deleted: ${pendingDelete.name} (${pendingDelete.studentId})`);
+      setSuccessMsg(`Student archived: ${pendingDelete.name} (${pendingDelete.studentId})`);
       setSuccessOpen(true);
       setTimeout(() => setSuccessOpen(false), 2500);
     } finally {
@@ -527,7 +534,7 @@ export default function StudentManagement() {
 
       <SmallConfirmModal
         open={deleteOpen}
-        title={deleting ? "Deleting..." : `Delete ${pendingDelete?.name || "this student"}?`}
+        title={deleting ? "Archiving..." : `Archive ${pendingDelete?.name || "this student"}?`}
         onYes={deleteYes}
         onCancel={deleteCancel}
       />
