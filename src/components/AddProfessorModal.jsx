@@ -187,15 +187,38 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
     setTouched((prev) => ({ ...prev, pass: true}));
   };
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setSubmitted(true);
     setError("");
 
     if (!canSubmit) return;
 
-    // open confirmation modal
-    setConfirmOpen(true);
+    setSaving(true); // Loading state habang nagche-check sa DB
+
+    try {
+      // ✅ Check kung existing na ang email sa 'professors' table
+      const { data: existingProf, error: checkErr } = await supabase
+        .from("professors")
+        .select("email")
+        .eq("email", email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (checkErr) throw new Error("Database check failed: " + checkErr.message);
+
+      if (existingProf) {
+        setError("This email address is already registered.");
+        setSaving(false);
+        return; // Hihinto rito, hindi lalabas ang confirmation modal
+      }
+
+      // ✅ Kung wala pang duplicate, proceed sa confirmation
+      setConfirmOpen(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const createCancel = () => {

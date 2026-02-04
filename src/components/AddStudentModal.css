@@ -6,7 +6,35 @@
   place-items: center;
   z-index: 3000;
 }
-
+.personal{
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.academic{
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.asm-stepper {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #ccc;
+}
+.asm-stepper .active {
+  color: #2563eb; /* Blue color */
+  border-bottom: 2px solid #2563eb;
+}
+.asm-row {
+  display: flex;
+  gap: 10px;
+}
+.asm-col {
+  flex: 1;
+}
 .asm-overlay { 
   z-index: 1000; 
 }
@@ -126,4 +154,22 @@
 }
 .err {
   border-color: #fca5a5;
+}
+
+.asm-input-error {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+}
+
+.asm-input-error:focus {
+  border-color: #ef4444 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.asm-fieldError {
+  color: #ef4444;
+  font-size: 12px;
+  margin: 4px 0 0 0;
+  font-weight: 500;
 }

@@ -642,8 +642,7 @@ tr {
 
 /* Name cell (avatar + name) align left */
 .sm-nameTd {
-  justify-content: flex-start !important;
-  text-align: left !important;
+  justify-content: center !important;
   padding-left: 14px !important; /* gives same comfortable inset like screenshot */
 }
 

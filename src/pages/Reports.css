@@ -522,11 +522,13 @@
 
 .rep-restoreBtn{
   border: 1.8px solid #0a4e86;
-  font-weight: 900;
+  font-weight: 700;
   border-radius: 999px;
   height: 32px;
-  padding: 0 16px;
+  padding: 0 12px;
   cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
   
     color: #0a4e86;
     border-color: #cfe3fb;
@@ -535,6 +537,26 @@
 }
 .rep-restoreBtn:hover{
   background: #0a4e86;
+  color: #fff;
+}
+
+.rep-deleteBtn{
+  border: 1.8px solid #ef4444;
+  font-weight: 700;
+  border-radius: 999px;
+  height: 32px;
+  padding: 0 12px;
+  cursor: pointer;
+  margin-left: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  
+  color: #ef4444;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.rep-deleteBtn:hover{
+  background: #ef4444;
   color: #fff;
 }
 

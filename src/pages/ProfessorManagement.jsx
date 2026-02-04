@@ -19,6 +19,7 @@ import {
   faTrash,
   faChevronLeft,
   faChevronRight,
+  faArchive,
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function ProfessorManagement() {
@@ -60,8 +61,11 @@ export default function ProfessorManagement() {
         email,
         department,
         status,
+        archived,
         classes:classes(count)
       `)
+      // ✅ DAGDAG NA FILTER: Ipakita lang ang hindi naka-archive
+      .eq("archived", false) 
       .order("professor_name", { ascending: true });
 
     if (error) {
@@ -78,7 +82,6 @@ export default function ProfessorManagement() {
         email: p.email,
         department: p.department,
         status: p.status ?? "Active",
-        // ✅ ACTUAL NUMBER OF CLASSES
         classes: Number(p.classes?.[0]?.count ?? 0),
       }))
     );
@@ -195,13 +198,13 @@ export default function ProfessorManagement() {
   };
 
 
-  // ===== Delete (DB) Confirm =====
-  const onDeleteClick = (profObj) => {
+  // ===== Archive (DB) Confirm =====
+  const onArchiveClick = (profObj) => {
     setPendingDelete(profObj);
     setDeleteOpen(true);
   };
 
-  const deleteYes = async () => {
+  const archiveYes = async () => {
     if (!pendingDelete?.id) {
       setPendingDelete(null);
       return;
@@ -210,15 +213,17 @@ export default function ProfessorManagement() {
     setActionLoading(true);
 
     try {
-      const { error } = await supabase.rpc("admin_delete_user", {
-        p_user_id: pendingDelete.id, // auth.users.id
-      });
+      const { error } = await supabase
+        .from("professors")
+        .update({ archived: true })
+        .eq("id", pendingDelete.id);
+
       if (error) throw error;
 
       setDeleteOpen(false);
       setPendingDelete(null);
 
-      setSuccessMsg("Professor deleted successfully!");
+      setSuccessMsg("Professor archived successfully!");
       setSuccessOpen(true);
 
       await fetchProfessors();
@@ -230,7 +235,7 @@ export default function ProfessorManagement() {
     }
   };
 
-  const deleteCancel = () => {
+  const archiveCancel = () => {
     if (actionLoading) return;
     setDeleteOpen(false);
     setPendingDelete(null);
@@ -438,8 +443,8 @@ export default function ProfessorManagement() {
                             <FontAwesomeIcon icon={faPenToSquare} /> Edit
                           </button>
 
-                          <button className="pm-actionBtn del" onClick={() => onDeleteClick(p)} type="button">
-                            <FontAwesomeIcon icon={faTrash} /> Delete
+                          <button className="pm-actionBtn del" onClick={() => onArchiveClick(p)} type="button">
+                            <FontAwesomeIcon icon={faArchive} /> Archive
                           </button>
                         </div>
                       </td>
@@ -506,16 +511,16 @@ export default function ProfessorManagement() {
         onCancel={applyCancel}
       />
 
-      {/* Confirm Delete */}
+      {/* Confirm Archive */}
       <SmallConfirmModal
         open={deleteOpen}
         title={
           actionLoading
-            ? "Deleting..."
-            : `Delete ${pendingDelete?.name || "this professor"}?`
+            ? "Archiving..."
+            : `Archive ${pendingDelete?.name || "this professor"}?`
         }
-        onYes={deleteYes}
-        onCancel={deleteCancel}
+        onYes={archiveYes}
+        onCancel={archiveCancel}
       />
     </div>
   );

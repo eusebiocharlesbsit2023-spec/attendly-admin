@@ -381,6 +381,15 @@ function SuccessModal({ open, message, onClose }) {
     setRestoreOpen(true);
   };
 
+  // ===== Delete confirm (archive only) =====
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const openDelete = (row) => {
+    setDeleteTarget(row);
+    setDeleteOpen(true);
+  };
+
   const confirmRestore = async () => {
     if (!restoreTarget) return;
 
@@ -419,6 +428,47 @@ function SuccessModal({ open, message, onClose }) {
       await loadArchive(); 
     } catch (e) {
       alert(`Restore failed: ${e.message || e}`);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      // Student delete
+      if (deleteTarget.kind === "Student") {
+        const { error } = await supabase
+          .from("students")
+          .delete()
+          .eq("id", deleteTarget.id);
+
+        if (error) throw error;
+
+        setSuccessMsg(`Student deleted: ${deleteTarget.name} (${deleteTarget.studentId})`);
+      }
+
+      // Professor delete
+      if (deleteTarget.kind === "Professor") {
+        const { error } = await supabase
+          .from("professors")
+          .delete()
+          .eq("id", deleteTarget.id);
+
+        if (error) throw error;
+
+        setSuccessMsg(`Professor deleted: ${deleteTarget.name}`);
+      }
+
+      setSuccessOpen(true);
+
+      // close confirm modal
+      setDeleteOpen(false);
+      setDeleteTarget(null);
+
+      // refresh archive list
+      await loadArchived();
+    } catch (e) {
+      alert(`Delete failed: ${e.message || e}`);
     }
   };
 
@@ -601,10 +651,10 @@ function SuccessModal({ open, message, onClose }) {
 
                     // ✅ Type column ONLY when All
                     const headGrid = isAll
-                      ? "120px minmax(260px, 1.2fr) minmax(220px, 1fr) 160px 120px" // Type, Name, Email, Deleted, Action
+                      ? "120px minmax(260px, 1.2fr) minmax(220px, 1fr) 160px 200px" // Type, Name, Email, Deleted, Action
                       : isStudent
-                      ? "minmax(260px, 1.2fr) 200px 160px minmax(220px, 1fr) 160px 120px" // Name, StudentID, Device, Email, Deleted, Action
-                      : "minmax(260px, 1.2fr) minmax(220px, 1fr) 160px 120px"; // Name, Email, Deleted, Action
+                      ? "minmax(260px, 1.2fr) 200px 160px minmax(220px, 1fr) 160px 200px" // Name, StudentID, Device, Email, Deleted, Action
+                      : "minmax(260px, 1.2fr) minmax(220px, 1fr) 160px 200px"; // Name, Email, Deleted, Action
 
                     const rowGrid = headGrid;
 
@@ -663,6 +713,9 @@ function SuccessModal({ open, message, onClose }) {
                                     <button className="rep-restoreBtn" type="button" onClick={() => openRestore(r)}>
                                       Restore
                                     </button>
+                                    <button className="rep-deleteBtn" type="button" onClick={() => openDelete(r)}>
+                                      Delete
+                                    </button>
                                   </div>
                                 </div>
                               );
@@ -712,6 +765,17 @@ function SuccessModal({ open, message, onClose }) {
         onCancel={() => {
           setRestoreOpen(false);
           setRestoreTarget(null);
+        }}
+      />
+
+      {/* Delete confirm */}
+      <ConfirmModal
+        open={deleteOpen}
+        title={deleteTarget ? `Delete ${deleteTarget.kind}: ${deleteTarget.name}? This cannot be undone.` : "Delete this account?"}
+        onYes={confirmDelete}
+        onCancel={() => {
+          setDeleteOpen(false);
+          setDeleteTarget(null);
         }}
       />
 

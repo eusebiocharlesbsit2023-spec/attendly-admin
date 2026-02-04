@@ -10,7 +10,7 @@ import supabase from "../helper/supabaseClient";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell, faMagnifyingGlass, faPlus, faDownload, faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faBell, faMagnifyingGlass, faPlus, faDownload, faPenToSquare, faTrash, faArchive } from "@fortawesome/free-solid-svg-icons";
 
 export default function StudentManagement() {
   const navigate = useNavigate();
@@ -460,8 +460,8 @@ export default function StudentManagement() {
                         </button>
 
                         <button className="sm-action del" onClick={() => onDeleteClick(s)} type="button">
-                          <FontAwesomeIcon icon={faTrash} />
-                          Delete
+                          <FontAwesomeIcon icon={faArchive} />
+                          Archive
                         </button>
                       </td>
                     </tr>
