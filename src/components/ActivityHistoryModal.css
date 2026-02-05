@@ -1,10 +1,10 @@
 .ahm-overlay {
   position: fixed;
   inset: 0;
-  background: transparent; /* removed dark backdrop */
+  background: rgba(0,0,0,0.25);
   display: grid;
   place-items: center;
-  z-index: 5000;
+  z-index: 10000;
 }
 
 .ahm-card {
@@ -16,7 +16,8 @@
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
+  z-index: 10001;
 }
 
 .ahm-header {
@@ -95,6 +96,13 @@
   font-weight: 700;
   color: #0f172a;
   font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.ahm-text {
+  /* Reserve space so text doesn't flow under the three-dot button */
+  padding-right: 64px; /* button width (34px) + right offset + breathing room */
+  min-width: 0; /* allow truncation within flex containers */
 }
 
 .ahm-time {
@@ -124,16 +132,13 @@
 }
 
 .ahm-more-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 8px;
+  /* base styles; positioning will be applied inline to ensure it sits above everything */
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(2,6,23,0.08);
   min-width: 140px;
-  z-index: 10;
-  padding: 6px 6px;
+  padding: 6px 2px;
 }
 
 .ahm-more-item {

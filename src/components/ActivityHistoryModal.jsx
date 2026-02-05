@@ -20,6 +20,7 @@ export default function ActivityHistoryModal({
   const [posStyle, setPosStyle] = useState(null);
   const [notes, setNotes] = useState(() => getNotifications());
   const [openMoreIndex, setOpenMoreIndex] = useState(null);
+  const [openMorePos, setOpenMorePos] = useState(null);
 
   const sig = (x) => `${(x?.text ?? "").trim()}__${(x?.time ?? "").trim()}`;
 
@@ -48,7 +49,12 @@ export default function ActivityHistoryModal({
 
   // keep local notes in sync when modal opens
   useEffect(() => {
-    if (open) setNotes(getNotifications());
+    if (open) {
+      setNotes(getNotifications());
+    } else {
+      setOpenMoreIndex(null);
+      setOpenMorePos(null);
+    }
   }, [open]);
 
   // positioning logic (unchanged)
@@ -104,6 +110,7 @@ export default function ActivityHistoryModal({
     markAsReadById(note.id);
     setNotes(getNotifications());
     setOpenMoreIndex(null);
+    setOpenMorePos(null);
   };
 
   const markAsUnread = (idx) => {
@@ -112,6 +119,7 @@ export default function ActivityHistoryModal({
     markAsUnreadById(note.id);
     setNotes(getNotifications());
     setOpenMoreIndex(null);
+    setOpenMorePos(null);
   };
 
   const deleteNotification = (idx) => {
@@ -120,12 +128,14 @@ export default function ActivityHistoryModal({
     deleteNotificationById(note.id);
     setNotes(getNotifications());
     setOpenMoreIndex(null);
+    setOpenMorePos(null);
   };
 
   const handleMarkAllAsRead = () => {
     markAllAsRead();
     setNotes(getNotifications());
     setOpenMoreIndex(null);
+    setOpenMorePos(null);
   };
 
   if (!open) return null;
@@ -163,14 +173,29 @@ export default function ActivityHistoryModal({
                   aria-label="More"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setOpenMoreIndex(openMoreIndex === idx ? null : idx);
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const menuWidth = 160; // approximate menu width
+                    const gap = 6;
+                    const top = rect.bottom + gap;
+                    const left = Math.max(8, rect.right - menuWidth);
+                    const willClose = openMoreIndex === idx;
+                    setOpenMoreIndex(willClose ? null : idx);
+                    setOpenMorePos(willClose ? null : { top: `${top}px`, left: `${left}px` });
                   }}
                 >
                   ⋯
                 </button>
 
                 {openMoreIndex === idx && (
-                  <div className="ahm-more-menu" onMouseDown={(e) => e.stopPropagation()}>
+                  <div
+                    className="ahm-more-menu"
+                    style={
+                      openMorePos
+                        ? { position: "fixed", top: openMorePos.top, left: openMorePos.left, zIndex: 100000 }
+                        : { position: "fixed", zIndex: 100000 }
+                    }
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
                     {!a.read ? (
                       <button
                         type="button"
