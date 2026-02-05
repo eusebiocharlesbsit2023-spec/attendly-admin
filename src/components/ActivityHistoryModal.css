@@ -60,11 +60,8 @@
   overflow-y: auto;
 
   /* ✅ important for flex scrolling */
-  flex: 0 0 auto;
+  flex: 1 1 auto; 
   min-height: 0;
-
-  /* ✅ height for exactly 9 visible entries */
-  max-height: calc(var(--ahm-row-height) * var(--ahm-visible-rows));
 }
 
 /* keep your existing styles */
@@ -175,8 +172,12 @@
   padding: 12px 18px;
   border-top: 1px solid #eef2f7;
   display: flex;
-  justify-content: space-between; /* mark all on left, close on right */
+  justify-content: space-between;
   align-items: center;
+  
+  /* ✅ Idagdag ito para manatiling fixed ang height ng footer */
+  flex-shrink: 0; 
+  background: #fff; /* Para hindi maging transparent habang may nag-o-overflow */
 }
 
 .ahm-markAll {

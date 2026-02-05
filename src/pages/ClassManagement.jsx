@@ -7,6 +7,16 @@ import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditClassModal from "../components/EditClassModal";
 import supabase from "../helper/supabaseClient";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBell,
+  faUsers,
+  faMicrochip,
+  faGraduationCap,
+  faBookOpen,
+  faClock,
+  faLocationDot,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function ClassManagement() {
   const navigate = useNavigate();
@@ -237,15 +247,15 @@ export default function ClassManagement() {
       <Sidebar open={false} active="classes" />
 
       {/* Topbar */}
-      <header className="cm-topbar">
-        <div className="cm-topbar-inner">
-          <div className="cm-topbar-left">
-            <div className="cm-title">Class Management</div>
+      <header className="mnt-topbar">
+        <div className="mnt-topbar-inner">
+          <div className="mnt-topbar-left">
+            <div className="dash-title">Class Management</div>
           </div>
 
-          <div className="cm-topbar-right">
+          <div className="mnt-topbar-right">
             <button
-              className="cm-icon-btn bell-btn"
+              className="mnt-icon-btn"
               ref={notifRef}
               aria-label="Notifications"
               type="button"
@@ -254,8 +264,8 @@ export default function ClassManagement() {
                 setActivityOpen(true);
               }}
             >
-              <span className="cm-notif-dot" />
-              <Svg name="bell" />
+              <span className="mnt-notif-dot" />
+              <FontAwesomeIcon icon={faBell} />
             </button>
           </div>
         </div>

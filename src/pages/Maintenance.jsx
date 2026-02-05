@@ -1,28 +1,34 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
-import "./Maintenance.css";
 import MaintenanceConfirmModal from "../components/MaintenanceConfirmModal";
+
+/* ===== Supabase Client ===== */ 
+import supabase from "../helper/supabaseClient";
+import { supabaseCreateUser } from "../helper/supabaseCreateUserClient";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell } from "@fortawesome/free-solid-svg-icons";
 
+import "./Maintenance.css";
+
 export default function Maintenance() {
   const navigate = useNavigate();
-  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
   const notifRef = useRef(null);
 
-  // UI only (you can connect this to backend later)
+  // States
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
+  const [activityOpen, setActivityOpen] = useState(false);
 
   // Confirm modal state
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingNextMode, setPendingNextMode] = useState(null); // "maintenance" | "online"
+  const [pendingNextMode, setPendingNextMode] = useState(null);
 
-  // ===== Activity (SAME AS ADMIN DASHBOARD) =====
-  const [activityOpen, setActivityOpen] = useState(false);
+  // Hardcoded activity for UI
   const activity = [
     { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
     { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
@@ -34,6 +40,28 @@ export default function Maintenance() {
     { text: "Attendance export generated", time: "1 week ago" },
   ];
 
+  // 1. Fetch current status on load
+  useEffect(() => {
+    fetchMaintenanceStatus();
+  }, []);
+
+  const fetchMaintenanceStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("system_settings")
+        .select("is_active")
+        .eq("id", "maintenance_mode")
+        .single();
+
+      if (error) throw error;
+      if (data) setIsMaintenanceMode(data.is_active);
+    } catch (err) {
+      console.error("Error fetching maintenance status:", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const statusLabel = isMaintenanceMode ? "Maintenance" : "Online";
   const statusClass = isMaintenanceMode ? "status-red" : "status-green";
 
@@ -43,10 +71,31 @@ export default function Maintenance() {
     setConfirmOpen(true);
   };
 
-  const confirmYes = () => {
-    setConfirmOpen(false);
-    setIsMaintenanceMode((v) => !v);
-    setPendingNextMode(null);
+  // 2. Functional update to Supabase
+  const confirmYes = async () => {
+    const nextValue = pendingNextMode === "maintenance";
+    
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from("system_settings")
+        .update({ 
+          is_active: nextValue,
+          updated_at: new Date().toISOString() 
+        })
+        .eq("id", "maintenance_mode");
+
+      if (error) throw error;
+
+      setIsMaintenanceMode(nextValue);
+      setConfirmOpen(false);
+      setPendingNextMode(null);
+    } catch (err) {
+      console.error("Update failed:", err.message);
+      alert("Failed to update system status. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const confirmCancel = () => {
@@ -79,8 +128,6 @@ export default function Maintenance() {
               <span className="mnt-notif-dot" />
               <FontAwesomeIcon icon={faBell} />
             </button>
-
-            {/* topbar logout removed */}
           </div>
         </div>
       </header>
@@ -90,10 +137,16 @@ export default function Maintenance() {
         <section className="mnt-card">
           <h2 className="mnt-card-title">System Current Status</h2>
 
-          <div className="mnt-status-row">
-            <span className={`mnt-dot ${statusClass}`} />
-            <span className="mnt-status-text">{statusLabel}</span>
-          </div>
+          {loading ? (
+            <div className="mnt-status-row">
+              <span className="mnt-status-text">Checking system status...</span>
+            </div>
+          ) : (
+            <div className="mnt-status-row">
+              <span className={`mnt-dot ${statusClass}`} />
+              <span className="mnt-status-text">{statusLabel}</span>
+            </div>
+          )}
 
           <p className="mnt-desc">
             The Attendly system is currently undergoing scheduled maintenance to ensure stability,
@@ -103,8 +156,13 @@ export default function Maintenance() {
             resume once maintenance has finished.
           </p>
 
-          <button className="mnt-btn" type="button" onClick={handleSwitch}>
-            {isMaintenanceMode ? "Switch to Online" : "Switch to Maintenance"}
+          <button 
+            className="mnt-btn" 
+            type="button" 
+            onClick={handleSwitch}
+            disabled={loading}
+          >
+            {loading ? "Processing..." : isMaintenanceMode ? "Switch to Online" : "Switch to Maintenance"}
           </button>
         </section>
       </main>

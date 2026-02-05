@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./ActivityHistoryModal.css";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   getNotifications,
   syncNotifications,
