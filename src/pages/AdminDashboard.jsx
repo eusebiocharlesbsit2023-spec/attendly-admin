@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AdminDashboard.css";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import supabase from "../helper/supabaseClient";
+
+/* ✅ Import the reusable hook */
+import { useNotifications } from "../hooks/useNotifications";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -17,25 +20,27 @@ import {
   faLocationDot,
 } from "@fortawesome/free-solid-svg-icons";
 
-/* ✅ Notifications store */
-import { getNotifications } from "../lib/notifications";
-
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [activityOpen, setActivityOpen] = useState(false);
-  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
-  const notifRef = useRef(null);
-
   const adminProfile = JSON.parse(localStorage.getItem("adminProfile")) || [];
 
-  // --- States ---
-  const [realActivity, setRealActivity] = useState([]);
-  const [activityLoading, setActivityLoading] = useState(true);
+  /* ✅ USE THE REUSABLE HOOK */
+  const {
+    realActivity,
+    activityLoading,
+    unreadCount,
+    activityOpen,
+    setActivityOpen,
+    activityAnchorRect,
+    notifRef,
+    openNotif,
+    refreshUnreadCount,
+  } = useNotifications();
+
+  // --- Dashboard Local States ---
   const [todayClasses, setTodayClasses] = useState([]);
   const [todayLoading, setTodayLoading] = useState(false);
   const [todayErr, setTodayErr] = useState(null);
-  const [unreadCount, setUnreadCount] = useState(0);
-
   const [stats, setStats] = useState([
     { label: "Total Students", value: "—", icon: faUsers, tint: "blue" },
     { label: "Active Devices", value: "N/A", icon: faMicrochip, tint: "purple" },
@@ -63,31 +68,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // 2. Fetch Real Activity (3rd Person Messages from DB)
-  const fetchActivities = async () => {
-    setActivityLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("recent_activities")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-
-      setRealActivity((data || []).map(act => ({
-        id: act.id,
-        text: act.message,
-        time: formatTimeAgo(act.created_at),
-      })));
-    } catch (e) {
-      console.error("fetchActivities error:", e);
-    } finally {
-      setActivityLoading(false);
-    }
-  };
-
-  // 3. Fetch Today Classes (Fixed UI Data)
+  // 2. Fetch Today Classes
   const fetchTodayClasses = async () => {
     setTodayLoading(true);
     setTodayErr(null);
@@ -97,14 +78,7 @@ export default function AdminDashboard() {
 
       const { data, error } = await supabase
         .from("classes")
-        .select(`
-          id,
-          course,
-          course_code,
-          room,
-          start_time,
-          class_enrollments(count)
-        `)
+        .select(`id, course, course_code, room, start_time, class_enrollments(count)`)
         .eq("archived", false)
         .eq("day_of_week", day)
         .order("start_time", { ascending: true });
@@ -125,19 +99,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- Helpers ---
-  function formatTimeAgo(dateString) {
-    const now = new Date();
-    const past = new Date(dateString);
-    const diffInMs = now - past;
-    const diffInMins = Math.floor(diffInMs / 60000);
-    if (diffInMins < 1) return "Just now";
-    if (diffInMins < 60) return `${diffInMins}m ago`;
-    const diffInHours = Math.floor(diffInMins / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    return past.toLocaleDateString();
-  }
-
   function formatTimeFromDB(t) {
     if (!t) return "—";
     const [hh, mm] = String(t).split(":");
@@ -147,34 +108,9 @@ export default function AdminDashboard() {
     return `${h}:${mm} ${ampm}`;
   }
 
-  const refreshUnreadCount = () => {
-    const notes = getNotifications() || [];
-    setUnreadCount(notes.filter((n) => !n.read).length);
-  };
-
-  // Realtime & Initial Load
   useEffect(() => {
     fetchTodayClasses();
     fetchStats();
-    fetchActivities();
-    refreshUnreadCount();
-
-    const channel = supabase
-      .channel('dashboard-realtime')
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'recent_activities' }, 
-        (payload) => {
-          const newItem = {
-            id: payload.new.id,
-            text: payload.new.message,
-            time: "Just now"
-          };
-          setRealActivity(prev => [newItem, ...prev].slice(0, 20));
-        }
-      )
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
   }, []);
 
   return (
@@ -190,10 +126,8 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="mnt-topbar-right">
-            <button className="mnt-icon-btn" ref={notifRef} onClick={() => {
-              setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
-              setActivityOpen(true);
-            }}>
+            {/* ✅ REUSABLE BELL ICON LOGIC */}
+            <button className="mnt-icon-btn" ref={notifRef} onClick={openNotif}>
               {unreadCount > 0 && <span className="mnt-notif-dot" />}
               <FontAwesomeIcon icon={faBell} />
             </button>
@@ -224,7 +158,7 @@ export default function AdminDashboard() {
 
         {/* BOTTOM */}
         <section className="bottom-grid">
-          {/* Recent Activity */}
+          {/* Recent Activity Panel */}
           <div className="card panel">
             <div className="panel-title">
               <FontAwesomeIcon icon={faClock} />
@@ -249,7 +183,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Today Classes (Fixed Original UI) */}
+          {/* Today Classes */}
           <div className="card panel">
             <div className="panel-title plain">Today Classes</div>
             <div className="classes-list">
@@ -283,6 +217,7 @@ export default function AdminDashboard() {
         </section>
       </main>
 
+      {/* ✅ REUSABLE MODAL */}
       <ActivityHistoryModal
         open={activityOpen}
         onClose={() => {

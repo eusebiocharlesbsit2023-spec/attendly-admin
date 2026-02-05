@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import MaintenanceConfirmModal from "../components/MaintenanceConfirmModal";
 
+/* ✅ Import the reusable hook */
+import { useNotifications } from "../hooks/useNotifications";
+
 /* ===== Supabase Client ===== */ 
 import supabase from "../helper/supabaseClient";
-import { supabaseCreateUser } from "../helper/supabaseCreateUserClient";
 
 /* ===== Font Awesome ===== */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -15,30 +16,23 @@ import { faBell } from "@fortawesome/free-solid-svg-icons";
 import "./Maintenance.css";
 
 export default function Maintenance() {
-  const navigate = useNavigate();
-  const notifRef = useRef(null);
+  /* ✅ USE THE REUSABLE HOOK */
+  const {
+    realActivity,
+    unreadCount,
+    activityOpen,
+    setActivityOpen,
+    activityAnchorRect,
+    notifRef,
+    openNotif,
+    refreshUnreadCount,
+  } = useNotifications();
 
-  // States
+  // Local States
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activityAnchorRect, setActivityAnchorRect] = useState(null);
-  const [activityOpen, setActivityOpen] = useState(false);
-
-  // Confirm modal state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingNextMode, setPendingNextMode] = useState(null);
-
-  // Hardcoded activity for UI
-  const activity = [
-    { text: "John Smith marked attendance in CS101", time: "2 minutes ago" },
-    { text: "Haylee Steinfield marked attendance in CS101", time: "5 minutes ago" },
-    { text: "New Student enrolled: Emma Wilson", time: "2 hours ago" },
-    { text: "Dakota Johnson marked attendance in CS201", time: "3 hours ago" },
-    { text: "Professor Sadie Mayers created class CS102", time: "Yesterday" },
-    { text: "Admin changed Alice Willson to Inactive", time: "2 days ago" },
-    { text: "Maintenance switched to Online", time: "3 days ago" },
-    { text: "Attendance export generated", time: "1 week ago" },
-  ];
 
   // 1. Fetch current status on load
   useEffect(() => {
@@ -115,17 +109,15 @@ export default function Maintenance() {
           </div>
 
           <div className="mnt-topbar-right">
+            {/* ✅ REUSABLE BELL ICON LOGIC */}
             <button
               className="mnt-icon-btn"
               type="button"
               aria-label="Notifications"
               ref={notifRef}
-              onClick={() => {
-                setActivityAnchorRect(notifRef.current?.getBoundingClientRect() ?? null);
-                setActivityOpen(true);
-              }}
+              onClick={openNotif}
             >
-              <span className="mnt-notif-dot" />
+              {unreadCount > 0 && <span className="mnt-notif-dot" />}
               <FontAwesomeIcon icon={faBell} />
             </button>
           </div>
@@ -173,17 +165,20 @@ export default function Maintenance() {
         title={
           pendingNextMode === "maintenance"
             ? "Are you sure you want to switch to maintenance?"
-            : " Are you sure you want to switch to online?"
+            : "Are you sure you want to switch to online?"
         }
         onYes={confirmYes}
         onCancel={confirmCancel}
       />
 
-      {/* Activity Modal (Bell) */}
+      {/* ✅ REUSABLE MODAL WITH REALTIME DATA */}
       <ActivityHistoryModal
         open={activityOpen}
-        onClose={() => setActivityOpen(false)}
-        items={activity}
+        onClose={() => {
+          setActivityOpen(false);
+          refreshUnreadCount();
+        }}
+        items={realActivity}
         anchorRect={activityAnchorRect}
       />
     </div>
