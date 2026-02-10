@@ -79,6 +79,7 @@ function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
   );
 }
 
+
 function SuccessModal({ open, message, onClose }) {
   if (!open) return null;
   return (
@@ -126,7 +127,8 @@ export default function ManageAdmin() {
     try {
       const { data, error } = await supabase
         .from("admins")
-        .select("id, admin_name, username, role, status")
+        .select("id, admin_name, username, role, status, archived")
+        .eq("archived", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -149,7 +151,6 @@ export default function ManageAdmin() {
 
   useEffect(() => { fetchAdmins(); }, []);
 
-  // Modal States
   const [createOpen, setCreateOpen] = useState(false);
   const [editRoleOpen, setEditRoleOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
@@ -187,20 +188,23 @@ export default function ManageAdmin() {
     finally { setSavingApply(false); setApplyOpen(false); }
   };
 
-  const onDelete = (r) => {
+  const onArchive = (r) => {
     if (r.role === "Super Admin") return;
     setPendingDelete(r);
     setDeleteOpen(true);
   };
 
-  const deleteYes = async () => {
+  const archiveYes = async () => {
     if (deleting || !pendingDelete?.uuid) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.rpc("admin_delete_user", { p_user_id: pendingDelete.uuid });
+      const { error } = await supabase
+        .from("admins")
+        .update({ archived: true, status: "Inactive", archived_at: new Date().toISOString() })
+        .eq("id", pendingDelete.uuid);
       if (error) throw error;
       setRows(prev => prev.filter(x => x.uuid !== pendingDelete.uuid));
-      setSuccessMsg(`Deleted admin: ${pendingDelete.id}`);
+      setSuccessMsg(`Archived admin: ${pendingDelete.id}`);
       setSuccessOpen(true);
     } catch (err) { console.error(err); }
     finally { setDeleting(false); setDeleteOpen(false); }
@@ -310,7 +314,13 @@ export default function ManageAdmin() {
                       <td><span className={`mam-status ${r.status === "Active" ? "active" : "inactive"}`}>{r.status}</span></td>
                       <td className="mam-actionsCell">
                         <button className="mam-action edit" onClick={() => onEdit(r)}>✎ Edit</button>
-                        <button className={`mam-action del ${r.role === "Super Admin" ? "disabled" : ""}`} onClick={() => onDelete(r)} disabled={r.role === "Super Admin"}>🗑 Delete</button>
+                        <button
+                          className={`mam-action del ${r.role === "Super Admin" ? "disabled" : ""}`}
+                          onClick={() => onArchive(r)}
+                          disabled={r.role === "Super Admin" || deleting}
+                        >
+                          {deleting && pendingDelete?.uuid === r.uuid ? "Archiving..." : "🗑 Archive"}
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -334,7 +344,7 @@ export default function ManageAdmin() {
       <EditAdminRoleModal open={editRoleOpen} admin={editingRow} onClose={() => setEditRoleOpen(false)} onSaveClick={onEditSaveClick} />
       <SmallConfirmModal open={applyOpen} title={savingApply ? "Saving..." : `Apply role change?`} onYes={applyYes} onCancel={() => setApplyOpen(false)} />
       <SuccessModal open={successOpen} message={successMsg} onClose={() => setSuccessOpen(false)} />
-      <SmallConfirmModal open={deleteOpen} title={deleting ? "Deleting..." : `Delete Admin?`} onYes={deleteYes} onCancel={() => setDeleteOpen(false)} />
+      <SmallConfirmModal open={deleteOpen} title={deleting ? "Archiving..." : `Archive Admin?`} onYes={archiveYes} onCancel={() => setDeleteOpen(false)} />
 
       {/* ✅ REUSABLE MODAL WITH REALTIME DATA */}
       <ActivityHistoryModal 

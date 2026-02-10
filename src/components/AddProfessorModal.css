@@ -53,7 +53,8 @@
 }
 
 /* INPUTS */
-.apm-field input {
+.apm-field input,
+.apm-field select {
   width: 100%;
   border: 1px solid #e2e8f0;
   background: #f3f4f6;
@@ -63,7 +64,8 @@
   font-size: 13px;
 }
 
-.apm-field input:focus {
+.apm-field input:focus,
+.apm-field select:focus {
   background: #fff;
   border-color: #93c5fd;
   box-shadow: 0 0 0 3px rgba(59,130,246,0.15);

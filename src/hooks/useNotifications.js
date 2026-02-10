@@ -41,6 +41,7 @@ export function useNotifications() {
         id: act.id,
         text: act.message,
         time: formatTimeAgo(act.created_at),
+        read: act.read,
       })));
     } catch (e) {
       console.error("fetchActivities error:", e);

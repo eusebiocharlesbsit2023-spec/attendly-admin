@@ -117,33 +117,48 @@
 }
 
 /* STATUS PILL */
+/* Status Pill Base Style */
 .status-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
+  padding: 4px 12px;
+  border-radius: 20px;
   font-size: 12px;
-  font-weight: 700;
-  border-radius: 999px;
+  font-weight: 600;
+  display: inline-block;
   margin-bottom: 10px;
-  border: 1px solid transparent;
 }
 
-.status-pill.inprogress {
-  background: #fff7d6;
-  color: #a16207;
-  border-color: #fde68a;
-}
-
-.status-pill.ended {
-  background: #fcdcdc;
-  color: #801515;
-  border-color: #ef8686;
-}
-
+/* PENDING / UPCOMING STYLE (Base sa image mo) */
 .status-pill.ongoing {
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-color: #93c5fd;
+  background-color: #FFF9E6; /* Light yellow background */
+  color: #D4A017;            /* Gold/Dark Yellow text */
+  border: 1.5px solid #F0D478; /* Muted yellow border */
+}
+
+/* IN-PROGRESS STYLE */
+.status-pill.inprogress {
+  background-color: #E6F4EA;
+  color: #1E8E3E;
+  border: 1.5px solid #81C995;
+}
+
+/* ENDED / INACTIVE STYLE */
+.status-pill.ended {
+  background-color: #FCE8E6;
+  color: #D93025;
+  border: 1.5px solid #F28B82;
+}
+
+.status-pill.pending {
+  background-color: #FFF9E6;
+  color: #D4A017;
+  border: 1.5px solid #F0D478;
+}
+
+/* Asul para sa Upcoming */
+.status-pill.upcoming {
+  background-color: #E8F0FE;
+  color: #1967D2;
+  border: 1.5px solid #8AB4F8;
 }
 
 /* TOP ROW */

@@ -15,31 +15,55 @@ export default function EditClassModal({
   const [status, setStatus] = useState("Active");
   const [professor, setProfessor] = useState("");
   const [room, setRoom] = useState("");
-  const [schedule, setSchedule] = useState("");
+  const [dayOfWeek, setDayOfWeek] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [wifi, setWifi] = useState("");
 
   const [original, setOriginal] = useState({
     status: "Active",
     professor: "",
     room: "",
-    schedule: "",
+    dayOfWeek: "",
+    startTime: "",
+    endTime: "",
     wifi: "",
   });
 
-  const profOptions = useMemo(() => {
-    const set = new Set((allClasses || []).map((c) => c.professor).filter(Boolean));
-    return Array.from(set);
-  }, [allClasses]);
+  const formatApName = (roomName) => {
+    const raw = String(roomName || "").trim();
+    if (!raw) return "";
+    const digits = raw.match(/\d+/g)?.join("") || "";
+    return `AP${digits || raw.replace(/\s+/g, "")}`;
+  };
 
-  const roomOptions = useMemo(() => {
-    const set = new Set((allClasses || []).map((c) => c.room).filter(Boolean));
-    return Array.from(set);
-  }, [allClasses]);
+  const dayOptions = useMemo(
+    () => ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    []
+  );
 
-  const scheduleOptions = useMemo(() => {
-    const set = new Set((allClasses || []).map((c) => c.schedule).filter(Boolean));
-    return Array.from(set);
-  }, [allClasses]);
+  const dayName = (d) => {
+    const map = {
+      mon: "Monday",
+      tue: "Tuesday",
+      wed: "Wednesday",
+      thu: "Thursday",
+      fri: "Friday",
+      sat: "Saturday",
+      sun: "Sunday",
+    };
+    const key = String(d ?? "").toLowerCase().slice(0, 3);
+    return map[key] || d || "";
+  };
+
+  const formatTime12 = (t) => {
+    if (!t) return "";
+    const [hh, mm] = String(t).split(":");
+    let h = Number(hh);
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${h}:${mm} ${ampm}`.trim();
+  };
 
   useEffect(() => {
     if (open && clazz) {
@@ -47,14 +71,18 @@ export default function EditClassModal({
         status: clazz.status || "Active",
         professor: clazz.professor || "",
         room: clazz.room || "",
-        schedule: clazz.schedule || "",
+        dayOfWeek: dayName(clazz.day_of_week) || "",
+        startTime: clazz.start_time || "",
+        endTime: clazz.end_time || "",
         wifi: clazz.wifi || "",
       };
 
       setStatus(next.status);
       setProfessor(next.professor);
       setRoom(next.room);
-      setSchedule(next.schedule);
+      setDayOfWeek(next.dayOfWeek);
+      setStartTime(next.startTime);
+      setEndTime(next.endTime);
       setWifi(next.wifi);
 
       setOriginal(next);
@@ -63,10 +91,14 @@ export default function EditClassModal({
 
   const changed =
     status !== original.status ||
-    professor !== original.professor ||
     room !== original.room ||
-    schedule !== original.schedule ||
-    wifi !== original.wifi;
+    dayOfWeek !== original.dayOfWeek ||
+    startTime !== original.startTime ||
+    endTime !== original.endTime;
+
+  useEffect(() => {
+    setWifi(formatApName(room));
+  }, [room]);
 
   if (!open || !clazz) return null;
 
@@ -79,17 +111,6 @@ export default function EditClassModal({
             <div className="ecm-title">{clazz.name}</div>
             <div className="ecm-code">{clazz.code}</div>
           </div>
-
-          <div className="ecm-statusWrap">
-            <select
-              className="ecm-statusSelect"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="Active">Activate</option>
-              <option value="Inactive">Deactivate</option>
-            </select>
-          </div>
         </div>
 
         {/* ===== Fields ===== */}
@@ -98,34 +119,19 @@ export default function EditClassModal({
             <span className="ecm-ico">
               <FontAwesomeIcon icon={faUser} />
             </span>
-            <select
-              className="ecm-select"
-              value={professor}
-              onChange={(e) => setProfessor(e.target.value)}
-            >
-              {profOptions.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+            <div className="ecm-static">{professor || "Unassigned"}</div>
           </div>
 
           <div className="ecm-line">
             <span className="ecm-ico">
               <FontAwesomeIcon icon={faLocationDot} />
             </span>
-            <select
-              className="ecm-select"
+            <input
+              className="ecm-input"
               value={room}
               onChange={(e) => setRoom(e.target.value)}
-            >
-              {roomOptions.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
+              placeholder="Room"
+            />
           </div>
 
           <div className="ecm-line">
@@ -134,28 +140,44 @@ export default function EditClassModal({
             </span>
             <select
               className="ecm-select"
-              value={schedule}
-              onChange={(e) => setSchedule(e.target.value)}
+              value={dayOfWeek}
+              onChange={(e) => setDayOfWeek(e.target.value)}
             >
-              {scheduleOptions.map((s) => (
-                <option key={s} value={s}>
-                  {s}
+              <option value="">Select day</option>
+              {dayOptions.map((d) => (
+                <option key={d} value={d}>
+                  {d}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="ecm-line ecm-timeRow">
+            <span className="ecm-ico">
+              <FontAwesomeIcon icon={faClock} />
+            </span>
+            <div className="ecm-timeInputs">
+              <input
+                className="ecm-input"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+              <span className="ecm-timeSep">to</span>
+              <input
+                className="ecm-input"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="ecm-line">
             <span className="ecm-ico">
               <FontAwesomeIcon icon={faWifi} />
             </span>
-
-            <input
-              className="ecm-input"
-              value={wifi}
-              onChange={(e) => setWifi(e.target.value)}
-              placeholder="Lab WiFi name"
-            />
+            <div className="ecm-static">{wifi || "No WiFi assigned"}</div>
           </div>
         </div>
 
@@ -170,17 +192,20 @@ export default function EditClassModal({
             type="button"
             disabled={!changed}
             title={!changed ? "Change something first" : "Save changes"}
-            onClick={() =>
-              onSaveClick?.({
-                ...clazz,
-                status,
-                professor,
-                room,
-                schedule,
-                wifi,
-              })
-            }
-          >
+              onClick={() =>
+                onSaveClick?.({
+                  ...clazz,
+                  status,
+                  professor,
+                  room,
+                  day_of_week: dayOfWeek,
+                  start_time: startTime,
+                  end_time: endTime,
+                  schedule: `${dayName(dayOfWeek)}: ${formatTime12(startTime)} - ${formatTime12(endTime)}`.trim(),
+                  wifi,
+                })
+              }
+            >
             Save
           </button>
         </div>

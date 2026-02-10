@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import "./AddStudentModal.css";
 import supabase from "../helper/supabaseClient";
+import SmallConfirmModal from "../components/SmallConfirmModal";
 
 const YEAR_LEVELS = [
   { value: "1", label: "1st Year" },
@@ -38,10 +39,75 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [liveEmailError, setLiveEmailError] = useState("");
+  const [liveStudentNoError, setLiveStudentNoError] = useState("");
 
   useEffect(() => {
     setPassword(buildPasswordFromSurname(surname));
   }, [surname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const emailLower = email.trim().toLowerCase();
+    if (!emailLower) {
+      setLiveEmailError("");
+      return;
+    }
+
+    const t = setTimeout(async () => {
+      try {
+        const [studentRes, profRes] = await Promise.all([
+          supabase.from("students").select("id").eq("email", emailLower).maybeSingle(),
+          supabase.from("professors").select("id").eq("email", emailLower).maybeSingle(),
+        ]);
+
+        if (studentRes.error) throw studentRes.error;
+        if (profRes.error) throw profRes.error;
+
+        if (studentRes.data || profRes.data) {
+          setLiveEmailError("Email already exists.");
+          return;
+        }
+
+        setLiveEmailError("");
+      } catch {
+        setLiveEmailError("");
+      }
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [open, email]);
+
+  useEffect(() => {
+    if (!open) return;
+    const studentNo = studentNumber.trim().toUpperCase();
+    if (!studentNo) {
+      setLiveStudentNoError("");
+      return;
+    }
+
+    const t = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from("students")
+          .select("id")
+          .eq("student_number", studentNo)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (data) {
+          setLiveStudentNoError("Student Number already exists.");
+          return;
+        }
+
+        setLiveStudentNoError("");
+      } catch {
+        setLiveStudentNoError("");
+      }
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [open, studentNumber]);
 
   // Validation logic
   const errors = useMemo(() => {
@@ -51,11 +117,16 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     if (!email.trim()) e.email = "Required";
     if (!studentNumber.trim()) e.studentNumber = "Required";
     if (studentNumber.length < 10) e.studentNumber = "Too short (include -N)";
+    if (liveEmailError) e.email = liveEmailError;
+    if (liveStudentNoError) e.studentNumber = liveStudentNoError;
+    const sn = studentNumber.trim();
+    if (sn && !/-N/i.test(sn)) e.studentNumber = "Student number must include -N.";
+    if (/=N/i.test(sn)) e.studentNumber = "Use -N, not =N.";
     if (!program) e.program = "Required";
     if (!yearLevel) e.yearLevel = "Required";
     if (!section) e.section = "Required";
     return e;
-  }, [firstName, surname, email, studentNumber, yearLevel, section, program]);
+  }, [firstName, surname, email, studentNumber, yearLevel, section, program, liveEmailError, liveStudentNoError]);
 
   const step1Valid = firstName.trim() && surname.trim();
   const step2Valid = Object.keys(errors).length === 0;
@@ -65,6 +136,7 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     setFirstName(""); setMiddleName(""); setSurname(""); setSuffix("");
     setStudentNumber(""); setEmail(""); setYearLevel(""); setSection("");
     setProgram(""); setPassword(""); setErrorMsg("");
+    setLiveEmailError(""); setLiveStudentNoError("");
     setConfirmOpen(false); setSubmitting(false); setSubmitAttempted(false);
   };
 
@@ -82,17 +154,58 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     setErrorMsg("");
 
     try {
-      // Check for duplicates
+      const first = firstName.trim();
+      const middle = middleName.trim();
+      const last = `${surname.trim()} ${suffix.trim()}`.trim();
+
+      const nameQuery = supabase
+        .from("students")
+        .select("id")
+        .ilike("first_name", first)
+        .ilike("last_name", last);
+
+      const { data: nameDup, error: nameErr } = middle
+        ? await nameQuery.ilike("middle_name", middle).limit(1)
+        : await nameQuery.or("middle_name.is.null,middle_name.eq.").limit(1);
+
+      if (nameErr) throw new Error("Name check failed: " + nameErr.message);
+      if (nameDup && nameDup.length > 0) {
+        setErrorMsg("Student name already exists.");
+        setSubmitting(false);
+        return;
+      }
+
+      const emailLower = email.trim().toLowerCase();
+      const studentNo = studentNumber.trim().toUpperCase();
+
+      // Check for duplicates in students
       const { data: existing, error: checkErr } = await supabase
         .from('students')
         .select('student_number, email')
-        .or(`student_number.eq.${studentNumber.trim().toUpperCase()},email.eq.${email.trim().toLowerCase()}`)
+        .or(`student_number.eq.${studentNo},email.eq.${emailLower}`)
         .maybeSingle();
 
+      if (checkErr) throw new Error("Check failed: " + checkErr.message);
+
       if (existing) {
-        setErrorMsg(existing.student_number === studentNumber.trim().toUpperCase() 
+        setErrorMsg(existing.student_number === studentNo 
           ? "Student Number already exists." 
           : "Email already exists.");
+        setSubmitting(false);
+        return;
+      }
+
+      // Check for duplicate email in professors
+      const { data: existingProf, error: profErr } = await supabase
+        .from('professors')
+        .select('email')
+        .eq('email', emailLower)
+        .maybeSingle();
+
+      if (profErr) throw new Error("Check failed: " + profErr.message);
+
+      if (existingProf) {
+        setErrorMsg("Email already exists.");
         setSubmitting(false);
         return;
       }
@@ -124,7 +237,11 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
       const { data, error } = await supabase.functions.invoke("create-student-and-email", { body: payload });
       if (error || !data?.success) throw new Error(data?.message || error?.message);
 
-      onSubmit?.({ studentRow: data, displayName: `${firstName} ${surname}` });
+      onSubmit?.({
+        studentRow: data,
+        displayName: `${firstName} ${surname}`,
+        studentNumber: studentNumber.trim().toUpperCase(),
+      });
       resetForm();
       onClose?.();
     } catch (e) {
@@ -138,7 +255,16 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
 
   return (
     <div className="asm-overlay">
-      {/* Confirmation Modal logic remains here... */}
+      <SmallConfirmModal
+        open={confirmOpen}
+        title={
+          submitting
+            ? "Adding..."
+            : `Add student ${firstName.trim()} ${surname.trim()}?`
+        }
+        onYes={confirmYes}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
       <div className="asm-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="asm-title">Add New Student</div>
@@ -210,14 +336,18 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
 
               <div>
                 <label className="asm-label">Email <span className="asm-req">*</span></label>
-                <input className={`asm-input ${submitAttempted && errors.email ? 'asm-input-error' : ''}`} value={email} onChange={e => setEmail(e.target.value)} />
-                {submitAttempted && errors.email && <p className="asm-fieldError">{errors.email}</p>}
+                <input className={`asm-input ${(liveEmailError || (submitAttempted && errors.email)) ? 'asm-input-error' : ''}`} value={email} onChange={e => setEmail(e.target.value)} />
+                {liveEmailError ? <p className="asm-fieldError">{liveEmailError}</p> : (submitAttempted && errors.email && <p className="asm-fieldError">{errors.email}</p>)}
               </div>
 
               <div>
                 <label className="asm-label">Student Number <span className="asm-req">*</span></label>
-                <input className={`asm-input ${submitAttempted && errors.studentNumber ? 'asm-input-error' : ''}`} value={studentNumber} onChange={e => setStudentNumber(e.target.value)} />
-                {submitAttempted && errors.studentNumber && <p className="asm-fieldError">{errors.studentNumber}</p>}
+                <input
+                  className={`asm-input ${(liveStudentNoError || (submitAttempted && errors.studentNumber)) ? 'asm-input-error' : ''}`}
+                  value={studentNumber}
+                  onChange={e => setStudentNumber(e.target.value.toUpperCase())}
+                />
+                {liveStudentNoError ? <p className="asm-fieldError">{liveStudentNoError}</p> : (submitAttempted && errors.studentNumber && <p className="asm-fieldError">{errors.studentNumber}</p>)}
               </div>
 
               <div className="asm-actions">

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./ActivityHistoryModal.css";
+import supabase from "../helper/supabaseClient";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -36,10 +37,10 @@ export default function ActivityHistoryModal({
       const existing = currentMap.get(key);
 
       return {
-        id: existing?.id ?? `seed_${idx}_${key}`,
+        id: it.id ?? existing?.id ?? `seed_${idx}_${key}`,
         text: it.text,
         time: it.time,
-        read: existing?.read ?? false,
+        read: it.read ?? existing?.read ?? false,
       };
     });
 
@@ -104,22 +105,32 @@ export default function ActivityHistoryModal({
     return () => window.removeEventListener("resize", handleResize);
   }, [open, anchorRect]);
 
-  const markAsRead = (idx) => {
+  const markAsRead = async (idx) => {
     const note = notes[idx];
     if (!note) return;
+
     markAsReadById(note.id);
     setNotes(getNotifications());
     setOpenMoreIndex(null);
     setOpenMorePos(null);
+
+    if (note.id) {
+      await supabase.from("recent_activities").update({ read: true }).eq("id", note.id);
+    }
   };
 
-  const markAsUnread = (idx) => {
+  const markAsUnread = async (idx) => {
     const note = notes[idx];
     if (!note) return;
+
     markAsUnreadById(note.id);
     setNotes(getNotifications());
     setOpenMoreIndex(null);
     setOpenMorePos(null);
+
+    if (note.id) {
+      await supabase.from("recent_activities").update({ read: false }).eq("id", note.id);
+    }
   };
 
   const deleteNotification = (idx) => {
@@ -131,11 +142,17 @@ export default function ActivityHistoryModal({
     setOpenMorePos(null);
   };
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
+    const unreadIds = notes.filter((n) => !n.read && n.id).map((n) => n.id);
+
     markAllAsRead();
     setNotes(getNotifications());
     setOpenMoreIndex(null);
     setOpenMorePos(null);
+
+    if (unreadIds.length > 0) {
+      await supabase.from("recent_activities").update({ read: true }).in("id", unreadIds);
+    }
   };
 
   if (!open) return null;

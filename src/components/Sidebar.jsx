@@ -51,7 +51,9 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
   const reportsOpen = active === "reports";
 
   // highlight sub tab based on URL even if same component
-  const reportsSubActive = pathname.includes("/reports/archive")
+  const reportsSubActive = pathname.includes("/reports/class-archive")
+    ? "class-archive"
+    : pathname.includes("/reports/archive")
     ? "archive"
     : "feedback";
 
@@ -115,7 +117,17 @@ export default function Sidebar({ open, onClose, active = "dashboard" }) {
                   onClick={() => go("/reports/archive")}
                   type="button"
                 >
-                  Archive
+                  User Archive
+                </button>
+
+                <button
+                  className={`sidebarV2-subitem ${
+                    reportsSubActive === "class-archive" ? "active" : ""
+                  }`}
+                  onClick={() => go("/reports/class-archive")}
+                  type="button"
+                >
+                  Class Archive
                 </button>
               </div>
             )}

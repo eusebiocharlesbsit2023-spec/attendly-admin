@@ -129,12 +129,15 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [dept, setDept] = useState("");
   const [error, setError] = useState("");
+  const [deptOptions, setDeptOptions] = useState([]);
+  const [deptLoading, setDeptLoading] = useState(false);
 
   const [pass, setPass] = useState("");
 
   const [showPass, setShowPass] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [liveEmailError, setLiveEmailError] = useState("");
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -161,6 +164,29 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const loadDepartments = async () => {
+      setDeptLoading(true);
+      try {
+        const { data, error: deptErr } = await supabase
+          .from("subjects")
+          .select("department")
+          .order("department", { ascending: true });
+
+        if (deptErr) throw deptErr;
+        const unique = Array.from(new Set((data || []).map((d) => d.department).filter(Boolean)));
+        setDeptOptions(unique);
+      } catch (err) {
+        console.error("Load departments failed:", err.message);
+        setDeptOptions([]);
+      } finally {
+        setDeptLoading(false);
+      }
+    };
+    loadDepartments();
+  }, [open]);
+
   const showErr = (key) => submitted || touched[key];
 
   const errors = useMemo(() => {
@@ -172,12 +198,45 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
 
     const emailErr = validateEmail(email);
     if (emailErr) e.email = emailErr;
+    if (liveEmailError) e.email = liveEmailError;
 
     const passErr = validatePassword(pass);
     if (passErr) e.pass = passErr;
 
     return e;
-  }, [firstName, lastName, email, dept, pass, confirm]);
+  }, [firstName, lastName, email, dept, pass, confirm, liveEmailError]);
+
+  useEffect(() => {
+    if (!open) return;
+    const emailLower = (email || "").trim().toLowerCase();
+    if (!emailLower) {
+      setLiveEmailError("");
+      return;
+    }
+
+    const t = setTimeout(async () => {
+      try {
+        const [profRes, studentRes] = await Promise.all([
+          supabase.from("professors").select("id").eq("email", emailLower).maybeSingle(),
+          supabase.from("students").select("id").eq("email", emailLower).maybeSingle(),
+        ]);
+
+        if (profRes.error) throw profRes.error;
+        if (studentRes.error) throw studentRes.error;
+
+        if (profRes.data || studentRes.data) {
+          setLiveEmailError("This email address is already registered.");
+          return;
+        }
+
+        setLiveEmailError("");
+      } catch {
+        setLiveEmailError("");
+      }
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [open, email]);
 
   const canSubmit = Object.keys(errors).length === 0;
 
@@ -198,10 +257,11 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
 
     try {
       // ✅ Check kung existing na ang email sa 'professors' table
+      const emailLower = email.trim().toLowerCase();
       const { data: existingProf, error: checkErr } = await supabase
         .from("professors")
         .select("email")
-        .eq("email", email.trim().toLowerCase())
+        .eq("email", emailLower)
         .maybeSingle();
 
       if (checkErr) throw new Error("Database check failed: " + checkErr.message);
@@ -213,6 +273,20 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
       }
 
       // ✅ Kung wala pang duplicate, proceed sa confirmation
+      const { data: existingStudent, error: studentErr } = await supabase
+        .from("students")
+        .select("email")
+        .eq("email", emailLower)
+        .maybeSingle();
+
+      if (studentErr) throw new Error("Database check failed: " + studentErr.message);
+
+      if (existingStudent) {
+        setError("This email address is already registered.");
+        setSaving(false);
+        return;
+      }
+
       setConfirmOpen(true);
     } catch (err) {
       setError(err.message);
@@ -322,7 +396,7 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            {showErr("email") && errors.email && <div className="apm-error">{errors.email}</div>}
+            {liveEmailError ? <div className="apm-error">{liveEmailError}</div> : (showErr("email") && errors.email && <div className="apm-error">{errors.email}</div>)}
           </div>
 
           <div className="apm-field">
@@ -363,11 +437,16 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
             <label>
               Department <span className="apm-req">*</span>
             </label>
-            <input
+            <select
               className={showErr("dept") && errors.dept ? "err" : ""}
               value={dept}
               onChange={(e) => setDept(e.target.value)}
-            />
+            >
+              <option value="">{deptLoading ? "Loading..." : "Select Department"}</option>
+              {deptOptions.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
             {showErr("dept") && errors.dept && <div className="apm-error">{errors.dept}</div>}
           </div>
 

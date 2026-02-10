@@ -12,12 +12,12 @@
 
 /* ================= CARD ================= */
 .ecm-card {
-  width: 700px;
+  width: 500px;
   background: #fff;
   border-radius: 14px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-  padding: 22px 26px;
+  padding: 18px 20px;
   font-family: "Montserrat";
 }
 
@@ -26,11 +26,13 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  justify-content: center;
+  text-align: center;
 }
 
 .ecm-title {
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 600;
   color: #0f172a;
 }
 
@@ -77,6 +79,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
 }
 
 .ecm-ico {
@@ -85,6 +88,29 @@
   align-items: center;
   justify-content: center;
   opacity: 0.75;
+  flex: 0 0 auto;
+}
+
+.ecm-timeRow .ecm-ico {
+  margin-top: 0;
+}
+
+.ecm-timeInputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.ecm-timeInputs .ecm-input {
+  max-width: none;
+}
+
+.ecm-timeSep {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
 }
 
 /* ✅ ALL RECTANGLE INPUTS (same size) */
@@ -108,6 +134,21 @@
 .ecm-input:focus {
   border-color: #93c5fd;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.ecm-static {
+  width: 100%;
+  max-width: 420px;
+  height: 44px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 14px;
+  color: #0f172a;
 }
 
 /* ================= ACTIONS (CENTER) ================= */

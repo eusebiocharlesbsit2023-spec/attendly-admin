@@ -2,11 +2,10 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "http://localhost:5173",
+  "Access-Control-Allow-Origin": "*", // I-allow ang lahat o i-specify ang iyong domain
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Max-Age": "86400",
-  "Access-Control-Expose-Headers": "content-type",
 };
 
 function json(status: number, body: unknown) {
@@ -16,12 +15,11 @@ function json(status: number, body: unknown) {
   });
 }
 
-async function sendBrevoEmail(args: {
+// ✅ Binago para gamitin ang Brevo Template ID #7
+async function sendBrevoTemplate(args: {
   to: string;
-  subject: string;
-  html: string;
-  fromEmail: string;
-  fromName: string;
+  templateId: number;
+  params: Record<string, any>;
   apiKey: string;
 }) {
   const r = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -31,10 +29,9 @@ async function sendBrevoEmail(args: {
       "api-key": args.apiKey,
     },
     body: JSON.stringify({
-      sender: { email: args.fromEmail, name: args.fromName },
       to: [{ email: args.to }],
-      subject: args.subject,
-      htmlContent: args.html,
+      templateId: args.templateId, // Template ID #7 para sa Prof Account Creation
+      params: args.params,         // Dito ipapasa ang login details
     }),
   });
 
@@ -43,14 +40,8 @@ async function sendBrevoEmail(args: {
 }
 
 serve(async (req) => {
-  // CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 200, headers: corsHeaders });
-  }
-
-  if (req.method !== "POST") {
-    return json(405, { step: "method", message: "Method not allowed" });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
+  if (req.method !== "POST") return json(405, { step: "method", message: "Method not allowed" });
 
   try {
     const payload = await req.json();
@@ -61,32 +52,19 @@ serve(async (req) => {
     const department = String(payload.department ?? "").trim();
     const password = String(payload.password ?? "").trim();
 
-    const professor_name = `${first_name} ${last_name}`.trim();
-    const status = String(payload.status ?? "Active").trim();
-
     if (!first_name || !last_name || !email || !department || !password) {
-      return json(400, {
-        step: "validate",
-        message: "first_name, last_name, email, department, password are required",
-      });
+      return json(400, { step: "validate", message: "Missing required fields" });
     }
 
-    const PROJECT_URL = Deno.env.get("PROJECT_URL");
-    const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY");
+    const PROJECT_URL = Deno.env.get("PROJECT_URL") ?? Deno.env.get("SUPABASE_URL");
+    const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
-    const BREVO_FROM_EMAIL = Deno.env.get("BREVO_FROM_EMAIL");
-    const BREVO_FROM_NAME = Deno.env.get("BREVO_FROM_NAME") ?? "Attendly";
 
-    if (!PROJECT_URL || !SERVICE_ROLE_KEY) {
-      return json(500, { step: "env", message: "Missing PROJECT_URL or SERVICE_ROLE_KEY" });
-    }
-    if (!BREVO_API_KEY || !BREVO_FROM_EMAIL) {
-      return json(500, { step: "env", message: "Missing BREVO_API_KEY or BREVO_FROM_EMAIL" });
+    if (!PROJECT_URL || !SERVICE_ROLE_KEY || !BREVO_API_KEY) {
+      return json(500, { step: "env", message: "Missing environment variables" });
     }
 
-    const admin = createClient(PROJECT_URL, SERVICE_ROLE_KEY, {
-      auth: { persistSession: false },
-    });
+    const admin = createClient(PROJECT_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
     // 1) Create auth user
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
@@ -95,63 +73,41 @@ serve(async (req) => {
       email_confirm: true,
     });
 
-    if (createErr) {
-      return json(400, { step: "createUser", message: createErr.message, details: createErr });
-    }
+    if (createErr) return json(400, { step: "createUser", message: createErr.message });
 
     const authUserId = created.user?.id;
-    if (!authUserId) return json(500, { step: "createUser", message: "Missing user id" });
 
-    // 2) Insert professors row (match your table exactly)
+    // 2) Insert professor row
     const { data: profRow, error: insertErr } = await admin
       .from("professors")
       .insert({
         id: authUserId,
-        professor_name,
+        professor_name: `${first_name} ${last_name}`.trim(),
         email,
         department,
-        status,
-        push_enabled: true,       // default (optional)
-        avatar_url: null,
+        status: payload.status ?? "Active",
       })
       .select("*")
       .single();
 
-    if (insertErr) {
-      // optional cleanup: avoid orphan auth user
-      // await admin.auth.admin.deleteUser(authUserId);
-      return json(400, { step: "insert_professor", message: insertErr.message, details: insertErr });
-    }
+    if (insertErr) return json(400, { step: "insert_professor", message: insertErr.message });
 
-    // 3) Send credentials email
-    const html = `
-      <h2>Welcome to Attendly</h2>
-      <p>Your professor account has been created.</p>
-      <p><b>Name:</b> ${professor_name}</p>
-      <p><b>Email (login):</b> ${email}</p>
-      <p><b>Password:</b> ${password}</p>
-      <p style="font-size:12px;color:#6b7280">We recommend changing your password after logging in.</p>
-    `;
-
-    const mail = await sendBrevoEmail({
+    // 3) ✅ PAG-SEND GAMIT ANG TEMPLATE ID #7
+    // Base sa iyong UI: kailangan ng profEmail at temporaryPassword na params
+    const mail = await sendBrevoTemplate({
       to: email,
-      subject: "Your Attendly Professor Account",
-      html,
-      fromEmail: BREVO_FROM_EMAIL,
-      fromName: BREVO_FROM_NAME,
+      templateId: 7, // "prof account creation" ID
+      params: {
+        profEmail: email,                     // {{ params.profEmail }} sa Brevo
+        temporaryPassword: password,          // {{ params.temporaryPassword }} sa Brevo
+      },
       apiKey: BREVO_API_KEY,
     });
 
-    if (!mail.ok) {
-      return json(400, { step: "brevo_send", message: "Brevo send failed", details: mail });
-    }
+    if (!mail.ok) return json(400, { step: "brevo_send", message: "Brevo send failed", details: mail });
 
-    return json(200, {
-      success: true,
-      auth_user_id: authUserId,
-      professor: profRow,
-      brevo: mail.data,
-    });
+    return json(200, { success: true, auth_user_id: authUserId, professor: profRow });
+
   } catch (e) {
     return json(400, { step: "catch", message: String(e) });
   }

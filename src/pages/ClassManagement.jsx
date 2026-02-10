@@ -15,7 +15,6 @@ import {
   faBell,
   faMagnifyingGlass,
   faDownload,
-  faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function ClassManagement() {
@@ -43,12 +42,15 @@ export default function ClassManagement() {
   // ✅ Delete confirm
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   // filters
   const [q, setQ] = useState("");
   const [clazz, setClazz] = useState("All Classes");
-  const [status, setStatus] = useState("All Status");
   const [prof, setProf] = useState("All Professors");
+  const [deptFilter, setDeptFilter] = useState("All Departments");
 
   // Data states
   const [rows, setRows] = useState([]);
@@ -60,7 +62,8 @@ export default function ClassManagement() {
     try {
       const { data: classes, error: clsErr } = await supabase
         .from("classes")
-        .select("id, course, course_code, room, schedule, day_of_week, start_time, end_time, professor_id, archived, class_code")
+        .select("id, course, course_code, room, schedule, day_of_week, start_time, end_time, professor_id, archived, class_code, room_ap")
+        .eq("archived", false)
         .order("created_at", { ascending: false });
 
       if (clsErr) throw clsErr;
@@ -80,6 +83,14 @@ export default function ClassManagement() {
         const map = { mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday" };
         return map[String(d ?? "").toLowerCase().slice(0,3)] || d || "";
       };
+      const formatTime12 = (t) => {
+        if (!t) return "";
+        const [hh, mm] = String(t).split(":");
+        let h = Number(hh);
+        const ampm = h >= 12 ? "PM" : "AM";
+        h = h % 12 || 12;
+        return `${h}:${mm} ${ampm}`.trim();
+      };
 
       setRows((classes || []).map((c) => ({
         id: c.id,
@@ -87,8 +98,8 @@ export default function ClassManagement() {
         code: c.course_code ?? "",
         professor: profMap[c.professor_id] ?? "Unassigned",
         room: c.room ?? "—",
-        schedule: c.schedule ?? `${dayName(c.day_of_week)}: ${c.start_time ?? ""} - ${c.end_time ?? ""}`.trim(),
-        wifi: "N/A",
+        schedule: c.schedule ?? `${dayName(c.day_of_week)}: ${formatTime12(c.start_time)} - ${formatTime12(c.end_time)}`.trim(),
+        wifi: c.room_ap ?? "No WiFi assigned",
         status: c.archived ? "Inactive" : "Active",
         professor_id: c.professor_id,
         day_of_week: c.day_of_week,
@@ -106,22 +117,94 @@ export default function ClassManagement() {
 
   useEffect(() => { fetchClasses(); }, []);
 
+
+  // Success Modal Component
+  function SuccessModal({ open, message, onClose }) {
+    useEffect(() => {
+      if (!open) return;
+      const t = setTimeout(() => onClose?.(), 1500);
+      return () => clearTimeout(t);
+    }, [open, onClose]);
+
+    if (!open) return null;
+    return (
+      <div className="scm-overlay">
+        <div className="scm-card">
+          <i className="bx bx-check-circle"></i>
+          <p className="scm-text">{message}</p>
+        </div>
+      </div>
+    );
+  }
+
   // ===== Handlers =====
   const onEdit = (clazzObj) => { setEditingClass(clazzObj); setEditOpen(true); };
   const onEditSaveClick = (updatedClass) => { setPendingEdit(updatedClass); setApplyOpen(true); };
 
   const applyYes = async () => {
     if (pendingEdit?.id) {
-       // Dito mo ilalagay ang actual Supabase Update query kung gusto mo ng DB sync
-       setRows((prev) => prev.map((c) => (c.id === pendingEdit.id ? { ...c, ...pendingEdit } : c)));
+      try {
+        // ✅ Magdagdag ng actual Supabase update para permanenteng ma-save
+        const { error } = await supabase
+          .from("classes")
+          .update({
+            course: pendingEdit.name,
+            course_code: pendingEdit.code,
+            room_ap: pendingEdit.wifi,
+            room: pendingEdit.room,
+            day_of_week: pendingEdit.day_of_week,
+            start_time: pendingEdit.start_time,
+            end_time: pendingEdit.end_time,
+            schedule: pendingEdit.schedule,
+          })
+          .eq("id", pendingEdit.id);
+
+        if (error) throw error;
+
+        setRows((prev) => prev.map((c) => (c.id === pendingEdit.id ? { ...c, ...pendingEdit } : c)));
+        setSuccessMsg("Class updated successfully!");
+        setSuccessOpen(true);
+      } catch (err) {
+        console.error("Update failed:", err.message);
+      }
     }
-    setApplyOpen(false); setEditOpen(false); setPendingEdit(null); setEditingClass(null);
+    setApplyOpen(false); 
+    setEditOpen(false); 
+    setPendingEdit(null); 
+    setEditingClass(null);
   };
 
   const onDeleteClick = (clazzObj) => { setPendingDelete(clazzObj); setDeleteOpen(true); };
-  const deleteYes = () => {
-    setRows((prev) => prev.filter((c) => c.id !== pendingDelete?.id));
-    setDeleteOpen(false); setPendingDelete(null);
+  const deleteYes = async () => {
+    if (pendingDelete?.id) {
+      try {
+        // 1. I-update ang record sa Supabase database
+        const { error } = await supabase
+          .from("classes")
+          .update({ archived: true })
+          .eq("id", pendingDelete.id);
+
+        if (error) throw error;
+
+        // 2. I-update ang local state para maging "Inactive" ang status sa UI
+        setRows((prev) =>
+          prev.map((c) =>
+            c.id === pendingDelete.id ? { ...c, status: "Inactive", archived: true } : c
+          )
+        );
+        
+        // Optional: Kung gusto mong mawala agad sa listahan ang inarchive:
+        // setRows((prev) => prev.filter((c) => c.id !== pendingDelete.id));
+
+        setSuccessMsg("Class archived successfully!");
+        setSuccessOpen(true);
+        await fetchClasses();
+      } catch (err) {
+        console.error("Archive failed:", err.message);
+      }
+    }
+    setDeleteOpen(false);
+    setPendingDelete(null);
   };
 
   // ===== Filtering =====
@@ -133,11 +216,11 @@ export default function ClassManagement() {
     return rows.filter((c) => {
       const matchesQuery = !query || c.name.toLowerCase().includes(query) || c.code.toLowerCase().includes(query);
       const matchesClass = clazz === "All Classes" || c.code === clazz;
-      const matchesStatus = status === "All Status" || c.status === status;
       const matchesProf = prof === "All Professors" || c.professor === prof;
-      return matchesQuery && matchesClass && matchesStatus && matchesProf;
+      return matchesQuery && matchesClass && matchesProf;
     });
-  }, [rows, q, clazz, status, prof]);
+  }, [rows, q, clazz, prof]);
+
 
   const stats = useMemo(() => ({
     total: rows.length,
@@ -154,6 +237,7 @@ export default function ClassManagement() {
     const a = document.createElement("a");
     a.href = url; a.download = "classes.csv"; a.click();
   };
+
 
   return (
     <div className="app-shell cm">
@@ -193,9 +277,6 @@ export default function ClassManagement() {
             <div className="cm-field"><label>Class</label>
               <select value={clazz} onChange={(e) => setClazz(e.target.value)}>{classOptions.map(c => <option key={c}>{c}</option>)}</select>
             </div>
-            <div className="cm-field"><label>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)}><option>All Status</option><option>Active</option><option>Inactive</option></select>
-            </div>
             <div className="cm-field"><label>Professors</label>
               <select value={prof} onChange={(e) => setProf(e.target.value)}>{profOptions.map(p => <option key={p}>{p}</option>)}</select>
             </div>
@@ -220,7 +301,9 @@ export default function ClassManagement() {
               </div>
               <div className="cm-card-actions">
                 <button className="cm-editBtn" onClick={() => onEdit(c)}><Svg name="edit" /> Edit</button>
-                <button className="cm-trashBtn" onClick={() => onDeleteClick(c)}><Svg name="trash" /></button>
+                <button className="cm-trashBtn" onClick={() => onDeleteClick(c)}>
+                  <Svg name="archive" /> {/* Pwedeng palitan ang icon name */}
+                </button>
               </div>
             </div>
           ))}
@@ -229,7 +312,13 @@ export default function ClassManagement() {
 
       <EditClassModal open={editOpen} clazz={editingClass} allClasses={rows} onClose={() => setEditOpen(false)} onSaveClick={onEditSaveClick} />
       <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={() => setApplyOpen(false)} />
-      <SmallConfirmModal open={deleteOpen} title={`Delete ${pendingDelete?.code}?`} onYes={deleteYes} onCancel={() => setDeleteOpen(false)} />
+      <SmallConfirmModal 
+        open={deleteOpen} 
+        title={`Archive ${pendingDelete?.code}?`} // Palitan ang Delete ng Archive
+        onYes={deleteYes} 
+        onCancel={() => setDeleteOpen(false)} 
+      />
+      <SuccessModal open={successOpen} message={successMsg} onClose={() => setSuccessOpen(false)} />
 
       {/* ✅ REUSABLE MODAL WITH REALTIME DATA */}
       <ActivityHistoryModal 
@@ -255,5 +344,12 @@ function Svg({ name }) {
   if (name === "wifi") return <svg {...common}><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M8.5 15.5a6 6 0 0 1 7 0"/><path d="M11 18.5a2 2 0 0 1 2 0"/></svg>;
   if (name === "edit") return <svg {...common}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
   if (name === "trash") return <svg {...common}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>;
+  if (name === "archive") return (
+  <svg {...common}>
+    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+    <rect x="1" y="3" width="22" height="5"></rect>
+    <line x1="10" y1="12" x2="14" y2="12"></line>
+  </svg>
+);
   return null;
 }

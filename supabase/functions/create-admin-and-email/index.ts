@@ -16,12 +16,11 @@ function json(status: number, body: unknown) {
   });
 }
 
-async function sendBrevoEmail(args: {
+// ✅ Binago para gamitin ang Brevo Template ID #8
+async function sendBrevoTemplate(args: {
   to: string;
-  subject: string;
-  html: string;
-  fromEmail: string;
-  fromName: string;
+  templateId: number;
+  params: Record<string, any>;
   apiKey: string;
 }) {
   const r = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -31,10 +30,9 @@ async function sendBrevoEmail(args: {
       "api-key": args.apiKey,
     },
     body: JSON.stringify({
-      sender: { email: args.fromEmail, name: args.fromName },
       to: [{ email: args.to }],
-      subject: args.subject,
-      htmlContent: args.html,
+      templateId: args.templateId, // Template ID #8 para sa Admin Account Creation
+      params: args.params,         // Dito ipapasa ang adminEmail at temporaryPassword
     }),
   });
 
@@ -71,21 +69,16 @@ serve(async (req) => {
     const PROJECT_URL = Deno.env.get("PROJECT_URL");
     const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY");
     const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
-    const BREVO_FROM_EMAIL = Deno.env.get("BREVO_FROM_EMAIL");
-    const BREVO_FROM_NAME = Deno.env.get("BREVO_FROM_NAME") ?? "Attendly";
 
-    if (!PROJECT_URL || !SERVICE_ROLE_KEY) {
-      return json(500, { step: "env", message: "Missing PROJECT_URL or SERVICE_ROLE_KEY" });
-    }
-    if (!BREVO_API_KEY || !BREVO_FROM_EMAIL) {
-      return json(500, { step: "env", message: "Missing BREVO_API_KEY or BREVO_FROM_EMAIL" });
+    if (!PROJECT_URL || !SERVICE_ROLE_KEY || !BREVO_API_KEY) {
+      return json(500, { step: "env", message: "Missing environment variables" });
     }
 
     const admin = createClient(PROJECT_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
     });
 
-    // 1) Create auth user (email login)
+    // 1) Create auth user
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email,
       password: temp_password,
@@ -93,20 +86,18 @@ serve(async (req) => {
     });
 
     if (createErr) {
-      return json(400, { step: "createUser", message: createErr.message, details: createErr });
+      return json(400, { step: "createUser", message: createErr.message });
     }
 
     const authUserId = created.user?.id;
-    if (!authUserId) return json(500, { step: "createUser", message: "Missing user id" });
 
-    // 2) Insert admins row (username = email)
+    // 2) Insert admins row
     const admin_name = `${first_name} ${last_name}`.trim();
-
     const { data: adminRow, error: insertErr } = await admin
       .from("admins")
       .insert({
         id: authUserId,
-        username: email,      // ✅ store email here
+        username: email,
         admin_name,
         role,
         status,
@@ -114,27 +105,17 @@ serve(async (req) => {
       .select("*")
       .single();
 
-    if (insertErr) {
-      // optional cleanup to avoid orphan auth user
-      // await admin.auth.admin.deleteUser(authUserId);
-      return json(400, { step: "insert_admin", message: insertErr.message, details: insertErr });
-    }
+    if (insertErr) return json(400, { step: "insert_admin", message: insertErr.message });
 
-    // 3) Send email
-    const html = `
-      <h2>Attendly Admin Account Created</h2>
-      <p>Your admin account has been created.</p>
-      <p><b>Email:</b> ${email}</p>
-      <p><b>Temporary Password:</b> ${temp_password}</p>
-      <p>Please use this credentials when loggin in.</p>
-    `;
-
-    const mail = await sendBrevoEmail({
+    // 3) ✅ PAG-SEND GAMIT ANG TEMPLATE ID #8
+    // Base sa iyong UI: kailangan ng adminEmail at temporaryPassword na params
+    const mail = await sendBrevoTemplate({
       to: email,
-      subject: "Your Attendly Admin Account",
-      html,
-      fromEmail: BREVO_FROM_EMAIL,
-      fromName: BREVO_FROM_NAME,
+      templateId: 8, // "account creation admin" ID
+      params: {
+        adminEmail: email,                   // {{ params.adminEmail }} sa Brevo
+        temporaryPassword: temp_password,    // {{ params.temporaryPassword }} sa Brevo
+      },
       apiKey: BREVO_API_KEY,
     });
 
@@ -146,7 +127,6 @@ serve(async (req) => {
       success: true,
       auth_user_id: authUserId,
       admin: adminRow,
-      brevo: mail.data,
     });
   } catch (e) {
     return json(400, { step: "catch", message: String(e) });

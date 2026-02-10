@@ -142,12 +142,15 @@ export default function Reports() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // TAB LOGIC
-  const tab = location.pathname.includes("/reports/archive") ? "archive" : "feedback";
+  let tab = "feedback";
+  if (location.pathname.includes("/reports/archive")) tab = "archive";
+  if (location.pathname.includes("/reports/class-archive")) tab = "class-archive";
 
   useEffect(() => {
     if (tab === "feedback") loadReports();
     if (tab === "archive") loadArchived();
-  }, [tab]);
+    if (tab === "class-archive") loadClassArchived();
+  }, [tab]); // eslint-disable-line
 
   // datatable controls
   const [q, setQ] = useState("");
@@ -171,7 +174,7 @@ export default function Reports() {
     setArchivedErr(null);
 
     try {
-      const [studentsRes, profRes] = await Promise.all([
+      const [studentsRes, profRes, adminsRes] = await Promise.all([
         supabase
           .from("students")
           .select("id, first_name, middle_name, last_name, student_number, email, archived_at")
@@ -183,10 +186,17 @@ export default function Reports() {
           .select("id, professor_name, email, archived_at")
           .eq("archived", true)
           .order("archived_at", { ascending: false }),
+
+        supabase
+          .from("admins")
+          .select("id, admin_name, username, archived_at")
+          .eq("archived", true)
+          .order("archived_at", { ascending: false }),
       ]);
 
       if (studentsRes.error) throw studentsRes.error;
       if (profRes.error) throw profRes.error;
+      if (adminsRes.error) throw adminsRes.error;
 
       const studentsMapped = (studentsRes.data ?? []).map((s) => ({
         id: s.id,
@@ -207,11 +217,63 @@ export default function Reports() {
         deletedAt: (p.archived_at || "").slice(0, 10),
       }));
 
-      setArchived([...studentsMapped, ...profMapped]);
+      const adminMapped = (adminsRes.data ?? []).map((a) => ({
+        id: a.id,
+        kind: "Admin",
+        adminId: a.id,
+        name: a.admin_name,
+        email: a.username || "â€”",
+        deletedAt: (a.archived_at || "").slice(0, 10),
+      }));
+
+      setArchived([...studentsMapped, ...profMapped, ...adminMapped]);
     } catch (e) {
       setArchivedErr(e.message || String(e));
     } finally {
       setArchivedLoading(false);
+    }
+  };
+
+  // CLASS ARCHIVE DATA
+  const [classArchived, setClassArchived] = useState([]);
+  const [classArchivedLoading, setClassArchivedLoading] = useState(false);
+
+  const loadClassArchived = async () => {
+    setClassArchivedLoading(true);
+    try {
+      // Fetch archived classes
+      const { data, error } = await supabase
+        .from("classes")
+        .select("id, course, course_code, room, schedule, professor_id, archived_at")
+        .eq("archived", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch professor names manually to be safe
+      const profIds = [...new Set((data || []).map(c => c.professor_id).filter(Boolean))];
+      let profMap = {};
+      if (profIds.length > 0) {
+        const { data: profs } = await supabase.from("professors").select("id, professor_name").in("id", profIds);
+        profMap = (profs || []).reduce((acc, p) => ({ ...acc, [p.id]: p.professor_name }), {});
+      }
+
+      const mapped = (data || []).map((c) => ({
+        id: c.id,
+        kind: "Class",
+        name: c.course,
+        code: c.course_code,
+        professor: profMap[c.professor_id] || "Unassigned",
+        room: c.room || "—",
+        schedule: c.schedule || "—",
+        deletedAt: (c.archived_at || "").slice(0, 10),
+      }));
+
+      setClassArchived(mapped);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setClassArchivedLoading(false);
     }
   };
 
@@ -269,7 +331,8 @@ export default function Reports() {
     const query = q.trim().toLowerCase();
     return archived.filter((r) => {
       const okQuery = !query || r.name.toLowerCase().includes(query) || String(r.studentId || "").toLowerCase().includes(query) ||
-        String(r.profId || "").toLowerCase().includes(query) || String(r.email || "").toLowerCase().includes(query);
+        String(r.profId || "").toLowerCase().includes(query) || String(r.adminId || "").toLowerCase().includes(query) ||
+        String(r.email || "").toLowerCase().includes(query);
       const okType = type === "All" || r.kind === type;
       const okFrom = !from || r.deletedAt >= from;
       const okTo = !to || r.deletedAt <= to;
@@ -277,7 +340,18 @@ export default function Reports() {
     });
   }, [archived, q, type, from, to]);
 
-  const activeRows = tab === "archive" ? filteredArchive : filteredFeedback;
+  const filteredClassArchive = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return classArchived.filter((r) => {
+      const okQuery = !query || r.name.toLowerCase().includes(query) || r.code.toLowerCase().includes(query) ||
+        r.professor.toLowerCase().includes(query);
+      const okFrom = !from || r.deletedAt >= from;
+      const okTo = !to || r.deletedAt <= to;
+      return okQuery && okFrom && okTo;
+    });
+  }, [classArchived, q, from, to]);
+
+  const activeRows = tab === "archive" ? filteredArchive : tab === "class-archive" ? filteredClassArchive : filteredFeedback;
 
   // PAGINATION
   const totalPages = Math.max(1, Math.ceil(activeRows.length / pageSize));
@@ -301,9 +375,22 @@ export default function Reports() {
       downloadCSV(csv, "reports-feedback.csv");
       return;
     }
+    if (tab === "class-archive") {
+      const header = ["Class Name", "Code", "Professor", "Room", "Schedule", "Deleted Date"];
+      const rows = filteredClassArchive.map((r) => [r.name, r.code, r.professor, r.room, r.schedule, r.deletedAt]);
+      const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
+      downloadCSV(csv, "reports-class-archive.csv");
+      return;
+    }
     const header = ["Type", "Name", "ID", "Device ID", "Email", "Deleted Date"];
-    const rows = filteredArchive.map((r) => [r.kind, r.name, r.kind === "Student" ? r.studentId : r.profId, 
-      r.kind === "Student" ? r.deviceId : "", r.email, r.deletedAt]);
+    const rows = filteredArchive.map((r) => [
+      r.kind,
+      r.name,
+      r.kind === "Student" ? r.studentId : r.kind === "Professor" ? r.profId : r.adminId,
+      r.kind === "Student" ? r.deviceId : "",
+      r.email,
+      r.deletedAt,
+    ]);
     const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
     downloadCSV(csv, "reports-archive.csv");
   };
@@ -320,19 +407,33 @@ export default function Reports() {
   const [restoreTarget, setRestoreTarget] = useState(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const openRestore = (row) => { setRestoreTarget(row); setRestoreOpen(true); };
   const openDelete = (row) => { setDeleteTarget(row); setDeleteOpen(true); };
 
   const confirmRestore = async () => {
     if (!restoreTarget) return;
+    setRestoreLoading(true);
     try {
-      const table = restoreTarget.kind === "Student" ? "students" : "professors";
+      const table =
+        restoreTarget.kind === "Student"
+          ? "students"
+          : restoreTarget.kind === "Professor"
+          ? "professors"
+          : restoreTarget.kind === "Admin"
+          ? "admins"
+          : "classes";
       
       // 1. Update the archived status
       const { error } = await supabase
         .from(table)
-        .update({ archived: false })
+        .update(
+          restoreTarget.kind === "Admin"
+            ? { archived: false, status: "Active" }
+            : { archived: false }
+        )
         .eq("id", restoreTarget.id);
 
       if (error) throw error;
@@ -359,18 +460,22 @@ export default function Reports() {
       setRestoreOpen(false);
       
       // ✅ SIGURADUHING TAMA ANG TAWAG DITO (loadArchived, hindi loadArchive)
-      loadArchived(); 
+      if (tab === "archive") loadArchived();
+      if (tab === "class-archive") loadClassArchived();
       
     } catch (e) { 
       console.error(e);
       alert(`Restore failed: ${e.message}`); 
+    } finally {
+      setRestoreLoading(false);
     }
   };
 
   const confirmDelete = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleteLoading) return;
+    setDeleteLoading(true);
     try {
-      const table = deleteTarget.kind === "Student" ? "students" : "professors";
+      const table = deleteTarget.kind === "Student" ? "students" : deleteTarget.kind === "Professor" ? "professors" : "classes";
       
       // 1. Permanent Delete from Table
       const { error } = await supabase
@@ -379,6 +484,16 @@ export default function Reports() {
         .eq("id", deleteTarget.id);
 
       if (error) throw error;
+
+      // 1b. Also delete auth user (students/professors/admins)
+      if (deleteTarget.kind === "Student" || deleteTarget.kind === "Professor" || deleteTarget.kind === "Admin") {
+        const { data, error: authErr } = await supabase.functions.invoke("delete-auth-user", {
+          body: { user_id: deleteTarget.id },
+        });
+        if (authErr || !data?.success) {
+          throw new Error(authErr?.message || "Failed to delete auth user.");
+        }
+      }
 
       // 2. Logging
       const { data: { user } } = await supabase.auth.getUser();
@@ -401,11 +516,14 @@ export default function Reports() {
       setDeleteOpen(false);
       
       // ✅ Refresh the list
-      loadArchived();
+      if (tab === "archive") loadArchived();
+      if (tab === "class-archive") loadClassArchived();
       
     } catch (e) { 
       console.error(e);
       alert(`Delete failed: ${e.message}`); 
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -420,7 +538,7 @@ export default function Reports() {
             <div>
               <div className="dash-title">Reports</div>
               <div className="dash-subtitle">
-                {tab === "archive" ? "Archived students & professors" : "View submitted reports and status"}
+                  {tab === "archive" ? "Archived students, professors & admins" : tab === "class-archive" ? "Archived classes" : "View submitted reports and status"}
               </div>
             </div>
           </div>
@@ -446,7 +564,7 @@ export default function Reports() {
               </div>
 
               <div className="rep-dt-right">
-                {tab === "feedback" && (
+                {tab === "feedback" ? (
                   <div className="rep-dt-field">
                     <label>Status</label>
                     <select value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -454,7 +572,7 @@ export default function Reports() {
                       {STATUS_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}
                     </select>
                   </div>
-                )}
+                ) : null}
                 <button className="rep-dt-btn primary" onClick={exportCSV}>
                   <span className="rep-dt-btnIco"><FontAwesomeIcon icon={faDownload} /></span> Export CSV
                 </button>
@@ -479,14 +597,14 @@ export default function Reports() {
                 <div className="rep-dt-mini">
                   <label>Type</label>
                   <select value={type} onChange={(e) => setType(e.target.value)}>
-                    <option value="All">All</option><option value="Student">Student</option><option value="Professor">Professor</option>
+                    <option value="All">All</option><option value="Student">Student</option><option value="Professor">Professor</option><option value="Admin">Admin</option>
                   </select>
                 </div>
               )}
             </div>
 
             <div className="rep-dt-table">
-              {tab === "feedback" ? (
+              {tab === "feedback" && (
                 <>
                   <div className="rep-dt-thead">
                     <div>ID</div><div>Name</div><div>Subject</div><div>Message</div><div>Submission Date</div><div>Status</div>
@@ -521,7 +639,9 @@ export default function Reports() {
                     {!reportsLoading && paged.length === 0 && <div className="rep-dt-empty">No reports found.</div>}
                   </div>
                 </>
-              ) : (
+              )}
+
+              {tab === "archive" && (
                 <div className="archive-table-wrapper">
                    {/* Archive logic follows same pattern as your original responsive grid */}
                    {(() => {
@@ -539,6 +659,7 @@ export default function Reports() {
                           </div>
                           <div className="rep-dt-tbody">
                             {archivedLoading ? <div className="rep-dt-empty">Loading archive...</div> :
+                             paged.length === 0 ? <div className="rep-dt-empty">No archive user found.</div> :
                              paged.map((r, idx) => (
                               <div className="rep-dt-row" key={r.id + idx} style={{ gridTemplateColumns: headGrid }}>
                                 {type === "All" && <div className="rep-typeCell">{r.kind}</div>}
@@ -559,6 +680,41 @@ export default function Reports() {
                         </>
                       );
                    })()}
+                </div>
+              )}
+
+              {tab === "class-archive" && (
+                <div className="archive-table-wrapper">
+                  {(() => {
+                    const headGrid = "1.5fr 120px 1.2fr 120px 1.2fr 150px 180px";
+                    return (
+                      <>
+                        <div className="rep-dt-thead" style={{ gridTemplateColumns: headGrid }}>
+                          <div>Class Name</div><div>Code</div><div>Professor</div><div>Room</div><div>Schedule</div><div>Deleted Date</div><div>Action</div>
+                        </div>
+                        <div className="rep-dt-tbody">
+                          {classArchivedLoading ? <div className="rep-dt-empty">Loading class archive...</div> :
+                           paged.length === 0 ? <div className="rep-dt-empty">No archive class found.</div> :
+                           paged.map((r) => (
+                            <div className="rep-dt-row" key={r.id} style={{ gridTemplateColumns: headGrid }}>
+                              <div className="rep-dt-nameCell">
+                                <div className="rep-dt-name">{r.name}</div>
+                              </div>
+                              <div>{r.code}</div>
+                              <div>{r.professor}</div>
+                              <div>{r.room}</div>
+                              <div>{r.schedule}</div>
+                              <div>{r.deletedAt}</div>
+                              <div>
+                                <button className="rep-restoreBtn" onClick={() => openRestore(r)}>Restore</button>
+                                <button className="rep-deleteBtn" onClick={() => openDelete(r)}>Delete</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -584,8 +740,19 @@ export default function Reports() {
         anchorRect={activityAnchorRect} 
       />
 
-      <ConfirmModal open={restoreOpen} title={restoreTarget ? `Restore ${restoreTarget.kind}: ${restoreTarget.name}?` : ""} onYes={confirmRestore} onCancel={() => setRestoreOpen(false)} />
-      <ConfirmModal open={deleteOpen} title={deleteTarget ? `Delete ${deleteTarget.kind}: ${deleteTarget.name}?` : ""} onYes={confirmDelete} onCancel={() => setDeleteOpen(false)} />
+      <ConfirmModal open={restoreOpen} title={restoreLoading ? "Restoring..." : (restoreTarget ? `Restore ${restoreTarget.kind}: ${restoreTarget.name}?` : "")} onYes={confirmRestore} onCancel={() => setRestoreOpen(false)} />
+      <ConfirmModal
+        open={deleteOpen}
+        title={
+          deleteLoading
+            ? "Deleting..."
+            : deleteTarget
+            ? `Delete ${deleteTarget.kind}: ${deleteTarget.name}?`
+            : ""
+        }
+        onYes={confirmDelete}
+        onCancel={() => setDeleteOpen(false)}
+      />
       <SuccessModal open={successOpen} message={successMsg} onClose={() => setSuccessOpen(false)} />
       <ConfirmModal open={fbStatusConfirmOpen} title={`Change status from "${fbPrevStatus}" to "${fbNextStatus}"?`} onYes={confirmFeedbackStatusChange} onCancel={cancelFeedbackStatusChange} />
     </div>

@@ -154,6 +154,7 @@ export default function AdminDashboard() {
           <ManageCard title="Manage Students" icon={faUsers} onClick={() => navigate("/students")} tint="blue" />
           <ManageCard title="Manage Classes" icon={faBookOpen} onClick={() => navigate("/classes")} tint="yellow" />
           <ManageCard title="Manage Professors" icon={faGraduationCap} onClick={() => navigate("/professors")} tint="green" />
+          <ManageCard title="Manage Subjects" icon={faBookOpen} onClick={() => navigate("/subjects")} tint="blue" />
         </section>
 
         {/* BOTTOM */}

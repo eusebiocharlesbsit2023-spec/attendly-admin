@@ -72,6 +72,7 @@ export default function StudentManagement() {
         student_number,
         status,
         email,
+        mac_address,
         class_enrollments:class_enrollments(count)
       `)
       .eq("archived", false)
@@ -84,8 +85,9 @@ export default function StudentManagement() {
       const mapped = (data || []).map((s) => ({
         uuid: s.id,
         name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.replace(/\s+/g, " ").trim(),
+        email: s.email ?? "",
         studentId: (s.student_number ?? "").toString(),
-        deviceId: s.device_id ?? "N/A",
+        deviceId: s.mac_address ?? "N/A",
         classes: Number(s.class_enrollments?.[0]?.count ?? 0),
         status: s.status ?? "Active",
       }));
@@ -207,8 +209,8 @@ export default function StudentManagement() {
   }, [rows]);
 
   const exportCSV = () => {
-    const header = ["Student Name", "Student Id", "Device Id", "Classes", "Status"];
-    const csv = [header, ...filtered.map(s => [s.name, s.studentId, s.deviceId, s.classes, s.status])]
+    const header = ["Student Name", "Email", "Student Id", "Device Id", "Classes", "Status"];
+    const csv = [header, ...filtered.map(s => [s.name, s.email, s.studentId, s.deviceId, s.classes, s.status])]
       .map(r => r.map(csvEscape).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -296,14 +298,14 @@ export default function StudentManagement() {
             <table className="sm-table2">
               <thead>
                 <tr>
-                  <th>Student Name</th><th>Student ID</th><th>Device ID</th><th>Classes</th><th className="sm-th-center">Status</th><th className="sm-actionsHead">Actions</th>
+                  <th>Student Name</th><th>Email</th><th>Student ID</th><th>Device ID</th><th>Classes</th><th className="sm-th-center">Status</th><th className="sm-actionsHead">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td className="sm-emptyRow" colSpan={6}>Loading students...</td></tr>
+                  <tr><td className="sm-emptyRow" colSpan={7}>Loading students...</td></tr>
                 ) : pageRows.length === 0 ? (
-                  <tr><td className="sm-emptyRow" colSpan={6}>No students found.</td></tr>
+                  <tr><td className="sm-emptyRow" colSpan={7}>No students found.</td></tr>
                 ) : (
                   pageRows.map((s) => (
                     <tr key={s.uuid}>
@@ -311,6 +313,7 @@ export default function StudentManagement() {
                         <span className="sm-avatar">{initials(s.name)}</span>
                         <span className="sm-nameText">{s.name}</span>
                       </td>
+                      <td>{s.email || "—"}</td>
                       <td>{s.studentId}</td><td>{s.deviceId}</td><td>{s.classes}</td>
                       <td className="sm-td-center">
                         <span className={`sm-status ${s.status === "Active" ? "active" : "inactive"}`}>{s.status}</span>

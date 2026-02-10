@@ -4,8 +4,8 @@ import "./CreateAdminModal.css";
 /* FontAwesome (eye icons) */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
-import { supabaseCreateUser } from "../helper/supabaseCreateUserClient";
 import supabase from "../helper/supabaseClient";
+import SmallConfirmModal from "../components/SmallConfirmModal";
 
 function generateStrongPassword(length = 12) {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -40,6 +40,8 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
   const [showPass, setShowPass] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const errors = useMemo(() => {
     const e = {};
@@ -86,7 +88,42 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
     setErrorMessage("");
     setSubmitted(true);
     if (!canSubmit) return;
+    try {
+      const emailLower = email.trim().toLowerCase();
+      const { data: existingAdmin, error: adminErr } = await supabase
+        .from("admins")
+        .select("id, username")
+        .eq("username", emailLower)
+        .maybeSingle();
 
+      if (adminErr) throw adminErr;
+      if (existingAdmin) {
+        setErrorMessage("Email is already registered as an admin.");
+        return;
+      }
+
+      const [studentRes, profRes] = await Promise.all([
+        supabase.from("students").select("id").eq("email", emailLower).maybeSingle(),
+        supabase.from("professors").select("id").eq("email", emailLower).maybeSingle(),
+      ]);
+
+      if (studentRes.error) throw studentRes.error;
+      if (profRes.error) throw profRes.error;
+      if (studentRes.data || profRes.data) {
+        setErrorMessage("Email is already registered.");
+        return;
+      }
+
+      setConfirmOpen(true);
+    } catch (err) {
+      setErrorMessage(`Check failed: ${err.message || err}`);
+    }
+  };
+
+  const confirmYes = async () => {
+    if (submitting) return;
+    setConfirmOpen(false);
+    setSubmitting(true);
     const payload = {
       first_name: firstName.trim(),
       last_name: lastName.trim(),
@@ -103,11 +140,13 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
     if (error) {
       const res = error.context?.response;
       setErrorMessage(res ? await res.text() : error.message);
+      setSubmitting(false);
       return;
     }
 
     if (!data?.success) {
       setErrorMessage(`${data?.step ?? "error"}: ${data?.message ?? "Unknown error"}`);
+      setSubmitting(false);
       return;
     }
 
@@ -123,6 +162,7 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
 
     reset();
     onClose?.();
+    setSubmitting(false);
   };
 
 
@@ -130,6 +170,12 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
 
   return (
     <div className="cam-overlay" onMouseDown={handleClose}>
+      <SmallConfirmModal
+        open={confirmOpen}
+        title={submitting ? "Adding..." : `Add admin ${firstName.trim()} ${lastName.trim()}?`}
+        onYes={confirmYes}
+        onCancel={() => setConfirmOpen(false)}
+      />
       <div className="cam-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="cam-title">Create New Admin</div>
 
@@ -213,8 +259,8 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
 
           {/* Buttons */}
           <div className="cam-actions">
-            <button type="submit" className="cam-btn primary" disabled={!canSubmit}>
-              Add
+            <button type="submit" className="cam-btn primary" disabled={!canSubmit || submitting}>
+              {submitting ? "Adding..." : "Add"}
             </button>
             <button type="button" className="cam-btn" onClick={handleClose}>
               Cancel

@@ -8,35 +8,27 @@ export default function TodaysSchedule() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState([]); // classes for today
+  const [rows, setRows] = useState([]);
 
-  // ---- helpers
+  // ---- HELPERS ----
   const dayKey = (d) => {
-  const map = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  return map[d];
-};
-
+    const map = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return map[d];
+  };
 
   const dayLabel = (d) => {
     const map = {
-      sun: "Sunday",
-      mon: "Monday",
-      tue: "Tuesday",
-      wed: "Wednesday",
-      thu: "Thursday",
-      fri: "Friday",
-      sat: "Saturday",
+      sun: "Sunday", mon: "Monday", tue: "Tuesday", wed: "Wednesday",
+      thu: "Thursday", fri: "Friday", sat: "Saturday",
     };
-    return map[d] || "";
+    return map[d] || d;
   };
 
   const formatTime = (t) => {
-    // t expected like "09:00:00" or "09:00"
     if (!t) return "";
     const [hh, mm] = String(t).split(":");
     const h = Number(hh);
     const m = Number(mm ?? 0);
-
     const ampm = h >= 12 ? "PM" : "AM";
     const h12 = ((h + 11) % 12) + 1;
     const mm2 = String(m).padStart(2, "0");
@@ -45,16 +37,15 @@ export default function TodaysSchedule() {
 
   const dateLabel = useMemo(() => {
     const now = new Date();
-    const dk = dayKey(now.getDay());
     const month = now.toLocaleString("en-US", { month: "long" });
     const day = now.getDate();
     const year = now.getFullYear();
     return `${month} ${day}, ${year}`;
   }, []);
 
-  const computeStatus = (c) => {
-    // simple status based on time today
-    if (c.status === "Inactive") return { text: "Inactive", type: "ended" };
+  // ---- STATUS LOGIC ----
+  const computeStatus = (c, session) => {
+    if (c.archived) return { text: "Inactive", type: "ended" };
 
     const now = new Date();
     const [sh, sm] = String(c.start_time || "00:00").split(":");
@@ -66,91 +57,119 @@ export default function TodaysSchedule() {
     const end = new Date(now);
     end.setHours(Number(eh), Number(em || 0), 0, 0);
 
-    if (now < start) return { text: "Upcoming", type: "ongoing" };
-    if (now >= start && now <= end) return { text: "Class In-Progress", type: "inprogress" };
-    return { text: "Class Ended", type: "ended" };
-  };
+    // Logic for 2 hours before schedule
+    const twoHoursBefore = new Date(start.getTime() - 2 * 60 * 60 * 1000);
 
-  const fetchToday = async () => {
-    setLoading(true);
-
-    const now = new Date();
-    const todayKey = dayKey(now.getDay());
-
-    // 1) classes scheduled today (not archived)
-    const { data: classes, error: clsErr } = await supabase
-      .from("classes")
-      .select("id, course, course_code, room, day_of_week, start_time, end_time, professor_id, archived, schedule")
-      .eq("day_of_week", todayKey)
-      .order("start_time", { ascending: true });
-
-    if (clsErr) {
-      console.log("Fetch today classes error:", clsErr.message);
-      setRows([]);
-      setLoading(false);
-      return;
+    // 1. Check kung may active session na sa DB (Priority)
+    if (session) {
+      if (session.status === "Started") return { text: "Class In-Progress", type: "inprogress" };
+      if (session.status === "Ended") return { text: "Class Ended", type: "ended" };
     }
 
-    // 2) professor names map
-    const profIds = Array.from(new Set((classes || []).map((c) => c.professor_id).filter(Boolean)));
-    let profMap = {};
+    // 2. Kung tapos na ang schedule at walang session record
+    if (now > end) return { text: "Class Ended", type: "ended" };
 
-    if (profIds.length) {
-      const { data: profs, error: profErr } = await supabase
+    // 3. Pending Logic (Nasa loob ng 2-hour window bago mag-start)
+    if (now >= twoHoursBefore && now < start) {
+      return { text: "Pending", type: "pending" }; // Ginawang 'pending'
+    }
+
+    // 4. Upcoming Logic (More than 2 hours pa)
+    if (now < twoHoursBefore) {
+      return { text: "Upcoming", type: "upcoming" }; // Ginawang 'upcoming'
+    }
+
+    // Fallback kung nasa loob na ng oras pero wala pang session
+    return { text: "Pending", type: "ongoing" };
+  };
+
+  // ---- FETCH LOGIC ----
+  const fetchToday = async () => {
+    setLoading(true);
+    const now = new Date();
+    const todayKey = dayKey(now.getDay());
+    const dateToday = now.toISOString().split('T')[0];
+
+    try {
+      // 1. Fetch classes scheduled today
+      const { data: classes, error: clsErr } = await supabase
+        .from("classes")
+        .select("*")
+        .eq("day_of_week", todayKey)
+        .eq("archived", false)
+        .order("start_time", { ascending: true });
+
+      if (clsErr) throw clsErr;
+
+      if (!classes || classes.length === 0) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+
+      const classIds = classes.map((c) => c.id);
+
+      // 2. Fetch sessions today
+      const { data: sessions } = await supabase
+        .from("class_sessions")
+        .select("*")
+        .in("class_id", classIds)
+        .eq("session_date", dateToday);
+
+      const sessionMap = Object.fromEntries((sessions || []).map((s) => [s.class_id, s]));
+
+      // 3. Fetch professors names
+      const profIds = Array.from(new Set(classes.map((c) => c.professor_id).filter(Boolean)));
+      const { data: profs } = await supabase
         .from("professors")
         .select("id, professor_name")
         .in("id", profIds);
 
-      if (profErr) console.log("Fetch professors error:", profErr.message);
-      profMap = Object.fromEntries((profs || []).map((p) => [p.id, p.professor_name]));
-    }
+      const profMap = Object.fromEntries((profs || []).map((p) => [p.id, p.professor_name]));
 
-    // 3) student count per class (from class_enrollments)
-    const classIds = (classes || []).map((c) => c.id);
-    let studentCountMap = {};
-
-    if (classIds.length) {
-      const { data: enrolls, error: enrErr } = await supabase
+      // 4. Fetch student counts
+      const { data: enrolls } = await supabase
         .from("class_enrollments")
         .select("class_id")
         .in("class_id", classIds);
 
-      if (enrErr) {
-        console.log("Fetch enrollments error:", enrErr.message);
-      } else {
-        for (const e of enrolls || []) {
-          studentCountMap[e.class_id] = (studentCountMap[e.class_id] || 0) + 1;
-        }
-      }
+      const studentCountMap = {};
+      (enrolls || []).forEach((e) => {
+        studentCountMap[e.class_id] = (studentCountMap[e.class_id] || 0) + 1;
+      });
+
+      // Map to UI
+      const mapped = classes.map((c) => {
+        const sessionToday = sessionMap[c.id];
+        const stat = computeStatus(c, sessionToday);
+
+        return {
+          id: c.id,
+          title: c.course ?? "Untitled",
+          code: c.course_code ?? "",
+          professor: profMap[c.professor_id] ?? "Unassigned",
+          room: c.room ?? "—",
+          time: c.schedule ?? `${dayLabel(todayKey)}: ${formatTime(c.start_time)} - ${formatTime(c.end_time)}`,
+          wifi: "N/A",
+          students: studentCountMap[c.id] ?? 0,
+          status: stat.text,
+          statusType: stat.type,
+        };
+      });
+
+      setRows(mapped);
+    } catch (err) {
+      console.error("Error fetching today's schedule:", err.message);
+    } finally {
+      setLoading(false);
     }
-
-    // map to UI cards
-    const mapped = (classes || []).map((c) => {
-      const status = c.archived ? "Inactive" : "Active";
-      const stat = computeStatus({ ...c, status });
-
-      return {
-        id: c.id,
-        title: c.course ?? "Untitled",
-        code: c.course_code ?? "",
-        professor: profMap[c.professor_id] ?? "Unassigned",
-        room: c.room ?? "—",
-        time:
-          c.schedule ??
-          `${dayLabel(todayKey)}: ${formatTime(c.start_time)} - ${formatTime(c.end_time)}`,
-        wifi: "N/A",
-        students: studentCountMap[c.id] ?? 0,
-        status: stat.text,
-        statusType: stat.type,
-      };
-    });
-
-    setRows(mapped);
-    setLoading(false);
   };
 
   useEffect(() => {
     fetchToday();
+    // Optional: Refresh status every minute without database fetch
+    const interval = setInterval(() => fetchToday(), 60000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -160,7 +179,6 @@ export default function TodaysSchedule() {
       <header className="schedule-topbar">
         <div className="schedule-topbar-inner">
           <div className="schedule-title">Today’s Schedule</div>
-
           <button className="icon-btn" onClick={() => navigate(-1)} title="Back">
             <Svg name="back" />
           </button>
@@ -170,7 +188,6 @@ export default function TodaysSchedule() {
       <main className="schedule-main">
         <div className="schedule-header">
           <div className="schedule-date">{dateLabel}</div>
-
           <button className="export-btn" type="button" onClick={() => window.print()}>
             <Svg name="download" small />
             Export PDF
@@ -186,36 +203,31 @@ export default function TodaysSchedule() {
             rows.map((c) => (
               <div className="schedule-card" key={c.id}>
                 <div className={`status-pill ${c.statusType}`}>{c.status}</div>
-                   <div className="card-top">
+                <div className="card-top">
                   <div className="course-title">{c.title}</div>
                   <div className="students-pill">{c.students} Students</div>
                 </div>
-
                 <div className="course-code">{c.code}</div>
 
-              {/* ✅ NEW: wrap info rows so we can control vertical spacing */}
-              <div className="card-body">
-                <div className="info-row">
-                  <Svg name="user" small />
-                  <span>{c.professor}</span>
-                </div>
-
-                <div className="info-row">
-                  <Svg name="pin" small />
-                  <span>{c.room}</span>
-                </div>
-
-                <div className="info-row">
-                  <Svg name="clock" small />
-                  <span>{c.time}</span>
-                </div>
-
-                <div className="info-row">
-                  <Svg name="wifi" small />
-                  <span>{c.wifi}</span>
+                <div className="card-body">
+                  <div className="info-row">
+                    <Svg name="user" small />
+                    <span>{c.professor}</span>
+                  </div>
+                  <div className="info-row">
+                    <Svg name="pin" small />
+                    <span>{c.room}</span>
+                  </div>
+                  <div className="info-row">
+                    <Svg name="clock" small />
+                    <span>{c.time}</span>
+                  </div>
+                  <div className="info-row">
+                    <Svg name="wifi" small />
+                    <span>{c.wifi}</span>
+                  </div>
                 </div>
               </div>
-            </div>
             ))
           )}
         </section>
@@ -224,7 +236,7 @@ export default function TodaysSchedule() {
   );
 }
 
-/* ===== SVG HELPER ===== */
+// SVG Helper stays the same
 function Svg({ name, small = false }) {
   const s = small ? 16 : 22;
   const props = { width: s, height: s, viewBox: "0 0 24 24", fill: "none" };
@@ -234,13 +246,7 @@ function Svg({ name, small = false }) {
     download: (
       <>
         <path d="M12 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path
-          d="M8 10l4 4 4-4"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <path d="M8 10l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M5 21h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </>
     ),
@@ -266,6 +272,5 @@ function Svg({ name, small = false }) {
       </>
     ),
   };
-
   return <svg {...props}>{icons[name]}</svg>;
 }
