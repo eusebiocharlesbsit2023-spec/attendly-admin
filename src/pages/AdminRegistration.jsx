@@ -102,6 +102,7 @@ export default function AdminRegistration() {
 
   useEffect(() => {
     if (!successOpen) return;
+    if (role !== 'admin') return;
     if (redirectCountdown <= 0) {
       navigate('/');
       return;
@@ -109,7 +110,7 @@ export default function AdminRegistration() {
 
     const t = setTimeout(() => setRedirectCountdown((prev) => prev - 1), 1000);
     return () => clearTimeout(t);
-  }, [successOpen, redirectCountdown, navigate]);
+  }, [successOpen, redirectCountdown, navigate, role]);
 
   useEffect(() => {
     setStudentStep(1);
@@ -367,10 +368,21 @@ export default function AdminRegistration() {
                 <path d="M7 12.5L10.2 15.7L17 8.9" stroke="#16a34a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <p style={{ marginTop: '10px' }}>Account created successfully. You can now log in.</p>
-            <p style={{ marginTop: '4px', fontSize: '14px', color: '#475569' }}>
-              Redirecting to login page in {redirectCountdown}...
-            </p>
+            {role === 'admin' ? (
+              <>
+                <p style={{ marginTop: '10px' }}>Account created successfully. You can now log in.</p>
+                <p style={{ marginTop: '4px', fontSize: '14px', color: '#475569' }}>
+                  Redirecting to login page in {redirectCountdown}...
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ marginTop: '10px' }}>Account created successfully.</p>
+                <p style={{ marginTop: '4px', fontSize: '14px', color: '#475569' }}>
+                  You can now log in using the mobile app.
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
