@@ -3,7 +3,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AttendanceRecords from "./pages/AttendanceRecords";
 import Maintenance from "./pages/Maintenance";
-import StudentManagement from "./pages/Studentmanagement";
+import StudentManagement from "./pages/StudentManagement";
 import ClassManagement from "./pages/ClassManagement";
 import ProfessorManagement from "./pages/ProfessorManagement";
 import SubjectManagement from "./pages/SubjectManagement";
