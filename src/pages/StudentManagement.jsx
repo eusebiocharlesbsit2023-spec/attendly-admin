@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./StudentManagement.css";
@@ -26,6 +27,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function StudentManagement() {
+  const navigate = useNavigate();
+
   /* ✅ USE THE REUSABLE HOOK */
   const {
     realActivity,
@@ -226,9 +229,12 @@ export default function StudentManagement() {
       <header className="mnt-topbar">
         <div className="mnt-topbar-inner">
           <div className="mnt-topbar-left">
+            <button type="button" className="sm-back-btn" onClick={() => navigate(-1)} aria-label="Back" title="Back">
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
             <div>
               <div className="mnt-title">Student Management</div>
-              <div className="mnt-subtitle">Review list of students</div>
+              <div className="pm-subtitle">Review list of students</div>
             </div>
           </div>
           <div className="mnt-topbar-right">

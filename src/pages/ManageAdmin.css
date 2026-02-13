@@ -334,3 +334,96 @@ tr,td{
     min-width: 60px;
   }
 }
+
+/* Manage Admin edit modal sizing */
+.mam-edit-overlay {
+  padding: 20px;
+}
+
+.mam-edit-card {
+  width: min(560px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 28px 34px;
+}
+
+.mam-edit-card .esm-row {
+  grid-template-columns: 220px 1fr;
+  column-gap: 16px;
+}
+
+.mam-edit-card .esm-value {
+  word-break: break-word;
+}
+
+
+.mam-edit-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.mam-edit-cancel {
+  min-width: 120px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.mam-edit-cancel:hover {
+  background: #f8fafc;
+}
+
+.mam-edit-card .esm-save {
+  min-width: 140px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #0a4e86;
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.mam-edit-card .esm-save:hover {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 640px) {
+  .mam-edit-card {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    padding: 18px;
+  }
+
+  .mam-edit-card .esm-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .mam-edit-actions {
+    flex-direction: column-reverse;
+  }
+
+  .mam-edit-card .esm-value,
+  .mam-edit-card .esm-statusWrap {
+    justify-self: start;
+    text-align: left;
+  }
+
+  .mam-edit-card .esm-select,
+  .mam-edit-card .esm-save,
+  .mam-edit-cancel {
+    width: 100%;
+  }
+}
+

@@ -25,8 +25,24 @@
 
 .pm-topbar-left {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 18px;
+}
+
+.pm-back-btn {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: transparent;
+  color: #fff;
+  height: 38px;
+  width: 38px;
+  padding: 0;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.pm-back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .pm-title {
@@ -528,7 +544,7 @@ td{
 
 /* title left */
 .pm-topbar .pm-topbar-left{
-  align-items: flex-start !important;
+  align-items: center !important;
   justify-content: flex-start !important;
 }
 
@@ -551,7 +567,7 @@ td{
 .pm-topbar .pm-topbar-left{
   display: flex !important;
   justify-content: flex-start !important;
-  align-items: flex-start !important;
+  align-items: center !important;
 }
 
 /* right stays right */

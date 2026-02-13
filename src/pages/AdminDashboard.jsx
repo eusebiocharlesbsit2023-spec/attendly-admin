@@ -43,7 +43,6 @@ export default function AdminDashboard() {
   const [todayErr, setTodayErr] = useState(null);
   const [stats, setStats] = useState([
     { label: "Total Students", value: "—", icon: faUsers, tint: "blue" },
-    { label: "Active Devices", value: "N/A", icon: faMicrochip, tint: "purple" },
     { label: "Professors", value: "—", icon: faGraduationCap, tint: "green" },
     { label: "Active Sessions", value: "—", icon: faBookOpen, tint: "yellow" },
   ]);
@@ -52,14 +51,13 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const [studentsRes, profsRes, sessionsRes] = await Promise.all([
-        supabase.from("students").select("id", { count: "exact", head: true }).eq("archived", false),
+        supabase.from("devices").select("id", { count: "exact", head: true }).eq("current_location", "CLASSROOM"),
         supabase.from("professors").select("id", { count: "exact", head: true }).eq("archived", false),
         supabase.from("class_sessions").select("id", { count: "exact", head: true }).eq("status", "started"),
       ]);
 
       setStats([
         { label: "Total Students", value: studentsRes.count ?? 0, icon: faUsers, tint: "blue" },
-        { label: "Active Devices", value: "0", icon: faMicrochip, tint: "purple" },
         { label: "Professors", value: profsRes.count ?? 0, icon: faGraduationCap, tint: "green" },
         { label: "Active Sessions", value: sessionsRes.count ?? 0, icon: faBookOpen, tint: "yellow" },
       ]);

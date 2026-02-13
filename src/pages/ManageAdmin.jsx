@@ -34,8 +34,8 @@ function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
   const changed = role !== originalRole || status !== originalStatus;
 
   return (
-    <div className="esm-overlay" onClick={onClose}>
-      <div className="esm-card" onClick={(e) => e.stopPropagation()}>
+    <div className="esm-overlay mam-edit-overlay" onClick={onClose}>
+      <div className="esm-card mam-edit-card" onClick={(e) => e.stopPropagation()}>
         <div className="esm-row">
           <div className="esm-label label">Admin ID:</div>
           <div className="esm-value">{admin?.id}</div>
@@ -66,14 +66,19 @@ function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
             </select>
           </div>
         </div>
-        <button
-          className={`esm-save ${!changed ? "disabled" : ""}`}
-          type="button"
-          disabled={!changed}
-          onClick={() => onSaveClick({ id: admin?.id, role, status })}
-        >
-          Save
-        </button>
+        <div className="mam-edit-actions">
+          <button className="mam-edit-cancel" type="button" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            className={`esm-save ${!changed ? "disabled" : ""}`}
+            type="button"
+            disabled={!changed}
+            onClick={() => onSaveClick({ id: admin?.id, role, status })}
+          >
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -127,19 +132,26 @@ export default function ManageAdmin() {
     try {
       const { data, error } = await supabase
         .from("admins")
-        .select("id, admin_name, username, role, status, archived")
+        .select("id, admin_name, username, role, status, archived, created_at")
         .eq("archived", false)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
 
-      const mapped = (data || []).map((p, i) => ({
+      const sortedByCreated = (data || []).slice().sort((a, b) => {
+        const aTime = a?.created_at ? Date.parse(a.created_at) : 0;
+        const bTime = b?.created_at ? Date.parse(b.created_at) : 0;
+        return aTime - bTime;
+      });
+
+      const mapped = sortedByCreated.map((p, i) => ({
         id: `ADM${i + 1}`,
         fullName: p.admin_name ?? "",
         username: p.username ?? "",
         role: p.role ?? "Admin",
         status: p.status ?? "Active",
         uuid: p.id,
+        createdAt: p.created_at ?? null,
       }));
       setRows(mapped);
     } catch (err) {
@@ -162,9 +174,18 @@ export default function ManageAdmin() {
   const [savingApply, setSavingApply] = useState(false);
 
   const onCreate = () => setCreateOpen(true);
-  const handleCreate = () => { fetchAdmins(); setCreateOpen(false); };
+  const handleCreate = (createdAdmin) => {
+    fetchAdmins();
+    setCreateOpen(false);
+    setSuccessMsg(createdAdmin?.fullName ? `Created admin: ${createdAdmin.fullName}` : "Admin created successfully!");
+    setSuccessOpen(true);
+  };
 
-  const onEdit = (r) => { setEditingRow(r); setEditRoleOpen(true); };
+  const onEdit = (r) => { 
+    if (r.role === "Super Admin") return;
+    setEditingRow(r); 
+    setEditRoleOpen(true); 
+  };
   const onEditSaveClick = (payload) => {
     setPendingRoleChange(payload);
     setEditRoleOpen(false);
@@ -313,7 +334,13 @@ export default function ManageAdmin() {
                       <td>{r.id}</td><td>{r.fullName}</td><td>{r.username}</td><td>{r.role}</td>
                       <td><span className={`mam-status ${r.status === "Active" ? "active" : "inactive"}`}>{r.status}</span></td>
                       <td className="mam-actionsCell">
-                        <button className="mam-action edit" onClick={() => onEdit(r)}>✎ Edit</button>
+                        <button 
+                          className={`mam-action edit ${r.role === "Super Admin" ? "disabled" : ""}`} 
+                          onClick={() => onEdit(r)}
+                          disabled={r.role === "Super Admin"}
+                        >
+                          ✎ Edit
+                        </button>
                         <button
                           className={`mam-action del ${r.role === "Super Admin" ? "disabled" : ""}`}
                           onClick={() => onArchive(r)}
@@ -356,3 +383,5 @@ export default function ManageAdmin() {
     </div>
   );
 }
+
+

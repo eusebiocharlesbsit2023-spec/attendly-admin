@@ -15,6 +15,7 @@ import {
   faBell,
   faMagnifyingGlass,
   faDownload,
+  faChevronLeft,
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function ClassManagement() {
@@ -246,7 +247,10 @@ export default function ClassManagement() {
       <header className="mnt-topbar">
         <div className="mnt-topbar-inner">
           <div className="mnt-topbar-left">
-            <div className="dash-title">Class Management</div>
+            <button type="button" className="cm-back-btn" onClick={() => navigate(-1)} aria-label="Back" title="Back">
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
+            <div className="pm-title">Class Management</div>
           </div>
           <div className="mnt-topbar-right">
             {/* ✅ REUSABLE BELL ICON LOGIC */}

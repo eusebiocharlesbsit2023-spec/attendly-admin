@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./ProfessorManagement.css";
@@ -24,6 +25,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function ProfessorManagement() {
+  const navigate = useNavigate();
+
   /* ✅ USE THE REUSABLE HOOK */
   const {
     realActivity,
@@ -175,7 +178,7 @@ export default function ProfessorManagement() {
     try {
       const { error } = await supabase
         .from("professors")
-        .update({ archived: true })
+        .update({ archived: true, status: "Inactive" })
         .eq("id", pendingDelete.id);
 
       if (error) throw error;
@@ -235,6 +238,9 @@ export default function ProfessorManagement() {
       <header className="mnt-topbar">
         <div className="mnt-topbar-inner">
           <div className="pm-topbar-left">
+            <button type="button" className="pm-back-btn" onClick={() => navigate(-1)} aria-label="Back" title="Back">
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
             <div>
               <div className="pm-title">Professor Management</div>
               <div className="pm-subtitle">Review list of professors</div>

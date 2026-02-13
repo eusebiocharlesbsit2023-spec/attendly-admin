@@ -24,6 +24,23 @@
   font-weight: 500;
 }
 
+.subj-back-btn {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: transparent;
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  margin-right: 14px;
+}
+
+.subj-back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .subj-card {
   background: #fff;
   border-radius: 14px;

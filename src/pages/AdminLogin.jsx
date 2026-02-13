@@ -58,6 +58,12 @@ function AdminLogin() {
         return;
       }
 
+      if ((profile.status || "").toLowerCase() === "inactive") {
+        setErrorMessage("Your admin account is deactivated.");
+        await supabase.auth.signOut();
+        return;
+      }
+
       localStorage.setItem("adminProfile", JSON.stringify(profile));
       navigate("/dashboard", { replace: true });
     } catch (e) {

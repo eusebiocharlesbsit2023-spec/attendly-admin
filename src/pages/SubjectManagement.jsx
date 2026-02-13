@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import AddSubjectModal from "../components/AddSubjectModal";
@@ -24,6 +25,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function SubjectManagement() {
+  const navigate = useNavigate();
+
   /* ✅ USE THE REUSABLE HOOK */
   const {
     realActivity,
@@ -265,6 +268,9 @@ export default function SubjectManagement() {
       <header className="mnt-topbar">
         <div className="mnt-topbar-inner">
           <div className="mnt-topbar-left">
+            <button type="button" className="subj-back-btn" onClick={() => navigate(-1)} aria-label="Back" title="Back">
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
             <div>
               <div className="dash-title">Subject Management</div>
               <div className="dash-subtitle">Manage subjects by department</div>
