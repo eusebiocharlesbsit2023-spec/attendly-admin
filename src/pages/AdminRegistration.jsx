@@ -379,7 +379,7 @@ export default function AdminRegistration() {
               <>
                 <p style={{ marginTop: '10px' }}>Account created successfully.</p>
                 <p style={{ marginTop: '4px', fontSize: '14px', color: '#475569' }}>
-                  You can now log in using the mobile app.
+                  You can now log in to the app using your Student Number and password.
                 </p>
               </>
             )}
@@ -620,3 +620,4 @@ function EyeOffIcon() {
     </svg>
   );
 }
+

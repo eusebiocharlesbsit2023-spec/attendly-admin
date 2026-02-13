@@ -92,6 +92,7 @@ serve(async (req) => {
       email: invite.email,
       password,
       email_confirm: true,
+      user_metadata: user_type === "student" ? { student_number } : undefined,
     });
 
     if (createErr) {
@@ -161,7 +162,12 @@ serve(async (req) => {
       return json(400, { step: "update_invite", message: updateErr.message, details: updateErr });
     }
 
-    return json(200, { success: true, user_type, profile: profileRow });
+    return json(200, {
+      success: true,
+      user_type,
+      login_identifier: user_type === "student" ? student_number : invite.email,
+      profile: profileRow,
+    });
   } catch (e) {
     return json(400, { step: "catch", message: String(e) });
   }
