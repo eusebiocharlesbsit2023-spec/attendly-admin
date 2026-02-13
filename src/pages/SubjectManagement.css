@@ -106,6 +106,32 @@
   gap: 10px;
 }
 
+.subj-viewToggle {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 40px;
+  background: #fff;
+}
+
+.subj-viewBtn {
+  border: none;
+  background: transparent;
+  padding: 0 14px;
+  height: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+}
+
+.subj-viewBtn.active {
+  background: #0a4e86;
+  color: #fff;
+}
+
 .subj-filter label {
   display: block;
   font-size: 12px;

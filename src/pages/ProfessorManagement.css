@@ -746,6 +746,12 @@ td{
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+.pm-modal-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin: -6px 0 8px;
+}
+
 .pm-modal-btn {
   display: inline-flex;
   align-items: center;

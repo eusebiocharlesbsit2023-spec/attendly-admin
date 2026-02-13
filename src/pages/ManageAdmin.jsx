@@ -6,6 +6,7 @@ import "./AdminDashboard.css";
 
 import CreateAdminModal from "../components/CreateAdminModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
+import { sendAdminInvite } from "../helper/emailjs";
 
 /* ✅ Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
@@ -79,6 +80,117 @@ function EditAdminRoleModal({ open, admin, onClose, onSaveClick }) {
             Save
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SelectCreationMethodModal({ open, onClose, onSelectManual, onSelectInvite }) {
+  if (!open) return null;
+  return (
+    <div className="scm-overlay" onClick={onClose}>
+      <div className="scm-card" style={{ padding: "2rem", width: "auto", maxWidth: "400px", background: "white", color: "black" }} onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ marginTop: 0, marginBottom: "1.5rem", textAlign: "center" }}>How do you want to add a new admin?</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", justifyContent: "center" }}>
+          <button className="mam-createBtn" onClick={onSelectManual}>
+            Create Manually
+          </button>
+          <button className="mam-createBtn" onClick={onSelectInvite}>
+            Invite via Email Link
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InviteAdminModal({ open, onClose, onSend }) {
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [fieldError, setFieldError] = useState("");
+
+  const handleSend = async () => {
+    if (!email || sending || !email.includes("@")) {
+      setFieldError("Please enter a valid email address.");
+      return;
+    }
+    setFieldError("");
+    setSending(true);
+    try {
+      const emailLower = email.trim().toLowerCase();
+
+      // Block invites for already-registered users.
+      const [{ data: existingAdmin, error: adminErr }, { data: existingProfessor, error: professorErr }, { data: existingStudent, error: studentErr }] = await Promise.all([
+        supabase.from("admins").select("id").eq("username", emailLower).maybeSingle(),
+        supabase.from("professors").select("id").eq("email", emailLower).maybeSingle(),
+        supabase.from("students").select("id").eq("email", emailLower).maybeSingle(),
+      ]);
+
+      if (adminErr || professorErr || studentErr) {
+        throw new Error(adminErr?.message || professorErr?.message || studentErr?.message || "Failed to validate email");
+      }
+
+      if (existingAdmin || existingProfessor || existingStudent) {
+        throw new Error("Email is already registered.");
+      }
+
+      const { data, error } = await supabase.rpc("create_admin_invite", {
+        invitee_email: emailLower,
+      });
+
+      if (error) throw error;
+
+      const token =
+        typeof data === "string"
+          ? data
+          : data?.token || data?.invite_token || data?.id || "";
+
+      const baseUrl =
+        import.meta.env.VITE_APP_URL ||
+        (typeof window !== "undefined" ? window.location.origin : "");
+      const inviteLink = token ? `${baseUrl}/register?token=${token}&role=admin` : "";
+
+      if (!inviteLink) {
+        throw new Error("Invite link was not returned from the server.");
+      }
+
+      await sendAdminInvite(emailLower, inviteLink);
+      onSend(emailLower);
+    } catch (err) {
+      console.error("Failed to send invite:", err);
+      setFieldError(err?.details || err?.message || "Failed to send invite.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="esm-overlay mam-invite-overlay" onClick={onClose}>
+      <div className="esm-card mam-invite-card" onClick={(e) => e.stopPropagation()}>
+        <div className="mam-invite-title">Send Admin Invitation</div>
+        <div className="mam-invite-label">Email Address:</div>
+        <input
+          type="email"
+          className="mam-input mam-invite-input"
+          placeholder="admin.email@example.com"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (fieldError) setFieldError("");
+          }}
+          disabled={sending}
+        />
+        {fieldError && <div className="mam-invite-error">{fieldError}</div>}
+        <button
+          className={`mam-invite-btn ${!email || sending ? "disabled" : ""}`}
+          type="button"
+          disabled={!email || sending}
+          onClick={handleSend}
+        >
+          {sending ? "Sending..." : "Send Invite"}
+        </button>
       </div>
     </div>
   );
@@ -163,6 +275,8 @@ export default function ManageAdmin() {
 
   useEffect(() => { fetchAdmins(); }, []);
 
+  const [selectMethodOpen, setSelectMethodOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editRoleOpen, setEditRoleOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
@@ -173,11 +287,16 @@ export default function ManageAdmin() {
   const [deleting, setDeleting] = useState(false);
   const [savingApply, setSavingApply] = useState(false);
 
-  const onCreate = () => setCreateOpen(true);
+  const onCreate = () => setSelectMethodOpen(true);
   const handleCreate = (createdAdmin) => {
     fetchAdmins();
     setCreateOpen(false);
     setSuccessMsg(createdAdmin?.fullName ? `Created admin: ${createdAdmin.fullName}` : "Admin created successfully!");
+    setSuccessOpen(true);
+  };
+  const handleInviteSend = (email) => {
+    setInviteOpen(false);
+    setSuccessMsg(`Invite sent to ${email}`);
     setSuccessOpen(true);
   };
 
@@ -367,6 +486,19 @@ export default function ManageAdmin() {
         </div>
       </main>
 
+      <SelectCreationMethodModal
+        open={selectMethodOpen}
+        onClose={() => setSelectMethodOpen(false)}
+        onSelectManual={() => {
+          setSelectMethodOpen(false);
+          setCreateOpen(true);
+        }}
+        onSelectInvite={() => {
+          setSelectMethodOpen(false);
+          setInviteOpen(true);
+        }}
+      />
+      <InviteAdminModal open={inviteOpen} onClose={() => setInviteOpen(false)} onSend={handleInviteSend} />
       <CreateAdminModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={handleCreate} />
       <EditAdminRoleModal open={editRoleOpen} admin={editingRow} onClose={() => setEditRoleOpen(false)} onSaveClick={onEditSaveClick} />
       <SmallConfirmModal open={applyOpen} title={savingApply ? "Saving..." : `Apply role change?`} onYes={applyYes} onCancel={() => setApplyOpen(false)} />

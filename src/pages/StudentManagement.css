@@ -674,3 +674,86 @@ tr {
 .sm-avatar {
   flex-shrink: 0 !important;
 }
+
+/* Student invite modals */
+.sm-modal-card {
+  background: #fff;
+  border: 1px solid #dbe7f4;
+  border-radius: 12px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+  padding: 20px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.sm-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.sm-modal-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.sm-modal-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.sm-modal-input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  outline: none;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.sm-modal-input:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.sm-modal-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 0 0 10px;
+}
+
+.sm-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #0a4e86;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(10, 78, 134, 0.2);
+}
+
+.sm-modal-btn.secondary {
+  background: #f5faff;
+  color: #0a4e86;
+  border-color: #cfe3fb;
+  box-shadow: none;
+}
+
+.sm-modal-btn.disabled,
+.sm-modal-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}

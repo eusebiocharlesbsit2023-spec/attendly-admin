@@ -16,6 +16,10 @@ function json(status: number, body: unknown) {
   });
 }
 
+type SupportedUserType = "admin" | "professor" | "student";
+
+const SUPPORTED_TYPES: SupportedUserType[] = ["admin", "professor", "student"];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -29,15 +33,35 @@ serve(async (req) => {
     const payload = await req.json();
 
     const token = String(payload.token ?? "").trim();
-    const full_name = String(payload.full_name ?? "").trim();
-    const username = String(payload.username ?? "").trim();
+    const user_type = String(payload.user_type ?? "").trim().toLowerCase() as SupportedUserType;
+    const first_name = String(payload.first_name ?? "").trim();
+    const last_name = String(payload.last_name ?? "").trim();
+    const middle_name = String(payload.middle_name ?? "").trim();
+    const full_name = `${first_name} ${last_name}`.trim();
+    const department = String(payload.department ?? "").trim();
+    const student_number = String(payload.student_number ?? "").trim();
+    const program = String(payload.program ?? "").trim();
+    const year_level = String(payload.year_level ?? "").trim();
+    const section = String(payload.section ?? "").trim();
     const password = String(payload.password ?? "").trim();
 
-    if (!token || !full_name || !username || !password) {
+    if (!token || !full_name || !password || !SUPPORTED_TYPES.includes(user_type)) {
       return json(400, {
         step: "validate",
-        message: "token, full_name, username, password are required",
+        message: "token, user_type, first_name, last_name, password are required",
       });
+    }
+
+    if (user_type === "professor" && !department) {
+      return json(400, { step: "validate", message: "department is required for professor invites" });
+    }
+
+    if (user_type === "student") {
+      if (!student_number) return json(400, { step: "validate", message: "student_number is required for student invites" });
+      if (!department) return json(400, { step: "validate", message: "department is required for student invites" });
+      if (!program) return json(400, { step: "validate", message: "program is required for student invites" });
+      if (!year_level) return json(400, { step: "validate", message: "year_level is required for student invites" });
+      if (!section) return json(400, { step: "validate", message: "section is required for student invites" });
     }
 
     const PROJECT_URL = Deno.env.get("PROJECT_URL");
@@ -52,9 +76,10 @@ serve(async (req) => {
     });
 
     const { data: invite, error: inviteErr } = await admin
-      .from("admin_invites")
-      .select("id, email, expires_at, used_at, is_active")
+      .from("user_invites")
+      .select("id, email, user_type, expires_at, used_at, is_active")
       .eq("token", token)
+      .eq("user_type", user_type)
       .eq("is_active", true)
       .is("used_at", null)
       .single();
@@ -63,7 +88,6 @@ serve(async (req) => {
       return json(400, { step: "invite", message: "Invalid or expired invite" });
     }
 
-    // 1) Create auth user
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email: invite.email,
       password,
@@ -77,28 +101,59 @@ serve(async (req) => {
     const authUserId = created.user?.id;
     if (!authUserId) return json(500, { step: "createUser", message: "Missing user id" });
 
-    // 2) Insert admins row
-    const { data: adminRow, error: insertErr } = await admin
-      .from("admins")
-      .insert({
+    let profileTable = "";
+    let profilePayload: Record<string, unknown> = {};
+
+    if (user_type === "admin") {
+      profileTable = "admins";
+      profilePayload = {
         id: authUserId,
-        username: username,
+        username: invite.email,
         admin_name: full_name,
         role: "Admin",
         status: "Active",
-      })
+      };
+    } else if (user_type === "professor") {
+      profileTable = "professors";
+      profilePayload = {
+        id: authUserId,
+        professor_name: full_name,
+        email: invite.email,
+        department,
+        status: "Active",
+        archived: false,
+      };
+    } else {
+      profileTable = "students";
+      profilePayload = {
+        id: authUserId,
+        first_name,
+        middle_name: middle_name || null,
+        last_name,
+        student_number,
+        email: invite.email,
+        department,
+        program,
+        year_level,
+        section,
+        status: "Active",
+        archived: false,
+      };
+    }
+
+    const { data: profileRow, error: insertErr } = await admin
+      .from(profileTable)
+      .insert(profilePayload)
       .select("*")
       .single();
 
     if (insertErr) {
-      // optional cleanup to avoid orphan auth user
-      // await admin.auth.admin.deleteUser(authUserId);
-      return json(400, { step: "insert_admin", message: insertErr.message, details: insertErr });
+      await admin.auth.admin.deleteUser(authUserId);
+      return json(400, { step: "insert_profile", message: insertErr.message, details: insertErr });
     }
 
-    // 3) Mark invite used
     const { error: updateErr } = await admin
-      .from("admin_invites")
+      .from("user_invites")
       .update({ used_at: new Date().toISOString(), is_active: false })
       .eq("id", invite.id);
 
@@ -106,7 +161,7 @@ serve(async (req) => {
       return json(400, { step: "update_invite", message: updateErr.message, details: updateErr });
     }
 
-    return json(200, { success: true, admin: adminRow });
+    return json(200, { success: true, user_type, profile: profileRow });
   } catch (e) {
     return json(400, { step: "catch", message: String(e) });
   }

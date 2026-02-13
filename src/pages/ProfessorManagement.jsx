@@ -7,6 +7,7 @@ import AddProfessorModal from "../components/AddProfessorModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditProfessorModal from "../components/EditProfessorModal";
 import supabase from "../helper/supabaseClient";
+import { sendProfessorInvite } from "../helper/emailjs";
 
 /* ✅ Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
@@ -91,6 +92,8 @@ export default function ProfessorManagement() {
 
   // Modals / Action states
   const [addOpen, setAddOpen] = useState(false);
+  const [selectMethodOpen, setSelectMethodOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -121,12 +124,17 @@ export default function ProfessorManagement() {
   }
 
   // Handlers
-  const onAdd = () => setAddOpen(true);
+  const onAdd = () => setSelectMethodOpen(true);
   const handleAddSubmit = async () => {
     setAddOpen(false);
     setSuccessMsg("Professor added successfully!");
     setSuccessOpen(true);
     await fetchProfessors();
+  };
+  const handleInviteSend = (email) => {
+    setInviteOpen(false);
+    setSuccessMsg(`Invite sent to ${email}`);
+    setSuccessOpen(true);
   };
 
   const onEdit = (profObj) => {
@@ -341,6 +349,23 @@ export default function ProfessorManagement() {
       </main>
 
       <AddProfessorModal open={addOpen} onClose={() => setAddOpen(false)} onSubmit={handleAddSubmit} />
+      <SelectCreationMethodModal
+        open={selectMethodOpen}
+        onClose={() => setSelectMethodOpen(false)}
+        onSelectManual={() => {
+          setSelectMethodOpen(false);
+          setAddOpen(true);
+        }}
+        onSelectInvite={() => {
+          setSelectMethodOpen(false);
+          setInviteOpen(true);
+        }}
+      />
+      <InviteProfessorModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onSend={handleInviteSend}
+      />
       <EditProfessorModal open={editOpen} professor={editingProf} onClose={() => setEditOpen(false)} onSaveClick={onEditSaveClick} />
       <SuccessModal open={successOpen} message={successMsg} onClose={() => setSuccessOpen(false)} />
       <SmallConfirmModal open={applyOpen} title={actionLoading ? "Applying..." : "Apply Changes?"} onYes={applyYes} onCancel={() => setApplyOpen(false)} />
@@ -365,4 +390,114 @@ function initials(name) {
 function csvEscape(v) {
   const s = String(v ?? "");
   return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function SelectCreationMethodModal({ open, onClose, onSelectManual, onSelectInvite }) {
+  if (!open) return null;
+  return (
+    <div className="scm-overlay" onClick={onClose}>
+      <div className="pm-modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="pm-modal-title">How do you want to add a new professor?</div>
+        <div className="pm-modal-actions">
+          <button className="pm-modal-btn secondary" onClick={onSelectManual}>
+            Create Manually
+          </button>
+          <button className="pm-modal-btn" onClick={onSelectInvite}>
+            Invite via Email Link
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InviteProfessorModal({ open, onClose, onSend }) {
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [fieldError, setFieldError] = useState("");
+
+  const handleSend = async () => {
+    if (!email || sending || !email.includes("@")) {
+      setFieldError("Please enter a valid email address.");
+      return;
+    }
+    setFieldError("");
+    setSending(true);
+
+    try {
+      const emailLower = email.trim().toLowerCase();
+
+      const [{ data: existingAdmin, error: adminErr }, { data: existingProfessor, error: professorErr }, { data: existingStudent, error: studentErr }] = await Promise.all([
+        supabase.from("admins").select("id").eq("username", emailLower).maybeSingle(),
+        supabase.from("professors").select("id").eq("email", emailLower).maybeSingle(),
+        supabase.from("students").select("id").eq("email", emailLower).maybeSingle(),
+      ]);
+
+      if (adminErr || professorErr || studentErr) {
+        throw new Error(adminErr?.message || professorErr?.message || studentErr?.message || "Failed to validate email");
+      }
+      if (existingAdmin || existingProfessor || existingStudent) {
+        throw new Error("Email is already registered.");
+      }
+
+      const { data, error } = await supabase.rpc("create_user_invite", {
+        invitee_email: emailLower,
+        invite_user_type: "professor",
+      });
+
+      if (error) throw error;
+
+      const token =
+        typeof data === "string"
+          ? data
+          : data?.token || data?.invite_token || data?.id || "";
+      const baseUrl =
+        import.meta.env.VITE_APP_URL ||
+        (typeof window !== "undefined" ? window.location.origin : "");
+      const inviteLink = token ? `${baseUrl}/register?token=${token}&role=professor` : "";
+
+      if (!inviteLink) {
+        throw new Error("Invite link was not returned from the server.");
+      }
+
+      await sendProfessorInvite(emailLower, inviteLink);
+      onSend(emailLower);
+    } catch (err) {
+      console.error("Failed to send professor invite:", err);
+      setFieldError(err?.details || err?.message || "Failed to send invite.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="scm-overlay" onClick={onClose}>
+      <div className="pm-modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="pm-modal-title">Send Professor Invitation</div>
+        <label className="pm-modal-label">Email Address</label>
+        <input
+          type="email"
+          className="pm-modal-input"
+          placeholder="prof.email@example.com"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (fieldError) setFieldError("");
+          }}
+          disabled={sending}
+        />
+        {fieldError && <div className="pm-modal-error">{fieldError}</div>}
+        <button
+          className={`pm-modal-btn ${!email || sending ? "disabled" : ""}`}
+          type="button"
+          disabled={!email || sending}
+          onClick={handleSend}
+        >
+          {sending ? "Sending..." : "Send Invite"}
+        </button>
+      </div>
+    </div>
+  );
 }

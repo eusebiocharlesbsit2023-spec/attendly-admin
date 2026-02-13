@@ -11,12 +11,6 @@ const YEAR_LEVELS = [
 ];
 
 const sections = ["A", "B", "C"];
-const programs = [
-  "BSIT - Bachelor of Science in Information Technology ",
-  "BSCS - Bachelor of Science in Computer Science",
-  "BSIS - Bachelor of Science in Information System",
-  "BSEMC - Bachelor of Science in Entertainment and Multimedia Computing ",
-];
 
 function buildPasswordFromSurname(surname) {
   return (surname || "").trim().replace(/\s+/g, "").toUpperCase();
@@ -33,7 +27,9 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
   const [yearLevel, setYearLevel] = useState("");
   const [section, setSection] = useState("");
   const [password, setPassword] = useState("");
+  const [department, setDepartment] = useState("");
   const [program, setProgram] = useState("");
+  const [programs, setPrograms] = useState([]);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +41,27 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
   useEffect(() => {
     setPassword(buildPasswordFromSurname(surname));
   }, [surname]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const loadPrograms = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("programs")
+          .select("department, program_abbr, program_name")
+          .order("department", { ascending: true });
+
+        if (error) throw error;
+        setPrograms(data || []);
+      } catch (err) {
+        console.error("Load programs failed:", err.message);
+        setPrograms([]);
+      }
+    };
+
+    loadPrograms();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -122,11 +139,22 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     const sn = studentNumber.trim();
     if (sn && !/-N/i.test(sn)) e.studentNumber = "Student number must include -N.";
     if (/=N/i.test(sn)) e.studentNumber = "Use -N, not =N.";
+    if (!department) e.department = "Required";
     if (!program) e.program = "Required";
     if (!yearLevel) e.yearLevel = "Required";
     if (!section) e.section = "Required";
     return e;
-  }, [firstName, surname, email, studentNumber, yearLevel, section, program, liveEmailError, liveStudentNoError]);
+  }, [firstName, surname, email, studentNumber, yearLevel, section, department, program, liveEmailError, liveStudentNoError]);
+
+  const departmentOptions = useMemo(() => {
+    return Array.from(new Set((programs || []).map((p) => String(p.department || "").trim()).filter(Boolean)));
+  }, [programs]);
+
+  const programOptions = useMemo(() => {
+    return (programs || [])
+      .filter((p) => String(p.department || "").trim() === department)
+      .map((p) => `${p.program_abbr} - ${p.program_name}`);
+  }, [programs, department]);
 
   const step1Valid = firstName.trim() && surname.trim();
   const step2Valid = Object.keys(errors).length === 0;
@@ -135,6 +163,7 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     setStep(1);
     setFirstName(""); setMiddleName(""); setSurname(""); setSuffix("");
     setStudentNumber(""); setEmail(""); setYearLevel(""); setSection("");
+    setDepartment("");
     setProgram(""); setPassword(""); setErrorMsg("");
     setLiveEmailError(""); setLiveStudentNoError("");
     setConfirmOpen(false); setSubmitting(false); setSubmitAttempted(false);
@@ -230,6 +259,7 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
         last_name: `${surname.trim()} ${suffix.trim()}`.trim(),
         year_level: yearLevel,
         section,
+        department,
         program,
         status: "Active",
       };
@@ -307,10 +337,19 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
           {step === 2 && (
             <div className="form-step-container academic">
               <div>
+                <label className="asm-label">Department <span className="asm-req">*</span></label>
+                <select className={`asm-input ${submitAttempted && errors.department ? 'asm-input-error' : ''}`} value={department} onChange={e => { setDepartment(e.target.value); setProgram(""); }}>
+                  <option value="">Select Department</option>
+                  {departmentOptions.map((d) => <option key={d}>{d}</option>)}
+                </select>
+                {submitAttempted && errors.department && <p className="asm-fieldError">{errors.department}</p>}
+              </div>
+
+              <div>
                 <label className="asm-label">Program <span className="asm-req">*</span></label>
-                <select className={`asm-input ${submitAttempted && errors.program ? 'asm-input-error' : ''}`} value={program} onChange={e => setProgram(e.target.value)}>
-                  <option value="">Select Program</option>
-                  {programs.map(p => <option key={p}>{p}</option>)}
+                <select className={`asm-input ${submitAttempted && errors.program ? 'asm-input-error' : ''}`} value={program} onChange={e => setProgram(e.target.value)} disabled={!department}>
+                  <option value="">{department ? "Select Program" : "Select Department first"}</option>
+                  {programOptions.map(p => <option key={p}>{p}</option>)}
                 </select>
                 {submitAttempted && errors.program && <p className="asm-fieldError">{errors.program}</p>}
               </div>

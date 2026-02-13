@@ -398,6 +398,72 @@ tr,td{
   filter: brightness(1.05);
 }
 
+.mam-invite-overlay {
+  padding: 20px;
+}
+
+.mam-invite-card {
+  width: min(440px, calc(100vw - 40px));
+  padding: 18px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.mam-invite-title {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.mam-invite-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0;
+  text-align: center;
+  width: 100%;
+}
+
+.mam-invite-input {
+  width: min(360px, 100%);
+  margin: 0;
+}
+
+.mam-invite-error {
+  width: min(360px, 100%);
+  color: #dc2626;
+  font-size: 12px;
+  text-align: left;
+}
+
+.mam-invite-btn {
+  width: min(180px, 100%);
+  min-height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: #0a4e86;
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(10, 78, 134, 0.2);
+}
+
+.mam-invite-btn:hover {
+  filter: brightness(1.05);
+}
+
+.mam-invite-btn.disabled,
+.mam-invite-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 @media (max-width: 640px) {
   .mam-edit-card {
     width: calc(100vw - 24px);
@@ -424,6 +490,22 @@ tr,td{
   .mam-edit-card .esm-save,
   .mam-edit-cancel {
     width: 100%;
+  }
+
+  .mam-invite-card {
+    width: calc(100vw - 24px);
+    padding: 14px;
+    gap: 8px;
+  }
+
+  .mam-invite-title {
+    font-size: 17px;
+    margin-bottom: 2px;
+  }
+
+  .mam-invite-btn {
+    width: 100%;
+    font-size: 15px;
   }
 }
 

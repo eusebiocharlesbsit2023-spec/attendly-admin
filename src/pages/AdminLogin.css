@@ -51,15 +51,18 @@ h2 {
   margin-bottom: 15px;
 }
 
-.input-group input {
+.input-group input,
+.input-group select {
   width: 100%;
   padding: 12px 14px;
   border-radius: 6px;
   border: 1px solid #cfd9e0;
   font-size: 14px;
+  background: #fff;
 }
 
-.input-group input:focus {
+.input-group input:focus,
+.input-group select:focus {
   outline: none;
   border-color: #003f7f;
 }
