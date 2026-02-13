@@ -46,6 +46,8 @@ export default function AdminRegistration() {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(3);
@@ -461,9 +463,47 @@ export default function AdminRegistration() {
                 </>
               ) : (
                 <>
-                  <div className="input-group"><input type="password" placeholder="Password" required value={password} onChange={e => { markTouched('password'); setPassword(e.target.value); setFormError(''); }} disabled={submitting} /></div>
+                  <div className="input-group password-group">
+                    <input
+                      className="password-input"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Password"
+                      required
+                      value={password}
+                      onChange={e => { markTouched('password'); setPassword(e.target.value); setFormError(''); }}
+                      disabled={submitting}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword((v) => !v)}
+                      tabIndex={-1}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
                   {showFieldError('password', studentStep3Errors.password) && <p style={fieldErrStyle}>{studentStep3Errors.password}</p>}
-                  <div className="input-group"><input type="password" placeholder="Confirm Password" required value={confirmPassword} onChange={e => { markTouched('confirmPassword'); setConfirmPassword(e.target.value); setFormError(''); }} disabled={submitting} /></div>
+                  <div className="input-group password-group">
+                    <input
+                      className="password-input"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Confirm Password"
+                      required
+                      value={confirmPassword}
+                      onChange={e => { markTouched('confirmPassword'); setConfirmPassword(e.target.value); setFormError(''); }}
+                      disabled={submitting}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      tabIndex={-1}
+                      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    >
+                      {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
                   {showFieldError('confirmPassword', studentStep3Errors.confirmPassword) && <p style={fieldErrStyle}>{studentStep3Errors.confirmPassword}</p>}
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button type="button" className="login-btn" style={{ background: '#64748b' }} onClick={() => setStudentStep(2)} disabled={submitting || successOpen}>
@@ -497,8 +537,46 @@ export default function AdminRegistration() {
                   </select>
                 </div>
               )}
-              <div className="input-group"><input type="password" placeholder="Password" required value={password} onChange={e => setPassword(e.target.value)} disabled={submitting} /></div>
-              <div className="input-group"><input type="password" placeholder="Confirm Password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} disabled={submitting} /></div>
+              <div className="input-group password-group">
+                <input
+                  className="password-input"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  disabled={submitting}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              <div className="input-group password-group">
+                <input
+                  className="password-input"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Confirm Password"
+                  required
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  disabled={submitting}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  tabIndex={-1}
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                >
+                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
               <button type="submit" className="login-btn" disabled={submitting || successOpen}>
                 {submitting ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
               </button>
@@ -507,5 +585,26 @@ export default function AdminRegistration() {
         </form>
       </div>
     </div>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.74-1.75 1.9-3.35 3.4-4.67" />
+      <path d="M1 1l22 22" />
+      <path d="M9.53 9.53A3.5 3.5 0 0 0 12 15.5a3.5 3.5 0 0 0 2.47-5.97" />
+      <path d="M14.47 14.47 9.53 9.53" />
+      <path d="M12 4c5 0 9.27 3.89 11 8a11.6 11.6 0 0 1-2.28 3.95" />
+    </svg>
   );
 }
