@@ -503,7 +503,7 @@ function InviteStudentModal({ open, onClose, onSend }) {
         />
         {fieldError && <div className="sm-modal-error">{fieldError}</div>}
         <button
-          className={`sm-modal-btn ${!email || sending ? "disabled" : ""}`}
+          className={`sm-modal-btn sm-modal-send ${!email || sending ? "disabled" : ""}`}
           type="button"
           disabled={!email || sending}
           onClick={handleSend}

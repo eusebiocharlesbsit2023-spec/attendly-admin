@@ -757,3 +757,8 @@ tr {
   cursor: not-allowed;
   box-shadow: none;
 }
+
+.sm-modal-send {
+  display: flex;
+  margin: 0 auto;
+}

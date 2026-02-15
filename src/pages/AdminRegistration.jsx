@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import supabase from '../helper/supabaseClient';
 import logo from '../assets/Logo.png';
 import './AdminLogin.css'; // Reusing styles
@@ -17,7 +17,6 @@ const fieldErrStyle = { marginTop: '-8px', marginBottom: '10px', color: '#ef4444
 
 export default function AdminRegistration() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const token = searchParams.get('token');
   const role = (searchParams.get('role') || 'admin').toLowerCase();
 
@@ -207,6 +206,10 @@ export default function AdminRegistration() {
     password: !password ? 'Password is required.' : '',
     confirmPassword: !confirmPassword ? 'Confirm password is required.' : password !== confirmPassword ? 'Passwords do not match.' : '',
   };
+  const nonStudentPasswordErrors = {
+    password: !password ? 'Password is required.' : '',
+    confirmPassword: !confirmPassword ? 'Confirm password is required.' : password !== confirmPassword ? 'Passwords do not match.' : '',
+  };
 
   const hasErrors = (obj) => Object.values(obj).some(Boolean);
   const showFieldError = (field, message) => Boolean(touched[field] && message);
@@ -356,15 +359,7 @@ export default function AdminRegistration() {
             </div>
             {role === 'admin' ? (
               <>
-                <p style={{ marginTop: '10px' }}>Account created successfully. You can now log in.</p>
-                <button
-                  type="button"
-                  className="login-btn"
-                  style={{ marginTop: '12px' }}
-                  onClick={() => navigate('/')}
-                >
-                  GO TO LOGIN
-                </button>
+                <p style={{ marginTop: '10px' }}>Account created successfully. <br />You can now log in on the admin web.</p>
               </>
             ) : (
               <>
@@ -547,7 +542,7 @@ export default function AdminRegistration() {
                   placeholder="Password"
                   required
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={e => { markTouched('password'); setPassword(e.target.value); setFormError(''); }}
                   disabled={submitting}
                 />
                 <button
@@ -560,6 +555,7 @@ export default function AdminRegistration() {
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
+              {showFieldError('password', nonStudentPasswordErrors.password) && <p style={fieldErrStyle}>{nonStudentPasswordErrors.password}</p>}
               <div className="input-group password-group">
                 <input
                   className="password-input"
@@ -567,7 +563,7 @@ export default function AdminRegistration() {
                   placeholder="Confirm Password"
                   required
                   value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
+                  onChange={e => { markTouched('confirmPassword'); setConfirmPassword(e.target.value); setFormError(''); }}
                   disabled={submitting}
                 />
                 <button
@@ -580,6 +576,7 @@ export default function AdminRegistration() {
                   {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
+              {showFieldError('confirmPassword', nonStudentPasswordErrors.confirmPassword) && <p style={fieldErrStyle}>{nonStudentPasswordErrors.confirmPassword}</p>}
               <button type="submit" className="login-btn" disabled={submitting || successOpen}>
                 {submitting ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
               </button>
