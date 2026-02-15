@@ -359,7 +359,7 @@ export default function AdminRegistration() {
             </div>
             {role === 'admin' ? (
               <>
-                <p style={{ marginTop: '10px' }}>Account created successfully. <br />You can now log in on the admin web.</p>
+                <p style={{ marginTop: '10px' }}>Account created successfully. <br />You are now part of the admins in Attendly.</p>
               </>
             ) : (
               <>
