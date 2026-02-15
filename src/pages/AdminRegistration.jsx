@@ -50,7 +50,6 @@ export default function AdminRegistration() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState(3);
   const [studentStep, setStudentStep] = useState(1);
   const [touched, setTouched] = useState({});
 
@@ -99,18 +98,6 @@ export default function AdminRegistration() {
 
     verifyToken();
   }, [token, role]);
-
-  useEffect(() => {
-    if (!successOpen) return;
-    if (role !== 'admin') return;
-    if (redirectCountdown <= 0) {
-      navigate('/');
-      return;
-    }
-
-    const t = setTimeout(() => setRedirectCountdown((prev) => prev - 1), 1000);
-    return () => clearTimeout(t);
-  }, [successOpen, redirectCountdown, navigate, role]);
 
   useEffect(() => {
     setStudentStep(1);
@@ -291,7 +278,6 @@ export default function AdminRegistration() {
         throw new Error(data?.message || 'Registration failed.');
       }
 
-      setRedirectCountdown(3);
       setSuccessOpen(true);
     } catch (err) {
       console.error('Registration failed:', err);
@@ -371,9 +357,14 @@ export default function AdminRegistration() {
             {role === 'admin' ? (
               <>
                 <p style={{ marginTop: '10px' }}>Account created successfully. You can now log in.</p>
-                <p style={{ marginTop: '4px', fontSize: '14px', color: '#475569' }}>
-                  Redirecting to login page in {redirectCountdown}...
-                </p>
+                <button
+                  type="button"
+                  className="login-btn"
+                  style={{ marginTop: '12px' }}
+                  onClick={() => navigate('/')}
+                >
+                  GO TO LOGIN
+                </button>
               </>
             ) : (
               <>

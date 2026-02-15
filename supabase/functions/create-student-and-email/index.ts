@@ -62,9 +62,8 @@ serve(async (req) => {
     const admin = createClient(PROJECT_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
     // 1) Create Auth user
-    const auth_email = `${student_number}@attendly.com`.toLowerCase();
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email: auth_email,
+      email: student_email,
       password: login_password,
       email_confirm: true,
     });
