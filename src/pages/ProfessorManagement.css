@@ -780,3 +780,8 @@ td{
   cursor: not-allowed;
   box-shadow: none;
 }
+
+.pm-modal-send {
+  display: flex;
+  margin: 0 auto;
+}

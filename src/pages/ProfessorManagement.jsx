@@ -490,7 +490,7 @@ function InviteProfessorModal({ open, onClose, onSend }) {
         />
         {fieldError && <div className="pm-modal-error">{fieldError}</div>}
         <button
-          className={`pm-modal-btn ${!email || sending ? "disabled" : ""}`}
+          className={`pm-modal-btn pm-modal-send ${!email || sending ? "disabled" : ""}`}
           type="button"
           disabled={!email || sending}
           onClick={handleSend}
