@@ -48,8 +48,28 @@ serve(async (req) => {
     const student_number = String(payload.student_number ?? "").trim();
     const student_email = String(payload.student_email ?? "").trim().toLowerCase();
     const login_password = String(payload.login_password ?? "").trim();
+    const first_name = String(payload.first_name ?? "").trim();
+    const middle_name = String(payload.middle_name ?? "").trim();
+    const last_name = String(payload.last_name ?? "").trim();
+    const year_level = String(payload.year_level ?? "").trim();
+    const section = String(payload.section ?? "").trim();
+    const department = String(payload.department ?? "").trim();
+    const program = String(payload.program ?? "").trim();
+    const status = String(payload.status ?? "Active").trim() || "Active";
 
-    // ... (iyong existing validation logic dito)
+    if (!student_number || !student_email || !login_password) {
+      return json(400, {
+        step: "validate",
+        message: "student_number, student_email, login_password are required",
+      });
+    }
+
+    if (!first_name || !last_name || !department || !program || !year_level || !section) {
+      return json(400, {
+        step: "validate",
+        message: "first_name, last_name, department, program, year_level, section are required",
+      });
+    }
 
     const PROJECT_URL = Deno.env.get("PROJECT_URL") ?? Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -75,9 +95,14 @@ serve(async (req) => {
       id: created.user?.id,
       student_number,
       email: student_email,
-      first_name: payload.first_name,
-      last_name: payload.last_name,
-      // ...dagdagan pa ang fields kung kailangan
+      first_name,
+      middle_name: middle_name || null,
+      last_name,
+      year_level,
+      section,
+      department,
+      program,
+      status,
     });
 
     if (upsertErr) return json(400, { step: "upsert_student", message: upsertErr.message });

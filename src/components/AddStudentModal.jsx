@@ -186,6 +186,36 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
       const first = firstName.trim();
       const middle = middleName.trim();
       const last = `${surname.trim()} ${suffix.trim()}`.trim();
+      const emailLower = email.trim().toLowerCase();
+      const studentNo = studentNumber.trim().toUpperCase();
+
+      // Force final validation on click (not only realtime/debounced checks).
+      const [studentByEmailRes, profByEmailRes, studentByNoRes] = await Promise.all([
+        supabase.from("students").select("id").eq("email", emailLower).maybeSingle(),
+        supabase.from("professors").select("id").eq("email", emailLower).maybeSingle(),
+        supabase.from("students").select("id").eq("student_number", studentNo).maybeSingle(),
+      ]);
+
+      if (studentByEmailRes.error) throw studentByEmailRes.error;
+      if (profByEmailRes.error) throw profByEmailRes.error;
+      if (studentByNoRes.error) throw studentByNoRes.error;
+
+      if (studentByEmailRes.data || profByEmailRes.data) {
+        setLiveEmailError("Email already exists.");
+      } else {
+        setLiveEmailError("");
+      }
+
+      if (studentByNoRes.data) {
+        setLiveStudentNoError("Student Number already exists.");
+      } else {
+        setLiveStudentNoError("");
+      }
+
+      if (studentByEmailRes.data || profByEmailRes.data || studentByNoRes.data) {
+        setSubmitting(false);
+        return;
+      }
 
       const nameQuery = supabase
         .from("students")
@@ -204,40 +234,6 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
         return;
       }
 
-      const emailLower = email.trim().toLowerCase();
-      const studentNo = studentNumber.trim().toUpperCase();
-
-      // Check for duplicates in students
-      const { data: existing, error: checkErr } = await supabase
-        .from('students')
-        .select('student_number, email')
-        .or(`student_number.eq.${studentNo},email.eq.${emailLower}`)
-        .maybeSingle();
-
-      if (checkErr) throw new Error("Check failed: " + checkErr.message);
-
-      if (existing) {
-        setErrorMsg(existing.student_number === studentNo 
-          ? "Student Number already exists." 
-          : "Email already exists.");
-        setSubmitting(false);
-        return;
-      }
-
-      // Check for duplicate email in professors
-      const { data: existingProf, error: profErr } = await supabase
-        .from('professors')
-        .select('email')
-        .eq('email', emailLower)
-        .maybeSingle();
-
-      if (profErr) throw new Error("Check failed: " + profErr.message);
-
-      if (existingProf) {
-        setErrorMsg("Email already exists.");
-        setSubmitting(false);
-        return;
-      }
       setConfirmOpen(true);
     } catch (err) {
       setErrorMsg("Check failed: " + err.message);
