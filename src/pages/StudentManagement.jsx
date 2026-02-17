@@ -8,6 +8,8 @@ import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditStudentModal from "../components/EditStudentModal";
 import supabase from "../helper/supabaseClient";
 import { sendStudentInvite } from "../helper/emailjs";
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 /* ✅ Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
@@ -93,7 +95,6 @@ export default function StudentManagement() {
         name: `${s.first_name ?? ""} ${s.last_name ?? ""}`.replace(/\s+/g, " ").trim(),
         email: s.email ?? "",
         studentId: (s.student_number ?? "").toString(),
-        deviceId: s.mac_address ?? "N/A",
         classes: Number(s.class_enrollments?.[0]?.count ?? 0),
         status: s.status ?? "Active",
       }));
@@ -221,14 +222,110 @@ export default function StudentManagement() {
     };
   }, [rows]);
 
-  const exportCSV = () => {
-    const header = ["Student Name", "Email", "Student Id", "Device Id", "Classes", "Status"];
-    const csv = [header, ...filtered.map(s => [s.name, s.email, s.studentId, s.deviceId, s.classes, s.status])]
-      .map(r => r.map(csvEscape).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "students.csv"; a.click();
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Student Management');
+
+    // 1. Define Columns (5 Columns lang based sa image: A to E)
+    worksheet.columns = [
+      { key: 'name', width: 30 },       // A: Student Name
+      { key: 'email', width: 35 },      // B: Email (mas malapad usually)
+      { key: 'studentId', width: 20 },  // C: Student Id
+      { key: 'classes', width: 20 },    // D: Classes
+      { key: 'status', width: 12 }      // E: Status
+    ];
+
+    // 2. INSERT LOGO
+    try {
+      const response = await fetch('/Logo.png'); // Nasa public folder dapat
+      const buffer = await response.arrayBuffer();
+      const imageId = workbook.addImage({
+        buffer: buffer,
+        extension: 'png',
+      });
+      
+      // I-center natin visually sa ibabaw (Columns B-D)
+      worksheet.addImage(imageId, {
+        tl: { col: 1.9, row: 0 }, 
+        ext: { width: 292.15748031, height: 100.15748031 }
+      });
+    } catch (error) {
+      console.warn('Logo loading failed', error);
+    }
+
+    // 3. TITLE & DATE (Row 6 & 7)
+    
+    // Title
+    const titleRow = worksheet.getRow(6);
+    titleRow.values = ['STUDENT MANAGEMENT'];
+    worksheet.mergeCells('A6:E6'); // Merge A to E only
+    titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true };
+    titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Date
+    const dateRow = worksheet.getRow(7);
+    const now = new Date();
+    dateRow.values = [`Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`];
+    worksheet.mergeCells('A7:E7'); // Merge A to E only
+    dateRow.getCell(1).font = { name: 'Calibri', size: 10 };
+    dateRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // 4. TABLE HEADER (Row 9)
+    const headerRow = worksheet.getRow(9);
+    headerRow.values = ["Student Name", "Email", "Student Id", "Classes", "Status"];
+    
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // 5. DATA ROWS (Loop sa 'filtered')
+    filtered.forEach((s) => {
+      const row = worksheet.addRow([
+        s.name, 
+        s.email, 
+        s.studentId, 
+        s.classes, 
+        s.status
+      ]);
+
+      // Styling per cell
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        
+        // Alignment formatting
+        // Name (Col 1) & Email (Col 2) = Left Align
+        // Others = Center Align
+        if (colNumber === 1 || colNumber === 2) {
+             cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+        } else {
+             cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+      });
+    });
+
+    // 6. PRINT SETUP (Fit to Page)
+    worksheet.pageSetup.printArea = `A1:E${worksheet.lastRow.number}`;
+    worksheet.pageSetup.orientation = 'landscape'; 
+    worksheet.pageSetup.fitToPage = true;
+    worksheet.pageSetup.fitToWidth = 1; // Sakto sa lapad ng papel
+    worksheet.pageSetup.fitToHeight = 0; // Tuloy-tuloy pababa pag madaming data
+
+    // 7. Save File
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, 'Student_List.xlsx');
   };
 
   return (
@@ -278,8 +375,8 @@ export default function StudentManagement() {
             <button className="sm-addTopBtn" onClick={onAdd}>
               <FontAwesomeIcon icon={faPlus} /> Add Student
             </button>
-            <button className="sm-exportTopBtn" onClick={exportCSV}>
-              <FontAwesomeIcon icon={faDownload} /> Export CSV
+            <button className="sm-exportTopBtn" onClick={exportToExcel}>
+              <FontAwesomeIcon icon={faDownload} /> Export XLSX
             </button>
           </div>
 
@@ -314,7 +411,7 @@ export default function StudentManagement() {
             <table className="sm-table2">
               <thead>
                 <tr>
-                  <th>Student Name</th><th>Email</th><th>Student ID</th><th>Device ID</th><th>Classes</th><th className="sm-th-center">Status</th><th className="sm-actionsHead">Actions</th>
+                  <th>Student Name</th><th>Email</th><th>Student ID</th><th>Classes</th><th className="sm-th-center">Status</th><th className="sm-actionsHead">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -330,7 +427,7 @@ export default function StudentManagement() {
                         <span className="sm-nameText">{s.name}</span>
                       </td>
                       <td>{s.email || "—"}</td>
-                      <td>{s.studentId}</td><td>{s.deviceId}</td><td>{s.classes}</td>
+                      <td>{s.studentId}</td>  <td>{s.classes}</td>
                       <td className="sm-td-center">
                         <span className={`sm-status ${s.status === "Active" ? "active" : "inactive"}`}>{s.status}</span>
                       </td>

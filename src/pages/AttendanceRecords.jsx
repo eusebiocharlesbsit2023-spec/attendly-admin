@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import "./AttendanceRecords.css";
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 /* ✅ Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
@@ -143,14 +145,121 @@ export default function AttendanceRecords() {
 
   useEffect(() => { setPage(1); }, [q, date, clazz, status, prof, pageSize]);
 
-  const exportCSV = () => {
-    const header = ["Student Name", "Student ID", "Date", "Classes", "Status", "Professors"];
-    const rows = filteredRecords.map(r => [r.student_name, r.student_number, r.session_date, r.class_name, r.status, r.professor_name]);
-    const csv = [header, ...rows].map(row => row.map(csvEscape).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "attendance-records.csv"; a.click();
+  // Function to export styled XLSX
+  const exportToExcel = async () => {
+    // 1. Setup Workbook at Worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Attendance Records');
+
+    // 2. Define Columns (match widths sa screenshot mo)
+    worksheet.columns = [
+      { key: 'student_name', width: 30 },   // A
+      { key: 'student_number', width: 15 }, // B
+      { key: 'session_date', width: 15 },   // C
+      { key: 'class_name', width: 25 },     // D
+      { key: 'status', width: 10 },         // E
+      { key: 'professor_name', width: 25 }  // F
+    ];
+
+    // --- 3. INSERT LOGO ---
+    // Note: Siguraduhin na nasa 'public' folder ang logo mo.
+    try {
+      const response = await fetch('/Logo.png'); // Palitan ng tamang file name
+      const buffer = await response.arrayBuffer();
+      const imageId = workbook.addImage({
+        buffer: buffer,
+        extension: 'png',
+      });
+
+      // Positioning: Target cells B2:D4 visually
+      worksheet.addImage(imageId, {
+        tl: { col: 2, row: 0 }, // Column B gitna, Row 2
+        ext: { width: 292.15748031, height: 100.15748031 } // Tantyahin ang size
+      });
+    } catch (error) {
+      console.warn('Logo not found or failed to load', error);
+    }
+
+    // --- 4. TITLES & MERGED CELLS ---
+    
+    // Title: Row 6
+    const titleRow = worksheet.getRow(6);
+    titleRow.values = ['ATTENDLY ATTENDANCE RECORDS'];
+    worksheet.mergeCells('A6:F6'); // Merge from A to F
+    titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true };
+    titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Date Generated: Row 7
+    const dateRow = worksheet.getRow(7);
+    const now = new Date();
+    // Format date similar to screenshot: 2/17/2026, 1:09:22 PM
+    const dateString = now.toLocaleDateString() + ', ' + now.toLocaleTimeString();
+    dateRow.values = [`Generated: ${dateString}`];
+    worksheet.mergeCells('A7:F7');
+    dateRow.getCell(1).font = { name: 'Calibri', size: 10 };
+    dateRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // --- 5. HEADERS (Row 9) ---
+    const headerRow = worksheet.getRow(9);
+    headerRow.values = ["Student Name", "Student ID", "Date", "Classes", "Status", "Professors"];
+    
+    // Style Headers
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // --- 6. DATA ROWS ---
+    filteredRecords.forEach((r) => {
+      // Mag-ingat sa mapping, siguraduhing tama ang fields mo
+      const row = worksheet.addRow([
+        r.student_name, 
+        r.student_number, 
+        r.session_date, 
+        r.class_name, 
+        r.status, 
+        r.professor_name
+      ]);
+
+      // Lagyan ng border ang bawat cell sa row
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        // Center alignment para sa lahat except Name (optional)
+        if (cell.col !== 1) { 
+           cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        } else {
+           cell.alignment = { vertical: 'middle', indent: 1 };
+        }
+      });
+    });
+
+    // --- 7. PRINT SETUP (Para hindi putol) ---
+    worksheet.pageSetup.printArea = `A1:F${worksheet.lastRow.number}`;
+    worksheet.pageSetup.orientation = 'landscape'; // Landscape para kasya lapad
+    worksheet.pageSetup.fitToPage = true;
+    worksheet.pageSetup.fitToWidth = 1;  // <--- ITO ANG SUSI: Fit width to 1 page
+    worksheet.pageSetup.fitToHeight = 0; // 0 means auto height (infinite pages pababa)
+    worksheet.pageSetup.margins = {
+      left: 0.25, right: 0.25,
+      top: 0.75, bottom: 0.75,
+      header: 0.3, footer: 0.3
+    };
+
+    // 8. Generate & Save
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, 'Attendly_Records.xlsx');
   };
 
   return (
@@ -212,9 +321,9 @@ export default function AttendanceRecords() {
                   <option>Late</option>
                 </select>
               </div>
-              <button className="ar-dt-btn primary" onClick={exportCSV}>
+              <button className="ar-dt-btn primary" onClick={exportToExcel}>
                 <span className="ar-dt-btnIco"><FontAwesomeIcon icon={faDownload} /></span>
-                Export CSV
+                Export XLSX
               </button>
             </div>
           </div>

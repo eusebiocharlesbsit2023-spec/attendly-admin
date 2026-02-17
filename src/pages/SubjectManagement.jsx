@@ -8,6 +8,8 @@ import EditSubjectModal from "../components/EditSubjectModal";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import supabase from "../helper/supabaseClient";
 import "./SubjectManagement.css";
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 /* ✅ Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
@@ -372,20 +374,117 @@ export default function SubjectManagement() {
     );
   }
 
-  const exportCSV = () => {
-    const header =
-      viewMode === "programs"
-        ? ["Department", "Program Abbreviation", "Program Name"]
-        : ["Department", "Course Code", "Course Name"];
-    const csv = [header, ...filteredSubjects.map((s) => [s.department, s.course_code, s.course_name])]
-      .map((r) => r.map(csvEscape).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "subjects.csv";
-    a.click();
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Subject Management');
+
+    // 1. Define Columns (3 Columns: A to C)
+    // Mas malapad ang Course Name (Col C)
+    worksheet.columns = [
+      { key: 'dept', width: 25 },       // A: Department
+      { key: 'code', width: 20 },       // B: Code / Abbreviation
+      { key: 'name', width: 45 },       // C: Name
+    ];
+
+    // 2. INSERT LOGO
+    try {
+      const response = await fetch('/Logo.png');
+      const buffer = await response.arrayBuffer();
+      const imageId = workbook.addImage({
+        buffer: buffer,
+        extension: 'png',
+      });
+      
+      // Center visually over 3 columns (Target Column B)
+      worksheet.addImage(imageId, {
+        tl: { col: 1, row: 0 }, // Start near end of Col A / start of Col B
+        ext: { width: 292.15748031, height: 100.15748031 }
+      });
+    } catch (error) {
+      console.warn('Logo loading failed', error);
+    }
+
+    // 3. TITLE & DATE
+    
+    // Title
+    const titleRow = worksheet.getRow(6);
+    titleRow.values = ['SUBJECT MANAGEMENT'];
+    worksheet.mergeCells('A6:C6'); // Merge A to C
+    titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true };
+    titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Date
+    const dateRow = worksheet.getRow(7);
+    const now = new Date();
+    dateRow.values = [`Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`];
+    worksheet.mergeCells('A7:C7'); // Merge A to C
+    dateRow.getCell(1).font = { name: 'Calibri', size: 10 };
+    dateRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // 4. DYNAMIC HEADERS (Row 9)
+    const headerRow = worksheet.getRow(9);
+    
+    // Check viewMode para sa tamang header text
+    if (viewMode === "programs") {
+        headerRow.values = ["Department", "Program Abbreviation", "Program Name"];
+    } else {
+        headerRow.values = ["Department", "Course Code", "Course Name"];
+    }
+    
+    // Style Header
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // 5. DATA ROWS
+    filteredSubjects.forEach((s) => {
+      // NOTE: Siguraduhin na tama ang field names mo dito base sa iyong data source.
+      // Sinunod ko ang logic sa CSV code mo (s.department, s.course_code, s.course_name).
+      const row = worksheet.addRow([
+        s.department, 
+        s.course_code, // Or s.program_abbreviation if viewMode is programs?
+        s.course_name  // Or s.program_name if viewMode is programs?
+      ]);
+
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+
+        // Alignment:
+        // Dept (Col 1) = Center
+        // Code (Col 2) = Center
+        // Name (Col 3) = Left (Kasi mahaba ang subject name)
+        if (colNumber === 3) {
+             cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+        } else {
+             cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+      });
+    });
+
+    // 6. PRINT SETUP
+    worksheet.pageSetup.printArea = `A1:C${worksheet.lastRow.number}`;
+    worksheet.pageSetup.orientation = 'landscape'; // Or 'portrait' since 3 cols lang to
+    worksheet.pageSetup.fitToPage = true;
+    worksheet.pageSetup.fitToWidth = 1; 
+    worksheet.pageSetup.fitToHeight = 0; 
+
+    // 7. Save File
+    const buffer = await workbook.xlsx.writeBuffer();
+    const fileName = viewMode === "programs" ? "Programs_List.xlsx" : "Subjects_List.xlsx";
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, fileName);
   };
 
   return (
@@ -458,8 +557,8 @@ export default function SubjectManagement() {
                   <FontAwesomeIcon icon={faPlus} /> Add Program
                 </button>
               )}
-              <button className="subj-exportBtn" onClick={exportCSV}>
-                <FontAwesomeIcon icon={faDownload} /> Export CSV
+              <button className="subj-exportBtn" onClick={exportToExcel}>
+                <FontAwesomeIcon icon={faDownload} /> Export XLSX
               </button>
             </div>
           </div>

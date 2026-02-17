@@ -6,7 +6,8 @@ import "./ClassManagement.css";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditClassModal from "../components/EditClassModal";
 import supabase from "../helper/supabaseClient";
-
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 /* ✅ Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
 
@@ -229,14 +230,115 @@ export default function ClassManagement() {
     inactiveCount: rows.filter((c) => c.status === "Inactive").length,
   }), [rows]);
 
-  const exportCSV = () => {
-    const header = ["Class Name", "Code", "Professor", "Room", "Schedule", "WiFi", "Status"];
-    const csv = [header, ...filtered.map(c => [c.name, c.code, c.professor, c.room, c.schedule, c.wifi, c.status])]
-      .map(r => r.map(csvEscape).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "classes.csv"; a.click();
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Class Management');
+
+    // 1. Define Columns (7 Columns: A to G)
+    worksheet.columns = [
+      { key: 'name', width: 30 },      // A: Class Name
+      { key: 'code', width: 15 },      // B: Code
+      { key: 'professor', width: 25 }, // C: Professor
+      { key: 'room', width: 15 },      // D: Room
+      { key: 'schedule', width: 35 },  // E: Schedule (Malapad dapat)
+      { key: 'wifi', width: 20 },      // F: WiFi
+      { key: 'status', width: 12 }     // G: Status
+    ];
+
+    // 2. INSERT LOGO
+    try {
+      const response = await fetch('/Logo.png'); // Nasa public folder
+      const buffer = await response.arrayBuffer();
+      const imageId = workbook.addImage({
+        buffer: buffer,
+        extension: 'png',
+      });
+      
+      // Center visually: Target Columns C-E roughly
+      worksheet.addImage(imageId, {
+        tl: { col: 2.9, row: 0 }, // Start mid-Column C, Row 2
+        ext: { width: 292.15748031, height: 100.15748031 }
+      });
+    } catch (error) {
+      console.warn('Logo loading failed', error);
+    }
+
+    // 3. TITLE & DATE (Row 6 & 7)
+    
+    // Title
+    const titleRow = worksheet.getRow(6);
+    titleRow.values = ['CLASS MANAGEMENT'];
+    worksheet.mergeCells('A6:G6'); // Merge A to G (7 columns)
+    titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true };
+    titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Date
+    const dateRow = worksheet.getRow(7);
+    const now = new Date();
+    dateRow.values = [`Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`];
+    worksheet.mergeCells('A7:G7'); // Merge A to G
+    dateRow.getCell(1).font = { name: 'Calibri', size: 10 };
+    dateRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // 4. TABLE HEADER (Row 9)
+    const headerRow = worksheet.getRow(9);
+    headerRow.values = ["Class Name", "Code", "Professor", "Room", "Schedule", "WiFi", "Status"];
+    
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // 5. DATA ROWS
+    filtered.forEach((c) => {
+      const row = worksheet.addRow([
+        c.name, 
+        c.code, 
+        c.professor, 
+        c.room, 
+        c.schedule, 
+        c.wifi, 
+        c.status
+      ]);
+
+      row.eachCell((cell, colNumber) => {
+        // Add Borders
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+
+        // Alignment Rules:
+        // Class Name (Col 1) = Left
+        // Schedule (Col 5) = Left (kasi mahaba text nito minsan)
+        // Others = Center
+        if (colNumber === 1 || colNumber === 5) {
+             cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+        } else {
+             cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+      });
+    });
+
+    // 6. PRINT SETUP
+    worksheet.pageSetup.printArea = `A1:G${worksheet.lastRow.number}`;
+    worksheet.pageSetup.orientation = 'landscape'; 
+    worksheet.pageSetup.fitToPage = true;
+    worksheet.pageSetup.fitToWidth = 1; // Susi para hindi putol ang Columns A-G
+    worksheet.pageSetup.fitToHeight = 0; 
+
+    // 7. Save File
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, 'Class_List.xlsx');
   };
 
 
@@ -284,7 +386,7 @@ export default function ClassManagement() {
             <div className="cm-field"><label>Professors</label>
               <select value={prof} onChange={(e) => setProf(e.target.value)}>{profOptions.map(p => <option key={p}>{p}</option>)}</select>
             </div>
-            <button className="cm-exportBtn" onClick={exportCSV}><FontAwesomeIcon icon={faDownload} /> Export CSV</button>
+            <button className="cm-exportBtn" onClick={exportToExcel}><FontAwesomeIcon icon={faDownload} /> Export XLSX</button>
           </div>
         </section>
 

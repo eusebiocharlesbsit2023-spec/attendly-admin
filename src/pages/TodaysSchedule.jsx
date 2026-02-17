@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "../components/Sidebar";
 import "./TodaysSchedule.css";
 import supabase from "../helper/supabaseClient";
@@ -35,6 +37,57 @@ export default function TodaysSchedule() {
     return `${h12}:${mm2} ${ampm}`;
   };
 
+  const localDateKey = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const sessionDateKey = (value) => {
+    if (!value) return "";
+    const raw = String(value);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return localDateKey(parsed);
+  };
+
+  const normalizeSessionStatus = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[\s-]+/g, "_");
+
+  const isSessionActive = (status) =>
+    ["started", "in_progress", "active"].includes(normalizeSessionStatus(status));
+
+  const isSessionEnded = (status) =>
+    ["ended", "completed", "closed", "finished", "done", "stopped"].includes(normalizeSessionStatus(status));
+
+  const sessionTimeValue = (s) => {
+    const raw = s?.updated_at || s?.ended_at || s?.created_at || s?.start_time || s?.session_date;
+    if (!raw) return 0;
+    const t = new Date(raw).getTime();
+    return Number.isNaN(t) ? 0 : t;
+  };
+
+  const chooseBetterSession = (current, next) => {
+    if (!current) return next;
+
+    const currentTs = sessionTimeValue(current);
+    const nextTs = sessionTimeValue(next);
+    if (nextTs > currentTs) return next;
+    if (currentTs > nextTs) return current;
+
+    const currentStatus = current?.status;
+    const nextStatus = next?.status;
+
+    const currentRank = isSessionEnded(currentStatus) ? 2 : isSessionActive(currentStatus) ? 1 : 0;
+    const nextRank = isSessionEnded(nextStatus) ? 2 : isSessionActive(nextStatus) ? 1 : 0;
+    return nextRank > currentRank ? next : current;
+  };
+
   const dateLabel = useMemo(() => {
     const now = new Date();
     const month = now.toLocaleString("en-US", { month: "long" });
@@ -62,8 +115,13 @@ export default function TodaysSchedule() {
 
     // 1. Check kung may active session na sa DB (Priority)
     if (session) {
-      if (session.status === "Started") return { text: "Class In-Progress", type: "inprogress" };
-      if (session.status === "Ended") return { text: "Class Ended", type: "ended" };
+      const sessionStatus = normalizeSessionStatus(session.status);
+      if (isSessionActive(sessionStatus)) {
+        return { text: "Class In-Progress", type: "inprogress" };
+      }
+      if (isSessionEnded(sessionStatus)) {
+        return { text: "Class Ended", type: "ended" };
+      }
     }
 
     // 2. Kung tapos na ang schedule at walang session record
@@ -88,7 +146,7 @@ export default function TodaysSchedule() {
     setLoading(true);
     const now = new Date();
     const todayKey = dayKey(now.getDay());
-    const dateToday = now.toISOString().split('T')[0];
+    const dateToday = localDateKey(now);
 
     try {
       // 1. Fetch classes scheduled today
@@ -113,10 +171,25 @@ export default function TodaysSchedule() {
       const { data: sessions } = await supabase
         .from("class_sessions")
         .select("*")
-        .in("class_id", classIds)
-        .eq("session_date", dateToday);
+        .in("class_id", classIds);
 
-      const sessionMap = Object.fromEntries((sessions || []).map((s) => [s.class_id, s]));
+      const sessionsToday = (sessions || []).filter((s) => sessionDateKey(s.session_date) === dateToday);
+
+      // If multiple session rows exist for one class, prioritize active/started for UI status.
+      const sessionMap = {};
+      sessionsToday.forEach((s) => {
+        const key = s.class_id;
+        sessionMap[key] = chooseBetterSession(sessionMap[key], s);
+      });
+
+      // Fallback: if no "today" row matched (date format/timezone mismatch), use best known session per class.
+      (sessions || []).forEach((s) => {
+        const key = s.class_id;
+        if (sessionMap[key]) return;
+        if (isSessionActive(s.status) || isSessionEnded(s.status)) {
+          sessionMap[key] = chooseBetterSession(sessionMap[key], s);
+        }
+      });
 
       // 3. Fetch professors names
       const profIds = Array.from(new Set(classes.map((c) => c.professor_id).filter(Boolean)));
@@ -176,12 +249,18 @@ export default function TodaysSchedule() {
     <div className="app-shell schedule">
       <Sidebar active="dashboard" />
 
-      <header className="schedule-topbar">
-        <div className="schedule-topbar-inner">
-          <div className="schedule-title">Today’s Schedule</div>
-          <button className="icon-btn" onClick={() => navigate(-1)} title="Back">
-            <Svg name="back" />
-          </button>
+      <header className="mnt-topbar">
+        <div className="mnt-topbar-inner">
+          <div className="schedule-topbar-left">
+            <button type="button" className="schedule-back-btn" onClick={() => navigate(-1)} aria-label="Back" title="Back">
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
+            <div>
+              <div className="mnt-title">Today's Schedule</div>
+              <div className="pm-subtitle">View today's classes</div>
+            </div>
+          </div>
+          <div className="mnt-topbar-right" />
         </div>
       </header>
 
@@ -274,3 +353,10 @@ function Svg({ name, small = false }) {
   };
   return <svg {...props}>{icons[name]}</svg>;
 }
+
+
+
+
+
+
+

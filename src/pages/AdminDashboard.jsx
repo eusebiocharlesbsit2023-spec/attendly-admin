@@ -46,18 +46,41 @@ export default function AdminDashboard() {
     { label: "Professors", value: "—", icon: faGraduationCap, tint: "green" },
     { label: "Active Sessions", value: "—", icon: faBookOpen, tint: "yellow" },
   ]);
+  const isOnlineInClassroom = (device) => {
+    const location = String(device?.current_location || "").toUpperCase();
+    if (location !== "CLASSROOM") return false;
+
+    if (typeof device?.is_online === "boolean") return device.is_online;
+
+    const statusCandidates = [
+      device?.status,
+      device?.current_status,
+      device?.device_status,
+      device?.connection_status,
+    ];
+
+    const normalized = statusCandidates
+      .map((v) => String(v || "").toLowerCase().trim())
+      .find(Boolean);
+
+    if (normalized) return normalized === "online";
+
+    return false;
+  };
 
   // 1. Fetch Stats
   const fetchStats = async () => {
     try {
       const [studentsRes, profsRes, sessionsRes] = await Promise.all([
-        supabase.from("devices").select("id", { count: "exact", head: true }).eq("current_location", "CLASSROOM"),
+        supabase.from("devices").select("*").eq("current_location", "CLASSROOM"),
         supabase.from("professors").select("id", { count: "exact", head: true }).eq("archived", false),
         supabase.from("class_sessions").select("id", { count: "exact", head: true }).eq("status", "started"),
       ]);
 
+      const totalOnlineInClassroom = (studentsRes.data ?? []).filter(isOnlineInClassroom).length;
+
       setStats([
-        { label: "Total Students", value: studentsRes.count ?? 0, icon: faUsers, tint: "blue" },
+        { label: "Total Students", value: totalOnlineInClassroom, icon: faUsers, tint: "blue" },
         { label: "Professors", value: profsRes.count ?? 0, icon: faGraduationCap, tint: "green" },
         { label: "Active Sessions", value: sessionsRes.count ?? 0, icon: faBookOpen, tint: "yellow" },
       ]);

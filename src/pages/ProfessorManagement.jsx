@@ -8,6 +8,8 @@ import SmallConfirmModal from "../components/SmallConfirmModal";
 import EditProfessorModal from "../components/EditProfessorModal";
 import supabase from "../helper/supabaseClient";
 import { sendProfessorInvite } from "../helper/emailjs";
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 /* ✅ Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
@@ -229,14 +231,109 @@ export default function ProfessorManagement() {
     };
   }, [rows]);
 
-  const exportCSV = () => {
-    const header = ["Professor Name", "Email", "Classes", "Status"];
-    const csv = [header, ...filtered.map(p => [p.name, p.email, p.classes, p.status])]
-      .map(r => r.map(csvEscape).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "professors.csv"; a.click();
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Professor Management');
+
+    // 1. Define Columns (4 Columns: A to D)
+    worksheet.columns = [
+      { key: 'name', width: 30 },     // A: Professor Name
+      { key: 'email', width: 35 },    // B: Email
+      { key: 'classes', width: 25 },  // C: Classes
+      { key: 'status', width: 12 }    // D: Status
+    ];
+
+    // 2. INSERT LOGO
+    try {
+      const response = await fetch('/Logo.png'); // Nasa public folder
+      const buffer = await response.arrayBuffer();
+      const imageId = workbook.addImage({
+        buffer: buffer,
+        extension: 'png',
+      });
+      
+      // Center visually: Target Columns B & C roughly
+      worksheet.addImage(imageId, {
+        tl: { col: 1.2, row: 0 }, // Start slightly inside Column B
+        ext: { width: 292.15748031, height: 100.15748031 }
+      });
+    } catch (error) {
+      console.warn('Logo loading failed', error);
+    }
+
+    // 3. TITLE & DATE (Row 6 & 7)
+    
+    // Title
+    const titleRow = worksheet.getRow(6);
+    titleRow.values = ['PROFESSOR MANAGEMENT'];
+    worksheet.mergeCells('A6:D6'); // Merge A to D (4 columns lang)
+    titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true };
+    titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Date
+    const dateRow = worksheet.getRow(7);
+    const now = new Date();
+    dateRow.values = [`Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`];
+    worksheet.mergeCells('A7:D7'); // Merge A to D
+    dateRow.getCell(1).font = { name: 'Calibri', size: 10 };
+    dateRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // 4. TABLE HEADER (Row 9)
+    const headerRow = worksheet.getRow(9);
+    headerRow.values = ["Professor Name", "Email", "Classes", "Status"];
+    
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // 5. DATA ROWS
+    filtered.forEach((p) => {
+      const row = worksheet.addRow([
+        p.name, 
+        p.email, 
+        p.classes, 
+        p.status
+      ]);
+
+      row.eachCell((cell, colNumber) => {
+        // Add Borders
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+
+        // Alignment Rules:
+        // Name (Col 1) & Email (Col 2) = Left Align (standard for text)
+        // Classes (Col 3) = Center (or Left kung mahaba ang listahan ng classes)
+        // Status (Col 4) = Center
+        if (colNumber === 1 || colNumber === 2) {
+             cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+        } else {
+             cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+      });
+    });
+
+    // 6. PRINT SETUP
+    worksheet.pageSetup.printArea = `A1:D${worksheet.lastRow.number}`;
+    worksheet.pageSetup.orientation = 'landscape'; // O 'portrait' kung gusto mo dahil 4 cols lang naman
+    worksheet.pageSetup.fitToPage = true;
+    worksheet.pageSetup.fitToWidth = 1; // Susi para fit sa lapad
+    worksheet.pageSetup.fitToHeight = 0; 
+
+    // 7. Save File
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, 'Professor_List.xlsx');
   };
 
   return (
@@ -297,7 +394,7 @@ export default function ProfessorManagement() {
             </div>
             <div className="pm-controls-right">
               <button className="pm-addBtn" onClick={onAdd}><FontAwesomeIcon icon={faPlus} /> Add Professor</button>
-              <button className="pm-exportBtn" onClick={exportCSV}><FontAwesomeIcon icon={faDownload} /> Export CSV</button>
+              <button className="pm-exportBtn" onClick={exportToExcel}><FontAwesomeIcon icon={faDownload} /> Export XLSX</button>
             </div>
           </div>
 

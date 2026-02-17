@@ -6,6 +6,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import "./AdminDashboard.css";
 import "./Reports.css";
 import supabase from "../helper/supabaseClient";
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 /* ✅ Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
@@ -161,6 +163,7 @@ export default function Reports() {
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const feedbackGrid = "1fr 240px 170px 1fr 160px";
 
   const STATUS_OPTIONS = ["Open", "Resolved", "Pending", "Closed"];
 
@@ -367,32 +370,184 @@ export default function Reports() {
   useEffect(() => { setPage(1); }, [q, status, from, to, pageSize, tab, type]);
 
   // CSV EXPORT
-  const exportCSV = () => {
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Reports');
+
+    // --- 1. CONFIGURE DYNAMIC SETTINGS BASED ON TAB ---
+    let tableColumns = [];
+    let tableTitle = "";
+    let mergeRange = ""; // A6 hanggang saan?
+    let fileName = "";
+    let dataRows = []; // Dito natin i-store ang pre-mapped data
+
     if (tab === "feedback") {
-      const header = ["ID", "Name", "Student ID", "Subject", "Message", "Submission Date", "Status"];
-      const rows = filteredFeedback.map((r) => [r.id, r.name, r.studentId, r.subject, r.message, r.date, r.status]);
-      const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-      downloadCSV(csv, "reports-feedback.csv");
-      return;
+      // --- SETTING: FEEDBACK (5 Columns) ---
+      tableTitle = "FEEDBACKS";
+      mergeRange = "A6:E6"; // A-E
+      fileName = "Reports_Feedback.xlsx";
+      
+      tableColumns = [
+        { key: 'name', width: 25 },       // A
+        { key: 'subject', width: 20 },    // B
+        { key: 'message', width: 45 },    // C (Wide for message)
+        { key: 'date', width: 20 },       // D
+        { key: 'status', width: 12 }      // E
+      ];
+
+      // Map Data
+      dataRows = filteredFeedback.map(r => [
+        r.name, r.subject, r.message, r.date, r.status
+      ]);
+
+    } else if (tab === "class-archive") {
+      // --- SETTING: CLASS ARCHIVE (6 Columns) ---
+      tableTitle = "CLASS ARCHIVES";
+      mergeRange = "A6:F6"; // A-F
+      fileName = "Reports_Class_Archive.xlsx";
+
+      tableColumns = [
+        { key: 'cname', width: 25 },      // A
+        { key: 'code', width: 15 },       // B
+        { key: 'prof', width: 25 },       // C
+        { key: 'room', width: 15 },       // D
+        { key: 'sched', width: 30 },      // E
+        { key: 'delDate', width: 20 }     // F
+      ];
+
+      // Map Data
+      dataRows = filteredClassArchive.map(r => [
+        r.name, r.code, r.professor, r.room, r.schedule, r.deletedAt
+      ]);
+
+    } else {
+      // --- SETTING: GENERAL ARCHIVE (4 Columns) ---
+      tableTitle = "ARCHIVED RECORDS";
+      mergeRange = "A6:D6"; // A-D lang
+      fileName = "Reports_Archive.xlsx";
+
+      tableColumns = [
+        { key: 'type', width: 15 },       // A
+        { key: 'name', width: 30 },       // B
+        { key: 'email', width: 30 },      // C
+        { key: 'delDate', width: 20 }     // D
+      ];
+
+      // Map Data
+      dataRows = filteredArchive.map(r => [
+        r.kind, r.name, r.email, r.deletedAt
+      ]);
     }
-    if (tab === "class-archive") {
-      const header = ["Class Name", "Code", "Professor", "Room", "Schedule", "Deleted Date"];
-      const rows = filteredClassArchive.map((r) => [r.name, r.code, r.professor, r.room, r.schedule, r.deletedAt]);
-      const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-      downloadCSV(csv, "reports-class-archive.csv");
-      return;
+
+    // --- 2. APPLY COLUMNS ---
+    worksheet.columns = tableColumns;
+
+    // --- 3. INSERT LOGO ---
+    try {
+      const response = await fetch('/Logo.png');
+      const buffer = await response.arrayBuffer();
+      const imageId = workbook.addImage({
+        buffer: buffer,
+        extension: 'png',
+      });
+
+      // Center visually: 
+      // Kung 6 cols, gitna sa C/D. Kung 4 cols, gitna sa B/C.
+      const centerCol = tableColumns.length >= 5 ? 2.5 : 1.5; 
+      
+      worksheet.addImage(imageId, {
+        tl: { col: centerCol, row: 0 }, 
+        ext: { width: 292.15748031, height: 100.15748031 }
+      });
+    } catch (error) {
+      console.warn('Logo loading failed', error);
     }
-    const header = ["Type", "Name", "ID", "Device ID", "Email", "Deleted Date"];
-    const rows = filteredArchive.map((r) => [
-      r.kind,
-      r.name,
-      r.kind === "Student" ? r.studentId : r.kind === "Professor" ? r.profId : r.adminId,
-      r.kind === "Student" ? r.deviceId : "",
-      r.email,
-      r.deletedAt,
-    ]);
-    const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-    downloadCSV(csv, "reports-archive.csv");
+
+    // --- 4. TITLE & DATE ---
+    
+    // Title
+    const titleRow = worksheet.getRow(6);
+    titleRow.values = [tableTitle];
+    worksheet.mergeCells(mergeRange); // Dynamic merge range
+    titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true };
+    titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Date
+    const dateRow = worksheet.getRow(7);
+    const now = new Date();
+    dateRow.values = [`Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`];
+    // Palitan ang range string (e.g., 'A6:F6' to 'A7:F7') para sa date row
+    const dateMergeRange = mergeRange.replace('6', '7').replace('6', '7'); 
+    worksheet.mergeCells(dateMergeRange);
+    dateRow.getCell(1).font = { name: 'Calibri', size: 10 };
+    dateRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // --- 5. HEADERS (Row 9) ---
+    const headerRow = worksheet.getRow(9);
+    
+    // Set Header Text based on tab
+    if (tab === "feedback") {
+      headerRow.values = ["Name", "Subject", "Message", "Submission Date", "Status"];
+    } else if (tab === "class-archive") {
+      headerRow.values = ["Class Name", "Code", "Professor", "Room", "Schedule", "Deleted Date"];
+    } else {
+      headerRow.values = ["Type", "Name", "Email", "Deleted Date"];
+    }
+
+    // Style Headers
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // --- 6. INSERT DATA ROWS ---
+    dataRows.forEach((rowData) => {
+      const row = worksheet.addRow(rowData);
+
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        
+        // Special Alignment Logic
+        // Message (Feedback Col 3) = Left + Wrap Text
+        if (tab === "feedback" && colNumber === 3) {
+             cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
+        } 
+        // Name/Email/Class Name usually Left aligned
+        else if (colNumber === 1 || colNumber === 3) { // Adjust as needed
+             cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+        } 
+        else {
+             cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+      });
+    });
+
+    // --- 7. PRINT SETUP ---
+    // Calculate last column letter based on tableColumns length
+    // 4 cols -> D, 6 cols -> F
+    const lastColLetter = String.fromCharCode(64 + tableColumns.length);
+    
+    worksheet.pageSetup.printArea = `A1:${lastColLetter}${worksheet.lastRow.number}`;
+    worksheet.pageSetup.orientation = 'landscape';
+    worksheet.pageSetup.fitToPage = true;
+    worksheet.pageSetup.fitToWidth = 1; // FIT ALL COLUMNS
+    worksheet.pageSetup.fitToHeight = 0;
+
+    // --- 8. SAVE ---
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, fileName);
   };
 
   const downloadCSV = (csv, filename) => {
@@ -573,8 +728,8 @@ export default function Reports() {
                     </select>
                   </div>
                 ) : null}
-                <button className="rep-dt-btn primary" onClick={exportCSV}>
-                  <span className="rep-dt-btnIco"><FontAwesomeIcon icon={faDownload} /></span> Export CSV
+                <button className="rep-dt-btn primary" onClick={exportToExcel}>
+                  <span className="rep-dt-btnIco"><FontAwesomeIcon icon={faDownload} /></span> Export XLSX
                 </button>
               </div>
             </div>
@@ -606,14 +761,13 @@ export default function Reports() {
             <div className="rep-dt-table">
               {tab === "feedback" && (
                 <>
-                  <div className="rep-dt-thead">
-                    <div>ID</div><div>Name</div><div>Subject</div><div>Message</div><div>Submission Date</div><div>Status</div>
+                  <div className="rep-dt-thead" style={{ gridTemplateColumns: feedbackGrid }}>
+                    <div>Name</div><div>Subject</div><div>Message</div><div>Submission Date</div><div>Status</div>
                   </div>
                   <div className="rep-dt-tbody">
                     {reportsLoading ? <div className="rep-dt-empty">Loading reports...</div> : 
                      paged.map((r) => (
-                      <div className="rep-dt-row" key={r.id}>
-                        <div>{String(r.id).slice(0, 8)}</div>
+                      <div className="rep-dt-row" key={r.id} style={{ gridTemplateColumns: feedbackGrid }}>
                         <div className="rep-dt-nameCell">
                           <span className="rep-dt-avatar">{initials(r.name)}</span>
                           <div className="rep-dt-name">{r.name}</div>
