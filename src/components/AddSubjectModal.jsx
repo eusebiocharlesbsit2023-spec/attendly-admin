@@ -8,6 +8,8 @@ export default function AddSubjectModal({ open, onClose, onSubmit, departments =
   const [courseName, setCourseName] = useState("");
   const [liveCodeError, setLiveCodeError] = useState("");
   const [liveNameError, setLiveNameError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -16,6 +18,8 @@ export default function AddSubjectModal({ open, onClose, onSubmit, departments =
     setCourseName("");
     setLiveCodeError("");
     setLiveNameError("");
+    setSaving(false);
+    setSuccessOpen(false);
   }, [open]);
 
   useEffect(() => {
@@ -63,14 +67,38 @@ export default function AddSubjectModal({ open, onClose, onSubmit, departments =
     return () => clearTimeout(t);
   }, [open, courseCode, courseName]);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    onSubmit?.({
-      department: department.trim(),
-      courseCode: courseCode.trim(),
-      courseName: courseName.trim(),
-    });
+    if (saving) return;
+    setSaving(true);
+    try {
+      const ok = await onSubmit?.({
+        department: department.trim(),
+        courseCode: courseCode.trim(),
+        courseName: courseName.trim(),
+      });
+      if (!ok) return;
+      setSuccessOpen(true);
+      setTimeout(() => {
+        setSuccessOpen(false);
+        onClose?.();
+      }, 1200);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  function SuccessModal({ open: isOpen, message }) {
+    if (!isOpen) return null;
+    return (
+      <div className="scm-overlay">
+        <div className="scm-card">
+          <i className="bx bx-check-circle"></i>
+          <p className="scm-text">{message}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!open) return null;
 
@@ -88,6 +116,7 @@ export default function AddSubjectModal({ open, onClose, onSubmit, departments =
               onChange={(e) => setDepartment(e.target.value)}
               placeholder="e.g. Computer System Department"
               list="asm-departments"
+              disabled={saving || successOpen}
             />
             <datalist id="asm-departments">
               {departments.map((d) => (
@@ -102,6 +131,7 @@ export default function AddSubjectModal({ open, onClose, onSubmit, departments =
               value={courseCode}
               onChange={(e) => setCourseCode(e.target.value.toUpperCase())}
               placeholder="e.g. CS 101"
+              disabled={saving || successOpen}
             />
             {liveCodeError ? <div className="asm-errorText field">{liveCodeError}</div> : null}
           </div>
@@ -112,19 +142,21 @@ export default function AddSubjectModal({ open, onClose, onSubmit, departments =
               value={courseName}
               onChange={(e) => setCourseName(e.target.value)}
               placeholder="e.g. Introduction to Programming"
+              disabled={saving || successOpen}
             />
             {liveNameError ? <div className="asm-errorText field">{liveNameError}</div> : null}
           </div>
 
           <div className="asm-actions">
-            <button className="asm-btn primary" type="submit">
-              Save Subject
+            <button className="asm-btn primary" type="submit" disabled={saving || successOpen}>
+              {saving ? "Saving..." : "Save Subject"}
             </button>
-            <button className="asm-btn" type="button" onClick={onClose}>
+            <button className="asm-btn" type="button" onClick={onClose} disabled={saving || successOpen}>
               Cancel
             </button>
           </div>
         </form>
+        <SuccessModal open={successOpen} message="Subject added successfully!" />
       </div>
     </div>
   );

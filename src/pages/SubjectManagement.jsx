@@ -178,7 +178,7 @@ export default function SubjectManagement() {
 
     if (!dept || !code || !name) {
       setAddError("All fields are required.");
-      return;
+      return false;
     }
 
     try {
@@ -197,7 +197,7 @@ export default function SubjectManagement() {
         } else {
           setAddError("Course name already exists.");
         }
-        return;
+        return false;
       }
 
       const { error } = await supabase.from("subjects").insert({
@@ -207,12 +207,12 @@ export default function SubjectManagement() {
       });
       if (error) throw error;
       await fetchSubjects();
+      return true;
     } catch (e) {
       console.log("Add subject failed:", e?.message || e);
       setAddError("Failed to add subject.");
-      return;
+      return false;
     }
-    setShowAddSubject(false);
   };
 
   const onEdit = (subject) => {
