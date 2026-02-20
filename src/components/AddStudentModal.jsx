@@ -11,9 +11,39 @@ const YEAR_LEVELS = [
 ];
 
 const sections = ["A", "B", "C"];
+const SUFFIX_OPTIONS = ["", "Jr.", "Sr.", "II", "III", "IV", "V"];
+const NAME_REGEX = /^[A-Za-z\s]+$/;
+const EMAIL_FORMAT_REGEX =
+  /^[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])?@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
+const ALLOWED_EMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "yahoo.com",
+  "yahoo.com.ph",
+  "outlook.com",
+  "hotmail.com",
+  "msn.com",
+]);
 
 function buildPasswordFromSurname(surname) {
   return (surname || "").trim().replace(/\s+/g, "").toUpperCase();
+}
+
+function isLettersOnly(value) {
+  return NAME_REGEX.test(value);
+}
+
+function validateEmail(emailRaw) {
+  const value = (emailRaw || "").trim().toLowerCase();
+  if (!value) return "Required";
+  if (!EMAIL_FORMAT_REGEX.test(value)) return "Enter a valid email address.";
+
+  const at = value.lastIndexOf("@");
+  const domain = value.slice(at + 1);
+  if (!ALLOWED_EMAIL_DOMAINS.has(domain)) {
+    return "Use a supported email provider (e.g., gmail.com, yahoo.com, outlook.com).";
+  }
+
+  return "";
 }
 
 export default function AddStudentModal({ open, onClose, onSubmit }) {
@@ -34,9 +64,19 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [liveEmailError, setLiveEmailError] = useState("");
   const [liveStudentNoError, setLiveStudentNoError] = useState("");
+  const [changed, setChanged] = useState({
+    firstName: false,
+    middleName: false,
+    surname: false,
+    department: false,
+    program: false,
+    yearLevel: false,
+    section: false,
+    email: false,
+    studentNumber: false,
+  });
 
   useEffect(() => {
     setPassword(buildPasswordFromSurname(surname));
@@ -66,7 +106,8 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
   useEffect(() => {
     if (!open) return;
     const emailLower = email.trim().toLowerCase();
-    if (!emailLower) {
+    const emailErr = validateEmail(emailLower);
+    if (emailErr) {
       setLiveEmailError("");
       return;
     }
@@ -130,21 +171,23 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
   const errors = useMemo(() => {
     const e = {};
     if (!firstName.trim()) e.firstName = "Required";
+    else if (!isLettersOnly(firstName.trim())) e.firstName = "Letters only.";
+    if (middleName.trim() && !isLettersOnly(middleName.trim())) e.middleName = "Letters only.";
     if (!surname.trim()) e.surname = "Required";
-    if (!email.trim()) e.email = "Required";
+    else if (!isLettersOnly(surname.trim())) e.surname = "Letters only.";
+    const emailErr = validateEmail(email);
+    if (emailErr) e.email = emailErr;
     if (!studentNumber.trim()) e.studentNumber = "Required";
-    if (studentNumber.length < 10) e.studentNumber = "Too short (include -N)";
+    else if (!/-N/i.test(studentNumber.trim())) e.studentNumber = "Student number must include -N.";
+    else if (studentNumber.trim().length !== 10) e.studentNumber = "Student number must be exactly 10 characters.";
     if (liveEmailError) e.email = liveEmailError;
     if (liveStudentNoError) e.studentNumber = liveStudentNoError;
-    const sn = studentNumber.trim();
-    if (sn && !/-N/i.test(sn)) e.studentNumber = "Student number must include -N.";
-    if (/=N/i.test(sn)) e.studentNumber = "Use -N, not =N.";
     if (!department) e.department = "Required";
     if (!program) e.program = "Required";
     if (!yearLevel) e.yearLevel = "Required";
     if (!section) e.section = "Required";
     return e;
-  }, [firstName, surname, email, studentNumber, yearLevel, section, department, program, liveEmailError, liveStudentNoError]);
+  }, [firstName, middleName, surname, suffix, email, studentNumber, yearLevel, section, department, program, liveEmailError, liveStudentNoError]);
 
   const departmentOptions = useMemo(() => {
     return Array.from(new Set((programs || []).map((p) => String(p.department || "").trim()).filter(Boolean)));
@@ -156,7 +199,7 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
       .map((p) => `${p.program_abbr} - ${p.program_name}`);
   }, [programs, department]);
 
-  const step1Valid = firstName.trim() && surname.trim();
+  const step1Valid = firstName.trim() && surname.trim() && !errors.firstName && !errors.middleName && !errors.surname;
   const step2Valid = Object.keys(errors).length === 0;
 
   const resetForm = () => {
@@ -166,17 +209,31 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
     setDepartment("");
     setProgram(""); setPassword(""); setErrorMsg("");
     setLiveEmailError(""); setLiveStudentNoError("");
-    setConfirmOpen(false); setSubmitting(false); setSubmitAttempted(false);
+    setChanged({
+      firstName: false,
+      middleName: false,
+      surname: false,
+      department: false,
+      program: false,
+      yearLevel: false,
+      section: false,
+      email: false,
+      studentNumber: false,
+    });
+    setConfirmOpen(false); setSubmitting(false);
   };
 
   const handleNext = () => {
     if (step1Valid) setStep(2);
-    else setSubmitAttempted(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitAttempted(true);
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setChanged((c) => ({ ...c, email: true }));
+      return;
+    }
     if (!step2Valid || submitting) return;
 
     setSubmitting(true);
@@ -307,21 +364,25 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             <div className="form-step-container personal">
               <div>
                 <label className="asm-label">First Name <span className="asm-req">*</span></label>
-                <input className={`asm-input ${submitAttempted && errors.firstName ? 'asm-input-error' : ''}`} value={firstName} onChange={e => setFirstName(e.target.value)} />
-                {submitAttempted && errors.firstName && <p className="asm-fieldError">{errors.firstName}</p>}
+                <input className={`asm-input ${(changed.firstName && errors.firstName) ? 'asm-input-error' : ''}`} value={firstName} onChange={e => { setChanged((c) => ({ ...c, firstName: true })); setFirstName(e.target.value.replace(/[^A-Za-z\s]/g, "")); }} />
+                {changed.firstName && errors.firstName && <p className="asm-fieldError">{errors.firstName}</p>}
               </div>
               <div>
                 <label className="asm-label">Middle Name</label>
-                <input className="asm-input" value={middleName} onChange={e => setMiddleName(e.target.value)} />
+                <input className={`asm-input ${(changed.middleName && errors.middleName) ? 'asm-input-error' : ''}`} value={middleName} onChange={e => { setChanged((c) => ({ ...c, middleName: true })); setMiddleName(e.target.value.replace(/[^A-Za-z\s]/g, "")); }} />
+                {changed.middleName && errors.middleName && <p className="asm-fieldError">{errors.middleName}</p>}
               </div>
               <div>
                 <label className="asm-label">Surname <span className="asm-req">*</span></label>
-                <input className={`asm-input ${submitAttempted && errors.surname ? 'asm-input-error' : ''}`} value={surname} onChange={e => setSurname(e.target.value)} />
-                {submitAttempted && errors.surname && <p className="asm-fieldError">{errors.surname}</p>}
+                <input className={`asm-input ${(changed.surname && errors.surname) ? 'asm-input-error' : ''}`} value={surname} onChange={e => { setChanged((c) => ({ ...c, surname: true })); setSurname(e.target.value.replace(/[^A-Za-z\s]/g, "")); }} />
+                {changed.surname && errors.surname && <p className="asm-fieldError">{errors.surname}</p>}
               </div>
               <div>
                 <label className="asm-label">Suffix</label>
-                <input className="asm-input" value={suffix} onChange={e => setSuffix(e.target.value)} />
+                <select className="asm-input" value={suffix} onChange={e => setSuffix(e.target.value)}>
+                  <option value="">Select suffix (optional)</option>
+                  {SUFFIX_OPTIONS.filter(Boolean).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
               </div>
               <div className="asm-actions">
                 <button type="button" className="asm-btn" onClick={() => { resetForm(); onClose?.(); }}>Cancel</button>
@@ -334,59 +395,60 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
             <div className="form-step-container academic">
               <div>
                 <label className="asm-label">Department <span className="asm-req">*</span></label>
-                <select className={`asm-input ${submitAttempted && errors.department ? 'asm-input-error' : ''}`} value={department} onChange={e => { setDepartment(e.target.value); setProgram(""); }}>
+                <select className={`asm-input ${(changed.department && errors.department) ? 'asm-input-error' : ''}`} value={department} onChange={e => { setChanged((c) => ({ ...c, department: true, program: false })); setDepartment(e.target.value); setProgram(""); }}>
                   <option value="">Select Department</option>
                   {departmentOptions.map((d) => <option key={d}>{d}</option>)}
                 </select>
-                {submitAttempted && errors.department && <p className="asm-fieldError">{errors.department}</p>}
+                {changed.department && errors.department && <p className="asm-fieldError">{errors.department}</p>}
               </div>
 
               <div>
                 <label className="asm-label">Program <span className="asm-req">*</span></label>
-                <select className={`asm-input ${submitAttempted && errors.program ? 'asm-input-error' : ''}`} value={program} onChange={e => setProgram(e.target.value)} disabled={!department}>
+                <select className={`asm-input ${(changed.program && errors.program) ? 'asm-input-error' : ''}`} value={program} onChange={e => { setChanged((c) => ({ ...c, program: true })); setProgram(e.target.value); }} disabled={!department}>
                   <option value="">{department ? "Select Program" : "Select Department first"}</option>
                   {programOptions.map(p => <option key={p}>{p}</option>)}
                 </select>
-                {submitAttempted && errors.program && <p className="asm-fieldError">{errors.program}</p>}
+                {changed.program && errors.program && <p className="asm-fieldError">{errors.program}</p>}
               </div>
 
               <div className="asm-row">
                 <div className="asm-col">
                   <label className="asm-label">Year <span className="asm-req">*</span></label>
-                  <select className={`asm-input ${submitAttempted && errors.yearLevel ? 'asm-input-error' : ''}`} value={yearLevel} onChange={e => setYearLevel(e.target.value)}>
+                  <select className={`asm-input ${(changed.yearLevel && errors.yearLevel) ? 'asm-input-error' : ''}`} value={yearLevel} onChange={e => { setChanged((c) => ({ ...c, yearLevel: true })); setYearLevel(e.target.value); }}>
                     <option value="">Select</option>
                     {YEAR_LEVELS.map(y => <option key={y.value} value={y.value}>{y.label}</option>)}
                   </select>
-                  {submitAttempted && errors.yearLevel && <p className="asm-fieldError">{errors.yearLevel}</p>}
+                  {changed.yearLevel && errors.yearLevel && <p className="asm-fieldError">{errors.yearLevel}</p>}
                 </div>
                 <div className="asm-col">
                   <label className="asm-label">Section <span className="asm-req">*</span></label>
-                  <select className={`asm-input ${submitAttempted && errors.section ? 'asm-input-error' : ''}`} value={section} onChange={e => setSection(e.target.value)}>
+                  <select className={`asm-input ${(changed.section && errors.section) ? 'asm-input-error' : ''}`} value={section} onChange={e => { setChanged((c) => ({ ...c, section: true })); setSection(e.target.value); }}>
                     <option value="">Select</option>
                     {sections.map(s => <option key={s}>{s}</option>)}
                   </select>
-                  {submitAttempted && errors.section && <p className="asm-fieldError">{errors.section}</p>}
+                  {changed.section && errors.section && <p className="asm-fieldError">{errors.section}</p>}
                 </div>
               </div>
 
               <div>
                 <label className="asm-label">Email <span className="asm-req">*</span></label>
-                <input className={`asm-input ${(liveEmailError || (submitAttempted && errors.email)) ? 'asm-input-error' : ''}`} value={email} onChange={e => setEmail(e.target.value)} />
-                {liveEmailError ? <p className="asm-fieldError">{liveEmailError}</p> : (submitAttempted && errors.email && <p className="asm-fieldError">{errors.email}</p>)}
+                <input type="email" className={`asm-input ${((changed.email && errors.email) || liveEmailError) ? 'asm-input-error' : ''}`} value={email} onChange={e => { setChanged((c) => ({ ...c, email: true })); setEmail(e.target.value); }} />
+                {liveEmailError ? <p className="asm-fieldError">{liveEmailError}</p> : (changed.email && errors.email && <p className="asm-fieldError">{errors.email}</p>)}
               </div>
 
               <div>
                 <label className="asm-label">Student Number <span className="asm-req">*</span></label>
                 <input
-                  className={`asm-input ${(liveStudentNoError || (submitAttempted && errors.studentNumber)) ? 'asm-input-error' : ''}`}
+                  className={`asm-input ${((changed.studentNumber && errors.studentNumber) || liveStudentNoError) ? 'asm-input-error' : ''}`}
                   value={studentNumber}
-                  onChange={e => setStudentNumber(e.target.value.toUpperCase())}
+                  maxLength={10}
+                  onChange={e => { setChanged((c) => ({ ...c, studentNumber: true })); setStudentNumber(e.target.value.toUpperCase()); }}
                 />
-                {liveStudentNoError ? <p className="asm-fieldError">{liveStudentNoError}</p> : (submitAttempted && errors.studentNumber && <p className="asm-fieldError">{errors.studentNumber}</p>)}
+                {liveStudentNoError ? <p className="asm-fieldError">{liveStudentNoError}</p> : (changed.studentNumber && errors.studentNumber && <p className="asm-fieldError">{errors.studentNumber}</p>)}
               </div>
 
               <div className="asm-actions">
-                <button type="button" className="asm-btn" onClick={() => { setSubmitAttempted(false); setStep(1); }}>Back</button>
+                <button type="button" className="asm-btn" onClick={() => { setStep(1); }}>Back</button>
                 <button type="submit" className="asm-btn primary" disabled={submitting}>
                   {submitting ? "Checking..." : "Add Student"}
                 </button>

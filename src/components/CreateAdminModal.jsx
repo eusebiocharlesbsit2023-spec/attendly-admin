@@ -7,6 +7,32 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import supabase from "../helper/supabaseClient";
 import SmallConfirmModal from "../components/SmallConfirmModal";
 
+const NAME_REGEX = /^[A-Za-z\s]+$/;
+const EMAIL_FORMAT_REGEX =
+  /^[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])?@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
+const ALLOWED_EMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "yahoo.com",
+  "yahoo.com.ph",
+  "outlook.com",
+  "hotmail.com",
+  "msn.com",
+]);
+
+function validateEmail(emailRaw) {
+  const value = (emailRaw || "").trim().toLowerCase();
+  if (!value) return "Email is required";
+  if (!EMAIL_FORMAT_REGEX.test(value)) return "Enter a valid email address";
+
+  const at = value.lastIndexOf("@");
+  const domain = value.slice(at + 1);
+  if (!ALLOWED_EMAIL_DOMAINS.has(domain)) {
+    return "Use a supported email provider (e.g., gmail.com, yahoo.com, outlook.com).";
+  }
+
+  return "";
+}
+
 function generateStrongPassword(length = 12) {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnopqrstuvwxyz";
@@ -38,16 +64,24 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
   const [role, setRole] = useState("Admin");
   const [tempPassword, setTempPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [changed, setChanged] = useState({
+    firstName: false,
+    lastName: false,
+    email: false,
+    tempPassword: false,
+  });
 
   const errors = useMemo(() => {
     const e = {};
     if (!firstName.trim()) e.firstName = "First name is required";
+    else if (!NAME_REGEX.test(firstName.trim())) e.firstName = "First name must contain letters only";
     if (!lastName.trim()) e.lastName = "Last name is required";
-    if (!email.trim()) e.email = "Email is required";
+    else if (!NAME_REGEX.test(lastName.trim())) e.lastName = "Last name must contain letters only";
+    const emailErr = validateEmail(email);
+    if (emailErr) e.email = emailErr;
     if (!tempPassword.trim()) e.tempPassword = "Temporary password is required";
     if (tempPassword.trim() && tempPassword.trim().length < 6)
       e.tempPassword = "Min 6 characters";
@@ -64,7 +98,7 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
     setRole("Admin");
     setTempPassword("");
     setShowPass(false);
-    setSubmitted(false);
+    setChanged({ firstName: false, lastName: false, email: false, tempPassword: false });
   };
 
   const handleClose = () => {
@@ -75,6 +109,7 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
   const handleGeneratePassword = async () => {
     const p = generateStrongPassword(8);
     setTempPassword(p);
+    setChanged((c) => ({ ...c, tempPassword: true }));
 
     try {
       await navigator.clipboard.writeText(p);
@@ -86,7 +121,11 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage("");
-    setSubmitted(true);
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setChanged((c) => ({ ...c, email: true }));
+      return;
+    }
     if (!canSubmit) return;
     try {
       const emailLower = email.trim().toLowerCase();
@@ -186,21 +225,21 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
             First Name <span className="cam-req">*</span>
           </label>
           <input
-            className={`cam-input ${submitted && errors.firstName ? "err" : ""}`}
+            className={`cam-input ${(changed.firstName && errors.firstName) ? "err" : ""}`}
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            onChange={(e) => { setChanged((c) => ({ ...c, firstName: true })); setFirstName(e.target.value.replace(/[^A-Za-z\s]/g, "")); }}
           />
-          {submitted && errors.firstName && <div className="cam-error">{errors.firstName}</div>}
+          {changed.firstName && errors.firstName && <div className="cam-error">{errors.firstName}</div>}
 
           <label className="cam-label">
             Last Name <span className="cam-req">*</span>
           </label>
           <input
-            className={`cam-input ${submitted && errors.lastName ? "err" : ""}`}
+            className={`cam-input ${(changed.lastName && errors.lastName) ? "err" : ""}`}
             value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
+            onChange={(e) => { setChanged((c) => ({ ...c, lastName: true })); setLastName(e.target.value.replace(/[^A-Za-z\s]/g, "")); }}
           />
-          {submitted && errors.lastName && <div className="cam-error">{errors.lastName}</div>}
+          {changed.lastName && errors.lastName && <div className="cam-error">{errors.lastName}</div>}
 
           {/* Username */}
           <label className="cam-label">
@@ -208,11 +247,11 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
           </label>
           <input
             type="email"
-            className={`cam-input ${submitted && errors.email ? "err" : ""}`}
+            className={`cam-input ${(changed.email && errors.email) ? "err" : ""}`}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setChanged((c) => ({ ...c, email: true })); setEmail(e.target.value); }}
           />
-          {submitted && errors.email && <div className="cam-error">{errors.email}</div>}
+          {changed.email && errors.email && <div className="cam-error">{errors.email}</div>}
 
           {/* Role (Admin only) */}
           <label className="cam-label">Role</label>
@@ -226,13 +265,13 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
           </label>
 
           <div style={{ display: "grid", gap: 8 }}>
-            <div className={`cam-passWrap ${submitted && errors.tempPassword ? "err" : ""}`}>
+            <div className={`cam-passWrap ${(changed.tempPassword && errors.tempPassword) ? "err" : ""}`}>
               <input
                 className="cam-pass"
                 type={'text'}
                 placeholder="Enter Temporary Password"
                 value={tempPassword}
-                onChange={(e) => setTempPassword(e.target.value)}
+                onChange={(e) => { setChanged((c) => ({ ...c, tempPassword: true })); setTempPassword(e.target.value); }}
               />
             </div>
 
@@ -248,12 +287,7 @@ export default function CreateAdminModal({ open, onClose, onCreate }) {
             </div>
           </div>
 
-          {submitted && errors.tempPassword && (
-            <div className="cam-error">{errors.tempPassword}</div>
-          )}
-
-
-          {submitted && errors.tempPassword && (
+          {changed.tempPassword && errors.tempPassword && (
             <div className="cam-error">{errors.tempPassword}</div>
           )}
 

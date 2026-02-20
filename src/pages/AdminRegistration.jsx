@@ -12,8 +12,51 @@ const YEAR_LEVELS = [
 ];
 
 const SECTIONS = ['A', 'B', 'C'];
+const SUFFIX_OPTIONS = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
+const NAME_REGEX = /^[A-Za-z\s]+$/;
+const EMAIL_FORMAT_REGEX =
+  /^[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])?@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
+const ALLOWED_EMAIL_DOMAINS = new Set([
+  'gmail.com',
+  'yahoo.com',
+  'yahoo.com.ph',
+  'outlook.com',
+  'hotmail.com',
+  'msn.com',
+]);
 
 const fieldErrStyle = { marginTop: '-8px', marginBottom: '10px', color: '#ef4444', fontSize: '12px' };
+
+function validateName(value, label, required = true) {
+  const v = String(value || '').trim();
+  if (!v) return required ? `${label} is required.` : '';
+  if (!NAME_REGEX.test(v)) return `${label} must contain letters only.`;
+  return '';
+}
+
+function validateEmail(emailRaw) {
+  const email = String(emailRaw || '').trim().toLowerCase();
+  if (!email) return 'Email is required.';
+  if (!EMAIL_FORMAT_REGEX.test(email)) return 'Enter a valid email address.';
+
+  const at = email.lastIndexOf('@');
+  const domain = email.slice(at + 1);
+  if (!ALLOWED_EMAIL_DOMAINS.has(domain)) {
+    return 'Use a supported email provider (e.g., gmail.com, yahoo.com, outlook.com).';
+  }
+
+  return '';
+}
+
+function validatePasswordStrength(passwordRaw) {
+  const password = String(passwordRaw || '');
+  if (!password) return 'Password is required.';
+  if (password.length < 8) return 'Password must be at least 8 characters.';
+  if (!/[A-Z]/.test(password)) return 'Password must contain at least 1 uppercase letter.';
+  if (!/\d/.test(password)) return 'Password must contain at least 1 number.';
+  if (!/[!@#$%^&*_\-+=?]/.test(password)) return 'Password must contain at least 1 special character.';
+  return '';
+}
 
 export default function AdminRegistration() {
   const [searchParams] = useSearchParams();
@@ -188,10 +231,12 @@ export default function AdminRegistration() {
       .filter((p) => String(p.department || '').trim() === studentDepartment)
       .map((p) => `${p.program_abbr} - ${p.program_name}`);
   }, [studentPrograms, studentDepartment]);
+  const inviteEmailError = useMemo(() => validateEmail(inviteData?.email || ''), [inviteData]);
 
   const studentStep1Errors = {
-    firstName: !firstName.trim() ? 'First name is required.' : '',
-    surname: !studentSurname.trim() ? 'Surname is required.' : '',
+    firstName: validateName(firstName, 'First name', true),
+    middleName: validateName(studentMiddleName, 'Middle name', false),
+    surname: validateName(studentSurname, 'Surname', true),
   };
 
   const studentStep2Errors = {
@@ -199,15 +244,25 @@ export default function AdminRegistration() {
     program: !studentProgram ? 'Program is required.' : '',
     yearLevel: !studentYearLevel ? 'Year level is required.' : '',
     section: !studentSection ? 'Section is required.' : '',
-    studentNumber: !studentNumber.trim() ? 'Student number is required.' : liveStudentNoError,
+    studentNumber: !studentNumber.trim()
+      ? 'Student number is required.'
+      : !/-N/i.test(studentNumber.trim())
+      ? 'Student number must include -N.'
+      : studentNumber.trim().length !== 10
+      ? 'Student number must be exactly 10 characters.'
+      : liveStudentNoError,
   };
 
   const studentStep3Errors = {
-    password: !password ? 'Password is required.' : '',
+    password: validatePasswordStrength(password),
     confirmPassword: !confirmPassword ? 'Confirm password is required.' : password !== confirmPassword ? 'Passwords do not match.' : '',
   };
+  const nonStudentNameErrors = {
+    firstName: validateName(firstName, 'First name', true),
+    lastName: validateName(lastName, 'Last name', true),
+  };
   const nonStudentPasswordErrors = {
-    password: !password ? 'Password is required.' : '',
+    password: validatePasswordStrength(password),
     confirmPassword: !confirmPassword ? 'Confirm password is required.' : password !== confirmPassword ? 'Passwords do not match.' : '',
   };
 
@@ -220,6 +275,10 @@ export default function AdminRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (inviteEmailError) {
+      setFormError(inviteEmailError);
+      return;
+    }
 
     if (role === 'student') {
       if (hasErrors(studentStep1Errors) || hasErrors(studentStep2Errors) || hasErrors(studentStep3Errors)) {
@@ -227,11 +286,7 @@ export default function AdminRegistration() {
         return;
       }
     } else {
-      if (password !== confirmPassword) {
-        setFormError('Passwords do not match.');
-        return;
-      }
-      if (!firstName.trim() || !lastName.trim() || !password) {
+      if (hasErrors(nonStudentNameErrors) || hasErrors(nonStudentPasswordErrors)) {
         setFormError('Please fill all fields.');
         return;
       }
@@ -387,6 +442,7 @@ export default function AdminRegistration() {
 
         <form onSubmit={handleSubmit}>
           <div className="input-group"><input type="email" value={inviteData.email} disabled /></div>
+          {inviteEmailError && <p style={fieldErrStyle}>{inviteEmailError}</p>}
           {role === 'student' ? (
             <>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '12px', fontSize: '12px', fontWeight: 700 }}>
@@ -401,10 +457,16 @@ export default function AdminRegistration() {
                 <>
                   <div className="input-group"><input type="text" placeholder="First Name" required value={firstName} onChange={e => { markTouched('firstName'); setFirstName(e.target.value); setFormError(''); }} disabled={submitting} /></div>
                   {showFieldError('firstName', studentStep1Errors.firstName) && <p style={fieldErrStyle}>{studentStep1Errors.firstName}</p>}
-                  <div className="input-group"><input type="text" placeholder="Middle Name" value={studentMiddleName} onChange={e => setStudentMiddleName(e.target.value)} disabled={submitting} /></div>
+                  <div className="input-group"><input type="text" placeholder="Middle Name" value={studentMiddleName} onChange={e => { markTouched('studentMiddleName'); setStudentMiddleName(e.target.value); setFormError(''); }} disabled={submitting} /></div>
+                  {showFieldError('studentMiddleName', studentStep1Errors.middleName) && <p style={fieldErrStyle}>{studentStep1Errors.middleName}</p>}
                   <div className="input-group"><input type="text" placeholder="Surname" required value={studentSurname} onChange={e => { markTouched('studentSurname'); setStudentSurname(e.target.value); setFormError(''); }} disabled={submitting} /></div>
                   {showFieldError('studentSurname', studentStep1Errors.surname) && <p style={fieldErrStyle}>{studentStep1Errors.surname}</p>}
-                  <div className="input-group"><input type="text" placeholder="Suffix" value={studentSuffix} onChange={e => setStudentSuffix(e.target.value)} disabled={submitting} /></div>
+                  <div className="input-group">
+                    <select value={studentSuffix} onChange={e => setStudentSuffix(e.target.value)} disabled={submitting}>
+                      <option value="">Select Suffix (Optional)</option>
+                      {SUFFIX_OPTIONS.filter(Boolean).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  </div>
                   <button type="button" className="login-btn" onClick={handleStudentNext} disabled={submitting || successOpen}>
                     NEXT
                   </button>
@@ -445,6 +507,7 @@ export default function AdminRegistration() {
                       placeholder="Student Number"
                       required
                       value={studentNumber}
+                      maxLength={10}
                       onChange={(e) => { markTouched('studentNumber'); setStudentNumber(e.target.value.toUpperCase()); setFormError(''); }}
                       disabled={submitting}
                     />
@@ -516,8 +579,10 @@ export default function AdminRegistration() {
             </>
           ) : (
             <>
-              <div className="input-group"><input type="text" placeholder="First Name" required value={firstName} onChange={e => setFirstName(e.target.value)} disabled={submitting} /></div>
-              <div className="input-group"><input type="text" placeholder="Last Name" required value={lastName} onChange={e => setLastName(e.target.value)} disabled={submitting} /></div>
+              <div className="input-group"><input type="text" placeholder="First Name" required value={firstName} onChange={e => { markTouched('firstName'); setFirstName(e.target.value); setFormError(''); }} disabled={submitting} /></div>
+              {showFieldError('firstName', nonStudentNameErrors.firstName) && <p style={fieldErrStyle}>{nonStudentNameErrors.firstName}</p>}
+              <div className="input-group"><input type="text" placeholder="Last Name" required value={lastName} onChange={e => { markTouched('lastName'); setLastName(e.target.value); setFormError(''); }} disabled={submitting} /></div>
+              {showFieldError('lastName', nonStudentNameErrors.lastName) && <p style={fieldErrStyle}>{nonStudentNameErrors.lastName}</p>}
               {role === 'professor' && (
                 <div className="input-group">
                   <select

@@ -80,7 +80,7 @@ export default function AdminDashboard() {
       const totalOnlineInClassroom = (studentsRes.data ?? []).filter(isOnlineInClassroom).length;
 
       setStats([
-        { label: "Total Students", value: totalOnlineInClassroom, icon: faUsers, tint: "blue" },
+        { label: "Active Students", value: totalOnlineInClassroom, icon: faUsers, tint: "blue" },
         { label: "Professors", value: profsRes.count ?? 0, icon: faGraduationCap, tint: "green" },
         { label: "Active Sessions", value: sessionsRes.count ?? 0, icon: faBookOpen, tint: "yellow" },
       ]);

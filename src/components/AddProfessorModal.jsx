@@ -70,22 +70,13 @@ const EMAIL_FORMAT_REGEX =
 /* ✅ Allowed email domains only (edit this list as you like) */
 const ALLOWED_EMAIL_DOMAINS = new Set([
   "gmail.com",
-  "googlemail.com",
   "yahoo.com",
   "yahoo.com.ph",
-  "ymail.com",
   "outlook.com",
   "hotmail.com",
-  "live.com",
   "msn.com",
-  "icloud.com",
-  "me.com",
-  "mac.com",
-  "aol.com",
-  "proton.me",
-  "protonmail.com",
-  "zoho.com",
 ]);
+const NAME_REGEX = /^[A-Za-z\s]+$/;
 
 function countMatches(str, regex) {
   const m = str.match(regex);
@@ -140,15 +131,13 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
   const [liveEmailError, setLiveEmailError] = useState("");
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const [touched, setTouched] = useState({
+  const [changed, setChanged] = useState({
     firstName: false,
     lastName: false,
     email: false,
-    dept: false,
     pass: false,
+    dept: false,
   });
-  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -158,9 +147,8 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
       setDept("");
       setPass("");
       setShowPass(false);
-      setTouched({ name:false, email:false, dept:false, pass:false, confirm:false });
-      setSubmitted(false);
       setError("");
+      setChanged({ firstName: false, lastName: false, email: false, pass: false, dept: false });
     }
   }, [open]);
 
@@ -187,13 +175,13 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
     loadDepartments();
   }, [open]);
 
-  const showErr = (key) => submitted || touched[key];
-
   const errors = useMemo(() => {
     const e = {};
 
     if (!firstName.trim()) e.firstName = "First name is required.";
+    else if (!NAME_REGEX.test(firstName.trim())) e.firstName = "First name must contain letters only.";
     if (!lastName.trim()) e.lastName = "Last name is required.";
+    else if (!NAME_REGEX.test(lastName.trim())) e.lastName = "Last name must contain letters only.";
     if (!dept.trim()) e.dept = "Department is required.";
 
     const emailErr = validateEmail(email);
@@ -204,12 +192,13 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
     if (passErr) e.pass = passErr;
 
     return e;
-  }, [firstName, lastName, email, dept, pass, confirm, liveEmailError]);
+  }, [firstName, lastName, email, dept, pass, liveEmailError]);
 
   useEffect(() => {
     if (!open) return;
     const emailLower = (email || "").trim().toLowerCase();
-    if (!emailLower) {
+    const emailErr = validateEmail(emailLower);
+    if (emailErr) {
       setLiveEmailError("");
       return;
     }
@@ -243,13 +232,18 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
   const handleGenerate = () => {
     const p = generateStrongPassword(10);
     setPass(p);
-    setTouched((prev) => ({ ...prev, pass: true}));
+    setChanged((c) => ({ ...c, pass: true }));
   };
 
   const submit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
     setError("");
+
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setChanged((c) => ({ ...c, email: true }));
+      return;
+    }
 
     if (!canSubmit) return;
 
@@ -361,12 +355,11 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               First Name <span className="apm-req">*</span>
             </label>
             <input
-              className={showErr("firstName") && errors.firstName ? "err" : ""}
+              className={(changed.firstName && errors.firstName) ? "err" : ""}
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, firstName: true }))}
+              onChange={(e) => { setChanged((c) => ({ ...c, firstName: true })); setFirstName(e.target.value.replace(/[^A-Za-z\s]/g, "")); }}
             />
-            {showErr("firstName") && errors.firstName && (
+            {changed.firstName && errors.firstName && (
               <div className="apm-error">{errors.firstName}</div>
             )}
           </div>
@@ -376,12 +369,11 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Last Name <span className="apm-req">*</span>
             </label>
             <input
-              className={showErr("lastName") && errors.lastName ? "err" : ""}
+              className={(changed.lastName && errors.lastName) ? "err" : ""}
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, lastName: true }))}
+              onChange={(e) => { setChanged((c) => ({ ...c, lastName: true })); setLastName(e.target.value.replace(/[^A-Za-z\s]/g, "")); }}
             />
-            {showErr("lastName") && errors.lastName && (
+            {changed.lastName && errors.lastName && (
               <div className="apm-error">{errors.lastName}</div>
             )}
           </div>
@@ -391,12 +383,13 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Email <span className="apm-req">*</span>
             </label>
             <input
-              className={showErr("email") && errors.email ? "err" : ""}
+              type="email"
+              className={((changed.email && errors.email) || liveEmailError) ? "err" : ""}
               placeholder="example@gmail.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setChanged((c) => ({ ...c, email: true })); setEmail(e.target.value); }}
             />
-            {liveEmailError ? <div className="apm-error">{liveEmailError}</div> : (showErr("email") && errors.email && <div className="apm-error">{errors.email}</div>)}
+            {liveEmailError ? <div className="apm-error">{liveEmailError}</div> : (changed.email && errors.email && <div className="apm-error">{errors.email}</div>)}
           </div>
 
           <div className="apm-field">
@@ -404,7 +397,7 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Password <span className="apm-req">*</span>
             </label>
 
-            <div className={`apm-passWrap ${showErr("pass") && errors.pass ? "err" : ""}`}>
+            <div className={`apm-passWrap ${(changed.pass && errors.pass) ? "err" : ""}`}>
               <input
                 type={showPass ? "text" : "password"}
                 placeholder="Click generate password"
@@ -429,7 +422,7 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Generate Password
             </button>
 
-            {showErr("pass") && errors.pass && <div className="apm-error">{errors.pass}</div>}
+            {changed.pass && errors.pass && <div className="apm-error">{errors.pass}</div>}
             
           </div>
 
@@ -438,16 +431,16 @@ export default function AddProfessorModal({ open, onClose, onSubmit }) {
               Department <span className="apm-req">*</span>
             </label>
             <select
-              className={showErr("dept") && errors.dept ? "err" : ""}
+              className={(changed.dept && errors.dept) ? "err" : ""}
               value={dept}
-              onChange={(e) => setDept(e.target.value)}
+              onChange={(e) => { setChanged((c) => ({ ...c, dept: true })); setDept(e.target.value); }}
             >
               <option value="">{deptLoading ? "Loading..." : "Select Department"}</option>
               {deptOptions.map((d) => (
                 <option key={d} value={d}>{d}</option>
               ))}
             </select>
-            {showErr("dept") && errors.dept && <div className="apm-error">{errors.dept}</div>}
+            {changed.dept && errors.dept && <div className="apm-error">{errors.dept}</div>}
           </div>
 
           <div className="apm-actions">
