@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./EditStudentModal.css";
 
-export default function EditStudentModal({ open, student, onClose, onSaveClick }) {
+export default function EditStudentModal({ open, student, onClose, onSaveClick, onUnbindRequest }) {
   const [status, setStatus] = useState("");
   const [originalStatus, setOriginalStatus] = useState("");
 
@@ -17,6 +17,7 @@ export default function EditStudentModal({ open, student, onClose, onSaveClick }
     () => status !== originalStatus,
     [status, originalStatus]
   );
+  const hasBoundDevice = Boolean(student?.macAddress);
 
   if (!open || !student) return null;
 
@@ -34,8 +35,21 @@ export default function EditStudentModal({ open, student, onClose, onSaveClick }
         </div>
 
         <div className="esm-row">
-          <div className="esm-label">Device Id</div>
-          <div className="esm-value">{student.deviceId}</div>
+          <div className="esm-label">Device</div>
+          <div className="esm-deviceWrap">
+            {!hasBoundDevice && (
+              <span className="esm-deviceStatus unbound">{student.deviceText}</span>
+            )}
+            {hasBoundDevice && (
+              <button
+                className="esm-unbindBtn"
+                type="button"
+                onClick={() => onUnbindRequest?.(student)}
+              >
+                Unbind
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="esm-row">

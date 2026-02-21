@@ -108,6 +108,19 @@ function InviteAdminModal({ open, onClose, onSend }) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [fieldError, setFieldError] = useState("");
+  const resetInviteForm = () => {
+    setEmail("");
+    setFieldError("");
+    setSending(false);
+  };
+  const handleClose = () => {
+    resetInviteForm();
+    onClose?.();
+  };
+
+  useEffect(() => {
+    if (!open) resetInviteForm();
+  }, [open]);
 
   const handleSend = async () => {
     if (!email || sending || !email.includes("@")) {
@@ -155,6 +168,7 @@ function InviteAdminModal({ open, onClose, onSend }) {
       }
 
       await sendAdminInvite(emailLower, inviteLink);
+      resetInviteForm();
       onSend(emailLower);
     } catch (err) {
       console.error("Failed to send invite:", err);
@@ -167,7 +181,7 @@ function InviteAdminModal({ open, onClose, onSend }) {
   if (!open) return null;
 
   return (
-    <div className="esm-overlay mam-invite-overlay" onClick={onClose}>
+    <div className="esm-overlay mam-invite-overlay" onClick={handleClose}>
       <div className="esm-card mam-invite-card" onClick={(e) => e.stopPropagation()}>
         <div className="mam-invite-title">Send Admin Invitation</div>
         <div className="mam-invite-label">Email Address:</div>

@@ -512,6 +512,19 @@ function InviteProfessorModal({ open, onClose, onSend }) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [fieldError, setFieldError] = useState("");
+  const resetInviteForm = () => {
+    setEmail("");
+    setFieldError("");
+    setSending(false);
+  };
+  const handleClose = () => {
+    resetInviteForm();
+    onClose?.();
+  };
+
+  useEffect(() => {
+    if (!open) resetInviteForm();
+  }, [open]);
 
   const handleSend = async () => {
     if (!email || sending || !email.includes("@")) {
@@ -558,6 +571,7 @@ function InviteProfessorModal({ open, onClose, onSend }) {
       }
 
       await sendProfessorInvite(emailLower, inviteLink);
+      resetInviteForm();
       onSend(emailLower);
     } catch (err) {
       console.error("Failed to send professor invite:", err);
@@ -570,7 +584,7 @@ function InviteProfessorModal({ open, onClose, onSend }) {
   if (!open) return null;
 
   return (
-    <div className="scm-overlay" onClick={onClose}>
+    <div className="scm-overlay" onClick={handleClose}>
       <div className="pm-modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="pm-modal-title">Send Professor Invitation</div>
         <label className="pm-modal-label">Email Address</label>
