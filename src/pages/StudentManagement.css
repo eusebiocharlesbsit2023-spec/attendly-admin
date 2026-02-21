@@ -378,6 +378,30 @@ tr {
   opacity: 0.95;
 }
 
+.sm-deviceStatus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  width: 130px;
+}
+
+.sm-deviceStatus.bound {
+  background: #e7f7ee;
+  color: #0f7a3d;
+  border-color: #b7ebc9;
+}
+
+.sm-deviceStatus.unbound {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
 /* status pill */
 .sm-status {
   display: inline-flex;

@@ -62,8 +62,11 @@ export default function StudentManagement() {
   const [pendingEdit, setPendingEdit] = useState(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [unbindConfirmOpen, setUnbindConfirmOpen] = useState(false);
+  const [pendingUnbind, setPendingUnbind] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [unbinding, setUnbinding] = useState(false);
 
   // ===== Data States =====
   const [rows, setRows] = useState([]);
@@ -97,6 +100,9 @@ export default function StudentManagement() {
         studentId: (s.student_number ?? "").toString(),
         classes: Number(s.class_enrollments?.[0]?.count ?? 0),
         status: s.status ?? "Active",
+        macAddress: s.mac_address ?? null,
+        deviceText: s.mac_address ? "Device Active" : "No Device Found",
+        deviceBound: Boolean(s.mac_address),
       }));
       setRows(mapped);
     }
@@ -168,6 +174,11 @@ export default function StudentManagement() {
     setDeleteOpen(true);
   };
 
+  const onUnbindRequest = (student) => {
+    setPendingUnbind(student);
+    setUnbindConfirmOpen(true);
+  };
+
   const deleteYes = async () => {
     if (deleting || !pendingDelete?.uuid) return;
     setDeleting(true);
@@ -189,6 +200,64 @@ export default function StudentManagement() {
     } finally {
       setDeleting(false);
       setPendingDelete(null);
+    }
+  };
+
+  const unbindYes = async () => {
+    if (unbinding || !pendingUnbind?.uuid) return;
+    if (!pendingUnbind.macAddress) {
+      setUnbindConfirmOpen(false);
+      setPendingUnbind(null);
+      return;
+    }
+
+    setUnbinding(true);
+    try {
+      const { error: deviceByMacError } = await supabase
+        .from("devices")
+        .delete()
+        .eq("mac_address", pendingUnbind.macAddress);
+
+      if (deviceByMacError) throw deviceByMacError;
+
+      const { error: studentError } = await supabase
+        .from("students")
+        .update({ mac_address: null })
+        .eq("id", pendingUnbind.uuid);
+
+      if (studentError) throw studentError;
+
+      setRows((prev) =>
+        prev.map((s) =>
+          s.uuid === pendingUnbind.uuid
+            ? {
+                ...s,
+                macAddress: null,
+                deviceText: "No Device Found",
+                deviceBound: false,
+              }
+            : s
+        )
+      );
+      setEditingStudent((prev) =>
+        prev?.uuid === pendingUnbind.uuid
+          ? {
+              ...prev,
+              macAddress: null,
+              deviceText: "No Device Found",
+              deviceBound: false,
+            }
+          : prev
+      );
+      setUnbindConfirmOpen(false);
+      setSuccessMsg(`Device unbound: ${pendingUnbind.name}`);
+      setSuccessOpen(true);
+      setTimeout(() => setSuccessOpen(false), 2500);
+    } catch (err) {
+      console.error("Failed to unbind device:", err.message);
+    } finally {
+      setUnbinding(false);
+      setPendingUnbind(null);
     }
   };
 
@@ -411,7 +480,7 @@ export default function StudentManagement() {
             <table className="sm-table2">
               <thead>
                 <tr>
-                  <th>Student Name</th><th>Email</th><th>Student ID</th><th>Classes</th><th className="sm-th-center">Status</th><th className="sm-actionsHead">Actions</th>
+                  <th>Student Name</th><th>Email</th><th>Student ID</th><th>Classes</th><th>Device</th><th className="sm-th-center">Status</th><th className="sm-actionsHead">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -428,6 +497,9 @@ export default function StudentManagement() {
                       </td>
                       <td>{s.email || "—"}</td>
                       <td>{s.studentId}</td>  <td>{s.classes}</td>
+                      <td className="sm-deviceTd">
+                        <span className={`sm-deviceStatus ${s.deviceBound ? "bound" : "unbound"}`}>{s.deviceText}</span>
+                      </td>
                       <td className="sm-td-center">
                         <span className={`sm-status ${s.status === "Active" ? "active" : "inactive"}`}>{s.status}</span>
                       </td>
@@ -470,7 +542,13 @@ export default function StudentManagement() {
         onClose={() => setInviteOpen(false)}
         onSend={handleInviteSend}
       />
-      <EditStudentModal open={editOpen} student={editingStudent} onClose={() => setEditOpen(false)} onSaveClick={onEditSaveClick} />
+      <EditStudentModal
+        open={editOpen}
+        student={editingStudent}
+        onClose={() => setEditOpen(false)}
+        onSaveClick={onEditSaveClick}
+        onUnbindRequest={onUnbindRequest}
+      />
       
       {successOpen && (
         <div className="scm-overlay"><div className="scm-card"><i className="bx bx-check-circle"></i><p className="scm-text">{successMsg}</p></div></div>
@@ -478,6 +556,16 @@ export default function StudentManagement() {
 
       <SmallConfirmModal open={applyOpen} title={savingEdit ? "Saving..." : "Apply Changes?"} onYes={applyYes} onCancel={() => setApplyOpen(false)} />
       <SmallConfirmModal open={deleteOpen} title={deleting ? "Archiving..." : `Archive ${pendingDelete?.name}?`} onYes={deleteYes} onCancel={() => setDeleteOpen(false)} />
+      <SmallConfirmModal
+        open={unbindConfirmOpen}
+        title={unbinding ? "Unbinding..." : `Unbind device for ${pendingUnbind?.name}?`}
+        onYes={unbindYes}
+        onCancel={() => {
+          if (unbinding) return;
+          setUnbindConfirmOpen(false);
+          setPendingUnbind(null);
+        }}
+      />
 
       {/* ✅ REUSABLE MODAL WITH REALTIME DATA */}
       <ActivityHistoryModal 
