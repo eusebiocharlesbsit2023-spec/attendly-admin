@@ -26,6 +26,15 @@
   color: #0f172a;
 }
 
+.scm-desc {
+  margin: -2px 0 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #b91c1c;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .scm-actions {
   display: flex;
   justify-content: center;
@@ -45,4 +54,9 @@
   background: #0a4e86;
   border-color: #0a4e86;
   color: #fff;
+}
+
+.scm-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

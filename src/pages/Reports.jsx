@@ -25,7 +25,7 @@ import {
 export default function Reports() {
   const navigate = useNavigate();
   const location = useLocation();
-  const adminProfile = JSON.parse(localStorage.getItem("adminProfile")) || [];
+  const adminProfile = JSON.parse(localStorage.getItem("adminProfile")) || {};
 
   /* ✅ USE THE REUSABLE HOOK */
   const {
@@ -56,14 +56,15 @@ export default function Reports() {
     try {
       const { data, error } = await supabase
         .from("support_requests")
-        .select("id, user_id, email, subject, message, status, created_at")
+        .select("id, user_id, user_name, email, subject, message, status, created_at")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
       const mapped = (data ?? []).map((r) => ({
         id: r.id,
-        name: r.email || "Unknown",
+        user_name: r.user_name || "Unknown",
+        email: r.email || "—",
         studentId: r.user_id || "—",
         subject: r.subject,
         message: r.message,
@@ -84,7 +85,6 @@ export default function Reports() {
     if (v === "open") return "Open";
     if (v === "resolved") return "Resolved";
     if (v === "pending" || v === "in_progress") return "Pending";
-    if (v === "closed") return "Closed";
     return "Open";
   }
 
@@ -93,7 +93,6 @@ export default function Reports() {
     if (v === "open") return "open";
     if (v === "resolved") return "resolved";
     if (v === "pending") return "in_progress";
-    if (v === "closed") return "closed";
     return "open";
   };
 
@@ -163,9 +162,9 @@ export default function Reports() {
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const feedbackGrid = "1fr 240px 170px 1fr 160px";
+  const feedbackGrid = "1fr 1fr 240px 170px 1fr 160px";
 
-  const STATUS_OPTIONS = ["Open", "Resolved", "Pending", "Closed"];
+  const STATUS_OPTIONS = ["Open", "Resolved", "Pending"];
 
   // ARCHIVE DATA
   const [archived, setArchived] = useState([]);
@@ -282,7 +281,7 @@ export default function Reports() {
 
   const applySelectStatusClass = (el, value) => {
     if (!el) return;
-    const all = ["open", "resolved", "pending", "closed"];
+    const all = ["open", "resolved", "pending"];
     all.forEach((c) => el.classList.remove(`rep-status-${c}`));
     el.classList.add(`rep-status-${String(value).toLowerCase()}`);
   };
@@ -321,7 +320,8 @@ export default function Reports() {
   const filteredFeedback = useMemo(() => {
     const query = q.trim().toLowerCase();
     return reports.filter((r) => {
-      const okQuery = !query || String(r.id).includes(query) || r.name.toLowerCase().includes(query) ||
+      const okQuery = !query || String(r.id).includes(query) || r.user_name.toLowerCase().includes(query) ||
+        r.email.toLowerCase().includes(query) ||
         r.studentId.toLowerCase().includes(query) || r.subject.toLowerCase().includes(query) || r.message.toLowerCase().includes(query);
       const okStatus = status === "All" || r.status === status;
       const okFrom = !from || r.date >= from;
@@ -382,22 +382,23 @@ export default function Reports() {
     let dataRows = []; // Dito natin i-store ang pre-mapped data
 
     if (tab === "feedback") {
-      // --- SETTING: FEEDBACK (5 Columns) ---
+      // --- SETTING: FEEDBACK (6 Columns) ---
       tableTitle = "FEEDBACKS";
-      mergeRange = "A6:E6"; // A-E
+      mergeRange = "A6:F6"; // A-F
       fileName = "Reports_Feedback.xlsx";
       
       tableColumns = [
-        { key: 'name', width: 25 },       // A
-        { key: 'subject', width: 20 },    // B
-        { key: 'message', width: 45 },    // C (Wide for message)
-        { key: 'date', width: 20 },       // D
-        { key: 'status', width: 12 }      // E
+        { key: 'user_name', width: 25 },  // A
+        { key: 'email', width: 30 },      // B
+        { key: 'subject', width: 20 },    // C
+        { key: 'message', width: 45 },    // D (Wide for message)
+        { key: 'date', width: 20 },       // E
+        { key: 'status', width: 12 }      // F
       ];
 
       // Map Data
       dataRows = filteredFeedback.map(r => [
-        r.name, r.subject, r.message, r.date, r.status
+        r.user_name, r.email, r.subject, r.message, r.date, r.status
       ]);
 
     } else if (tab === "class-archive") {
@@ -487,7 +488,7 @@ export default function Reports() {
     
     // Set Header Text based on tab
     if (tab === "feedback") {
-      headerRow.values = ["Name", "Subject", "Message", "Submission Date", "Status"];
+      headerRow.values = ["User Name", "Email", "Subject", "Message", "Submission Date", "Status"];
     } else if (tab === "class-archive") {
       headerRow.values = ["Class Name", "Code", "Professor", "Room", "Schedule", "Deleted Date"];
     } else {
@@ -519,8 +520,8 @@ export default function Reports() {
         };
         
         // Special Alignment Logic
-        // Message (Feedback Col 3) = Left + Wrap Text
-        if (tab === "feedback" && colNumber === 3) {
+        // Message (Feedback Col 4) = Left + Wrap Text
+        if (tab === "feedback" && colNumber === 4) {
              cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
         } 
         // Name/Email/Class Name usually Left aligned
@@ -568,6 +569,26 @@ export default function Reports() {
   const openRestore = (row) => { setRestoreTarget(row); setRestoreOpen(true); };
   const openDelete = (row) => { setDeleteTarget(row); setDeleteOpen(true); };
 
+  const getCurrentAdminName = async () => {
+    const localAdminName = adminProfile?.admin_name;
+    const localAdminId = adminProfile?.id;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const actorId = user?.id || localAdminId;
+      if (!actorId) return localAdminName || "Admin";
+
+      const { data: adminData } = await supabase
+        .from("admins")
+        .select("admin_name")
+        .eq("id", actorId)
+        .maybeSingle();
+
+      return adminData?.admin_name || localAdminName || "Admin";
+    } catch {
+      return localAdminName || "Admin";
+    }
+  };
+
   const confirmRestore = async () => {
     if (!restoreTarget) return;
     setRestoreLoading(true);
@@ -594,14 +615,7 @@ export default function Reports() {
       if (error) throw error;
 
       // 2. Get current Admin Name for logging
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: adminData } = await supabase
-        .from('admins')
-        .select('admin_name')
-        .eq('id', user.id)
-        .single();
-      
-      const adminName = adminData?.admin_name || "Admin";
+      const adminName = await getCurrentAdminName();
 
       // 3. Insert Activity Log
       await supabase.from('recent_activities').insert({
@@ -630,7 +644,14 @@ export default function Reports() {
     if (!deleteTarget || deleteLoading) return;
     setDeleteLoading(true);
     try {
-      const table = deleteTarget.kind === "Student" ? "students" : deleteTarget.kind === "Professor" ? "professors" : "classes";
+      const table =
+        deleteTarget.kind === "Student"
+          ? "students"
+          : deleteTarget.kind === "Professor"
+          ? "professors"
+          : deleteTarget.kind === "Admin"
+          ? "admins"
+          : "classes";
       
       // 1. Permanent Delete from Table
       const { error } = await supabase
@@ -651,14 +672,7 @@ export default function Reports() {
       }
 
       // 2. Logging
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: adminData } = await supabase
-        .from('admins')
-        .select('admin_name')
-        .eq('id', user.id)
-        .single();
-      
-      const adminName = adminData?.admin_name || "Admin";
+      const adminName = await getCurrentAdminName();
 
       await supabase.from('recent_activities').insert({
         activity_type: 'permanent_delete',
@@ -761,17 +775,18 @@ export default function Reports() {
             <div className="rep-dt-table">
               {tab === "feedback" && (
                 <>
-                  <div className="rep-dt-thead" style={{ gridTemplateColumns: feedbackGrid }}>
-                    <div>Name</div><div>Subject</div><div>Message</div><div>Submission Date</div><div>Status</div>
+                  <div className="rep-dt-thead rep-feedback-head" style={{ gridTemplateColumns: feedbackGrid }}>
+                    <div>User Name</div><div>Email</div><div>Subject</div><div>Message</div><div>Submission Date</div><div>Status</div>
                   </div>
                   <div className="rep-dt-tbody">
                     {reportsLoading ? <div className="rep-dt-empty">Loading reports...</div> : 
                      paged.map((r) => (
-                      <div className="rep-dt-row" key={r.id} style={{ gridTemplateColumns: feedbackGrid }}>
+                      <div className="rep-dt-row rep-feedback-row" key={r.id} style={{ gridTemplateColumns: feedbackGrid }}>
                         <div className="rep-dt-nameCell">
-                          <span className="rep-dt-avatar">{initials(r.name)}</span>
-                          <div className="rep-dt-name">{r.name}</div>
+                          <span className="rep-dt-avatar">{initials(r.user_name)}</span>
+                          <div className="rep-dt-name">{r.user_name}</div>
                         </div>
+                        <div className="rep-email">{r.email}</div>
                         <div className="rep-subject">{r.subject}</div>
                         <div className="rep-message">{r.message}</div>
                         <div>{r.date}</div>
@@ -796,7 +811,7 @@ export default function Reports() {
               )}
 
               {tab === "archive" && (
-                <div className="archive-table-wrapper">
+                <div className="archive-table-wrapper rep-user-archive">
                    {/* Archive logic follows same pattern as your original responsive grid */}
                    {(() => {
                       const isStudent = type === "Student";
@@ -804,8 +819,8 @@ export default function Reports() {
                       return (
                         <>
                           <div className="rep-dt-thead" style={{ gridTemplateColumns: headGrid }}>
-                            {type === "All" && <div>Type</div>}
-                            <div>Name</div>
+                            {type === "All" && <div className="rep-archive-typeHead">Type</div>}
+                            <div className="rep-archive-nameHead">Name</div>
                             <div>{isStudent ? "Student ID" : "Email"}</div>
                             {isStudent && <div>Email</div>}
                             <div>Deleted Date</div>
@@ -816,8 +831,8 @@ export default function Reports() {
                              paged.length === 0 ? <div className="rep-dt-empty">No archive user found.</div> :
                              paged.map((r, idx) => (
                               <div className="rep-dt-row" key={r.id + idx} style={{ gridTemplateColumns: headGrid }}>
-                                {type === "All" && <div className="rep-typeCell">{r.kind}</div>}
-                                <div className="rep-dt-nameCell">
+                                {type === "All" && <div className="rep-typeCell rep-archive-typeCell">{r.kind}</div>}
+                                <div className="rep-dt-nameCell rep-archive-nameCell">
                                   <span className="rep-dt-avatar">{initials(r.name)}</span>
                                   <div className="rep-dt-name">{r.name}</div>
                                 </div>

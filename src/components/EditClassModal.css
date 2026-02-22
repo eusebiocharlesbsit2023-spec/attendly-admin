@@ -82,6 +82,11 @@
   width: 100%;
 }
 
+.ecm-fieldWrap {
+  width: 100%;
+  max-width: 420px;
+}
+
 .ecm-ico {
   width: 26px;
   display: inline-flex;
@@ -149,6 +154,21 @@
   font-weight: 700;
   font-size: 14px;
   color: #0f172a;
+}
+
+.ecm-helpText {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #334155;
+}
+
+.ecm-errorText {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #b91c1c;
+  font-weight: 600;
 }
 
 /* ================= ACTIONS (CENTER) ================= */

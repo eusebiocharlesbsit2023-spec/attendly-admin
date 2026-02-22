@@ -44,7 +44,6 @@ export default function ClassManagement() {
   // ✅ Delete confirm
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [archiveOpen, setArchiveOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -143,8 +142,63 @@ export default function ClassManagement() {
   const onEdit = (clazzObj) => { setEditingClass(clazzObj); setEditOpen(true); };
   const onEditSaveClick = (updatedClass) => { setPendingEdit(updatedClass); setApplyOpen(true); };
 
+  const normalizeDay = (value) => {
+    const map = {
+      mon: "Monday",
+      tue: "Tuesday",
+      wed: "Wednesday",
+      thu: "Thursday",
+      fri: "Friday",
+      sat: "Saturday",
+      sun: "Sunday",
+    };
+    const raw = String(value || "").trim();
+    const key = raw.toLowerCase().slice(0, 3);
+    return map[key] || raw;
+  };
+
+  const toMinutes = (value) => {
+    const [hh, mm] = String(value || "").split(":");
+    const h = Number(hh);
+    const m = Number(mm || 0);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return h * 60 + m;
+  };
+
+  const isInScheduleSpan = (clazzObj) => {
+    if (!clazzObj?.day_of_week || !clazzObj?.start_time || !clazzObj?.end_time) return false;
+    const now = new Date();
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const today = days[now.getDay()];
+    if (normalizeDay(clazzObj.day_of_week) !== today) return false;
+
+    const start = toMinutes(clazzObj.start_time);
+    const end = toMinutes(clazzObj.end_time);
+    if (start == null || end == null) return false;
+
+    const current = now.getHours() * 60 + now.getMinutes();
+    return current >= start && current < end;
+  };
+
   const applyYes = async () => {
     if (pendingEdit?.id) {
+      const currentClass = rows.find((c) => c.id === pendingEdit.id) || editingClass;
+
+      if (currentClass && isInScheduleSpan(currentClass)) {
+        const changedLockedFields =
+          pendingEdit.room !== currentClass.room ||
+          normalizeDay(pendingEdit.day_of_week) !== normalizeDay(currentClass.day_of_week) ||
+          pendingEdit.start_time !== currentClass.start_time ||
+          pendingEdit.end_time !== currentClass.end_time;
+
+        if (changedLockedFields) {
+          alert("Room, day, and time cannot be changed during the class schedule span.");
+          setApplyOpen(false);
+          setPendingEdit(null);
+          return;
+        }
+      }
+
       try {
         // ✅ Magdagdag ng actual Supabase update para permanenteng ma-save
         const { error } = await supabase
@@ -177,8 +231,10 @@ export default function ClassManagement() {
   };
 
   const onDeleteClick = (clazzObj) => { setPendingDelete(clazzObj); setDeleteOpen(true); };
+
   const deleteYes = async () => {
     if (pendingDelete?.id) {
+      if (isInScheduleSpan(pendingDelete)) return;
       try {
         // 1. I-update ang record sa Supabase database
         const { error } = await supabase
@@ -208,6 +264,8 @@ export default function ClassManagement() {
     setDeleteOpen(false);
     setPendingDelete(null);
   };
+
+  const archiveBlockedBySchedule = pendingDelete ? isInScheduleSpan(pendingDelete) : false;
 
   // ===== Filtering =====
   const classOptions = useMemo(() => ["All Classes", ...Array.from(new Set(rows.map(c => c.code)))], [rows]);
@@ -420,7 +478,9 @@ export default function ClassManagement() {
       <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={() => setApplyOpen(false)} />
       <SmallConfirmModal 
         open={deleteOpen} 
-        title={`Archive ${pendingDelete?.code}?`} // Palitan ang Delete ng Archive
+        title={archiveBlockedBySchedule ? `Cannot Archive ${pendingDelete?.code}` : `Archive ${pendingDelete?.code}?`}
+        description={archiveBlockedBySchedule ? "This class is currently within its scheduled time span." : ""}
+        yesDisabled={archiveBlockedBySchedule}
         onYes={deleteYes} 
         onCancel={() => setDeleteOpen(false)} 
       />

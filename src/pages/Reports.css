@@ -620,6 +620,32 @@
   text-align: left !important;
 }
 
+.rep-dt-thead.rep-feedback-head > div:nth-child(1),
+.rep-dt-thead.rep-feedback-head > div:nth-child(2) {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.rep-dt-tbody .rep-dt-row.rep-feedback-row > div:nth-child(1),
+.rep-dt-tbody .rep-dt-row.rep-feedback-row > div:nth-child(2) {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.rep-dt-tbody .rep-dt-row.rep-feedback-row .rep-dt-nameCell {
+  justify-content: center !important;
+}
+
+.rep-user-archive .rep-dt-thead > div:first-child,
+.rep-user-archive .rep-dt-tbody .rep-dt-row > div:first-child {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.rep-user-archive .rep-dt-nameCell {
+  justify-content: center !important;
+}
+
 .rep-dt-nameCell {
   justify-content: flex-start !important;
 }
@@ -683,4 +709,33 @@
   border-color: #cbd5e1;
 }
 
+.rep-user-archive .rep-dt-nameCell {
+  justify-content: center !important;
+}
+
+.rep-user-archive .rep-dt-name {
+  text-align: center !important;
+}
+
+.rep-user-archive .rep-archive-typeHead,
+.rep-user-archive .rep-archive-nameHead,
+.rep-user-archive .rep-archive-typeCell,
+.rep-user-archive .rep-archive-nameCell {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.rep-user-archive .rep-archive-nameCell .rep-dt-name {
+  text-align: center !important;
+}
+
+/* Final override for archive name column alignment */
+.rep-user-archive .rep-dt-tbody .rep-dt-row .rep-archive-nameCell {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.rep-user-archive .rep-dt-tbody .rep-dt-row .rep-archive-nameCell .rep-dt-name {
+  text-align: center !important;
+}
 

@@ -204,6 +204,7 @@ body {
 
 .manage-card {
   padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .manage-btn {
@@ -218,6 +219,28 @@ body {
   gap: 10px;
   transition: all 0.2s ease;
 }
+.manage-btn:hover {
+  background: #f8fbff;
+}
+.manage-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(10, 78, 134, 0.16);
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+.manage-card:hover .manage-icon {
+  transform: scale(1.06);
+}
+
+.manage-card:hover .manage-text {
+  color: #0a4e86;
+}
+
+.manage-btn:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
 
 .manage-icon {
   width: 56px;
@@ -225,6 +248,7 @@ body {
   border-radius: 16px;
   display: grid;
   place-items: center;
+  transition: transform 0.2s ease;
 }
 
 .manage-text {
