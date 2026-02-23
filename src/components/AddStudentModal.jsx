@@ -46,6 +46,12 @@ function validateEmail(emailRaw) {
   return "";
 }
 
+function normalizeStudentNumberInput(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^0-9N-]/g, "");
+}
+
 export default function AddStudentModal({ open, onClose, onSubmit }) {
   const [step, setStep] = useState(1); // 1 or 2
   const [firstName, setFirstName] = useState("");
@@ -442,7 +448,7 @@ export default function AddStudentModal({ open, onClose, onSubmit }) {
                   className={`asm-input ${((changed.studentNumber && errors.studentNumber) || liveStudentNoError) ? 'asm-input-error' : ''}`}
                   value={studentNumber}
                   maxLength={10}
-                  onChange={e => { setChanged((c) => ({ ...c, studentNumber: true })); setStudentNumber(e.target.value.toUpperCase()); }}
+                  onChange={e => { setChanged((c) => ({ ...c, studentNumber: true })); setStudentNumber(normalizeStudentNumberInput(e.target.value)); }}
                 />
                 {liveStudentNoError ? <p className="asm-fieldError">{liveStudentNoError}</p> : (changed.studentNumber && errors.studentNumber && <p className="asm-fieldError">{errors.studentNumber}</p>)}
               </div>

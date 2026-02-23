@@ -58,6 +58,45 @@ function validatePasswordStrength(passwordRaw) {
   return '';
 }
 
+function getPasswordChecks(passwordRaw) {
+  const password = String(passwordRaw || '');
+  return [
+    { key: 'len', label: 'At least 8 characters', ok: password.length >= 8 },
+    { key: 'upper', label: 'At least 1 uppercase letter', ok: /[A-Z]/.test(password) },
+    { key: 'num', label: 'At least 1 number', ok: /\d/.test(password) },
+    { key: 'special', label: 'At least 1 special character', ok: /[!@#$%^&*_\-+=?]/.test(password) },
+  ];
+}
+
+function PasswordRequirementList({ password }) {
+  const checks = getPasswordChecks(password);
+  return (
+    <div style={{ marginTop: '-6px', marginBottom: '10px', fontSize: '12px' }}>
+      {checks.map((item) => (
+        <div
+          key={item.key}
+          style={{
+            color: item.ok ? '#16a34a' : '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            lineHeight: 1.35,
+          }}
+        >
+          <span style={{ fontWeight: 700 }}>{item.ok ? '✓' : '✕'}</span>
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function normalizeStudentNumberInput(value) {
+  return String(value || '')
+    .toUpperCase()
+    .replace(/[^0-9N-]/g, '');
+}
+
 export default function AdminRegistration() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -246,6 +285,8 @@ export default function AdminRegistration() {
     section: !studentSection ? 'Section is required.' : '',
     studentNumber: !studentNumber.trim()
       ? 'Student number is required.'
+      : /[^0-9N-]/i.test(studentNumber.trim())
+      ? 'Student number accepts only digits, "-", and "N".'
       : !/-N/i.test(studentNumber.trim())
       ? 'Student number must include -N.'
       : studentNumber.trim().length !== 10
@@ -508,7 +549,7 @@ export default function AdminRegistration() {
                       required
                       value={studentNumber}
                       maxLength={10}
-                      onChange={(e) => { markTouched('studentNumber'); setStudentNumber(e.target.value.toUpperCase()); setFormError(''); }}
+                      onChange={(e) => { markTouched('studentNumber'); setStudentNumber(normalizeStudentNumberInput(e.target.value)); setFormError(''); }}
                       disabled={submitting}
                     />
                   </div>
@@ -544,7 +585,7 @@ export default function AdminRegistration() {
                       {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                     </button>
                   </div>
-                  {showFieldError('password', studentStep3Errors.password) && <p style={fieldErrStyle}>{studentStep3Errors.password}</p>}
+                  <PasswordRequirementList password={password} />
                   <div className="input-group password-group">
                     <input
                       className="password-input"
@@ -620,7 +661,7 @@ export default function AdminRegistration() {
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
-              {showFieldError('password', nonStudentPasswordErrors.password) && <p style={fieldErrStyle}>{nonStudentPasswordErrors.password}</p>}
+              <PasswordRequirementList password={password} />
               <div className="input-group password-group">
                 <input
                   className="password-input"

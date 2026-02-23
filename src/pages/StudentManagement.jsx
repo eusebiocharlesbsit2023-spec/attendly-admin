@@ -633,6 +633,15 @@ function InviteStudentModal({ open, onClose, onSend }) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [fieldError, setFieldError] = useState("");
+  const formatInviteError = (err, fallbackEmail = "") => {
+    const text = [err?.details, err?.message, err?.hint].filter(Boolean).join(" ");
+    const matched = text.match(/Key \(email\)=\(([^)]+)\) already exists\.?/i);
+    if (matched?.[1]) return `Key (email)=(${matched[1]}) already exists.`;
+    if (/duplicate key value/i.test(text) || (/already exists/i.test(text) && /email/i.test(text))) {
+      return `Key (email)=(${fallbackEmail}) already exists.`;
+    }
+    return err?.details || err?.message || "Failed to send invite.";
+  };
   const resetInviteForm = () => {
     setEmail("");
     setFieldError("");
@@ -678,7 +687,7 @@ function InviteStudentModal({ open, onClose, onSend }) {
         invite_user_type: "student",
       });
 
-      if (error) throw error;
+      if (error) throw new Error(formatInviteError(error, emailLower));
 
       const token =
         typeof data === "string"
@@ -699,7 +708,7 @@ function InviteStudentModal({ open, onClose, onSend }) {
       onSend(emailLower);
     } catch (err) {
       console.error("Failed to send student invite:", err);
-      setFieldError(err?.details || err?.message || "Failed to send invite.");
+      setFieldError(formatInviteError(err, email.trim().toLowerCase()));
     } finally {
       setSending(false);
     }
