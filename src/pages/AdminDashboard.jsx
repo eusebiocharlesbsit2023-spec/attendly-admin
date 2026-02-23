@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./AdminDashboard.css";
 import ActivityHistoryModal from "../components/ActivityHistoryModal";
 import supabase from "../helper/supabaseClient";
 
-/* ✅ Import the reusable hook */
+/* âœ… Import the reusable hook */
 import { useNotifications } from "../hooks/useNotifications";
 
 /* ===== Font Awesome ===== */
@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const adminProfile = JSON.parse(localStorage.getItem("adminProfile")) || [];
 
-  /* ✅ USE THE REUSABLE HOOK */
+  /* âœ… USE THE REUSABLE HOOK */
   const {
     realActivity,
     activityLoading,
@@ -42,9 +42,27 @@ export default function AdminDashboard() {
   const [todayLoading, setTodayLoading] = useState(false);
   const [todayErr, setTodayErr] = useState(null);
   const [stats, setStats] = useState([
-    { label: "Total Students", value: "—", icon: faUsers, tint: "blue" },
-    { label: "Professors", value: "—", icon: faGraduationCap, tint: "green" },
-    { label: "Active Sessions", value: "—", icon: faBookOpen, tint: "yellow" },
+    {
+      label: "Total Students",
+      value: "—",
+      icon: faUsers,
+      tint: "blue",
+      tooltip: "Students currently online inside classroom devices.",
+    },
+    {
+      label: "Professors",
+      value: "—",
+      icon: faGraduationCap,
+      tint: "green",
+      tooltip: "Total active (not archived) professors.",
+    },
+    {
+      label: "Active Sessions",
+      value: "—",
+      icon: faBookOpen,
+      tint: "yellow",
+      tooltip: "Classes that are currently marked as started.",
+    },
   ]);
   const isOnlineInClassroom = (device) => {
     const location = String(device?.current_location || "").toUpperCase();
@@ -78,11 +96,28 @@ export default function AdminDashboard() {
       ]);
 
       const totalOnlineInClassroom = (studentsRes.data ?? []).filter(isOnlineInClassroom).length;
-
       setStats([
-        { label: "Active Students", value: totalOnlineInClassroom, icon: faUsers, tint: "blue" },
-        { label: "Professors", value: profsRes.count ?? 0, icon: faGraduationCap, tint: "green" },
-        { label: "Active Sessions", value: sessionsRes.count ?? 0, icon: faBookOpen, tint: "yellow" },
+        {
+          label: "Active Students",
+          value: totalOnlineInClassroom,
+          icon: faUsers,
+          tint: "blue",
+          tooltip: `Students online in CLASSROOM right now`,
+        },
+        {
+          label: "Professors",
+          value: profsRes.count ?? 0,
+          icon: faGraduationCap,
+          tint: "green",
+          tooltip: `Total registered professors`,
+        },
+        {
+          label: "Active Sessions",
+          value: sessionsRes.count ?? 0,
+          icon: faBookOpen,
+          tint: "yellow",
+          tooltip: `Class with ongoing session`,
+        },
       ]);
     } catch (e) {
       console.log("fetchStats error:", e?.message || e);
@@ -110,7 +145,7 @@ export default function AdminDashboard() {
         id: c.id,
         title: `${c.course} (${c.course_code})`,
         time: formatTimeFromDB(c.start_time),
-        location: c.room ? `Room ${c.room}` : "—",
+        location: c.room ? `Room ${c.room}` : "â€”",
         students: Number(c.class_enrollments?.[0]?.count ?? 0),
       })));
     } catch (e) {
@@ -121,7 +156,7 @@ export default function AdminDashboard() {
   };
 
   function formatTimeFromDB(t) {
-    if (!t) return "—";
+    if (!t) return "â€”";
     const [hh, mm] = String(t).split(":");
     let h = Number(hh);
     const ampm = h >= 12 ? "PM" : "AM";
@@ -147,7 +182,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="mnt-topbar-right">
-            {/* ✅ REUSABLE BELL ICON LOGIC */}
+            {/* âœ… REUSABLE BELL ICON LOGIC */}
             <button className="mnt-icon-btn" ref={notifRef} onClick={openNotif}>
               {unreadCount > 0 && <span className="mnt-notif-dot" />}
               <FontAwesomeIcon icon={faBell} />
@@ -161,6 +196,7 @@ export default function AdminDashboard() {
         <section className="stats-grid">
           {stats.map((s) => (
             <div className="card stat-card" key={s.label}>
+              <span className="stat-tooltip" role="tooltip">{s.tooltip}</span>
               <div className={`stat-icon tint-${s.tint}`}><FontAwesomeIcon icon={s.icon} /></div>
               <div className="stat-right">
                 <div className="stat-value">{s.value}</div>
@@ -239,7 +275,7 @@ export default function AdminDashboard() {
         </section>
       </main>
 
-      {/* ✅ REUSABLE MODAL */}
+      {/* âœ… REUSABLE MODAL */}
       <ActivityHistoryModal
         open={activityOpen}
         onClose={() => {
@@ -263,3 +299,6 @@ function ManageCard({ title, icon, onClick, tint }) {
     </div>
   );
 }
+
+
+

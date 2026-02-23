@@ -1,6 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
 
-/* ✅ Wider content on 1920x1080 (less empty space on sides) */
+/* âœ… Wider content on 1920x1080 (less empty space on sides) */
 :root {
   --container-max: 1480px; /* was effectively ~1100px via grid max-width */
   --content-max: 1480px;
@@ -25,7 +25,7 @@ body {
   overflow-y: auto;
   overflow-y: auto;
 
-  /* ✅ Global font */
+  /* âœ… Global font */
   font-family: "Montserrat";
 }
 
@@ -37,11 +37,11 @@ body {
   overflow-y: auto;
   overflow-y: auto;
 
-  /* ✅ Ensure dashboard uses Montserrat */
+  /* âœ… Ensure dashboard uses Montserrat */
   font-family: "Montserrat";
 }
 
-/* ✅ Force all dashboard children */
+/* âœ… Force all dashboard children */
 .dash * {
   font-family: "Montserrat";
 }
@@ -152,12 +152,49 @@ body {
 }
 
 .stat-card {
+  position: relative;
   padding: 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   transition: transform 0.2s ease;
+}
+
+.stat-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%) translateY(6px);
+  background: #0a4e86;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  padding: 8px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  z-index: 5;
+}
+
+.stat-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #0a4e86;
+}
+
+.stat-card:hover .stat-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .stat-icon {
@@ -219,14 +256,14 @@ body {
   gap: 10px;
   transition: all 0.2s ease;
 }
-.manage-btn:hover {
-  background: #f8fbff;
-}
 .manage-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(10, 78, 134, 0.16);
   border-color: #bfdbfe;
-  background: #f8fbff;
+  background: #c9e1ff;
+}
+.manage-card:hover .manage-btn{
+  background: #c9e1ff;
 }
 
 .manage-card:hover .manage-icon {
@@ -297,7 +334,7 @@ body {
   display: grid;
   gap: 12px;
 
-  /* ✅ make it scrollable without changing card UI */
+  /* âœ… make it scrollable without changing card UI */
   max-height: 330px;
   overflow-y: auto;
   padding-right: 6px;
@@ -462,3 +499,5 @@ body {
     font-size: 14px;
   }
 }
+
+

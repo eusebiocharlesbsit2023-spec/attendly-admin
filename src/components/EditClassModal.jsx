@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import "./EditClassModal.css";
 
 /* Font Awesome */
@@ -9,6 +9,7 @@ export default function EditClassModal({
   open,
   clazz,
   allClasses,
+  editBlockedReason,
   onClose,
   onSaveClick,
 }) {
@@ -19,6 +20,7 @@ export default function EditClassModal({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [wifi, setWifi] = useState("");
+  const [liveValidationError, setLiveValidationError] = useState("");
 
   const [original, setOriginal] = useState({
     status: "Active",
@@ -107,68 +109,43 @@ export default function EditClassModal({
       .filter((c) => {
         if (!c || c.id === clazz?.id) return false;
         const classRoom = normalizeRoom(c.room);
-        return classRoom.includes(roomQuery);
-      })
-      .slice(0, 5);
-  }, [allClasses, roomQuery, clazz?.id]);
+        if (!classRoom.includes(roomQuery)) return false;
+        if (!dayOfWeek) return true;
+        return dayName(c.day_of_week) === dayOfWeek;
+      });
+  }, [allClasses, roomQuery, dayOfWeek, clazz?.id]);
 
-  const sameRoomSameDay = useMemo(() => {
-    if (!Array.isArray(allClasses) || !roomKey || !dayOfWeek) return [];
+  const getValidationError = (nextRoom, nextDay, nextStart, nextEnd) => {
+    if (!nextStart || !nextEnd) return "";
 
-    return allClasses.filter((c) => {
+    const start = toMinutes(nextStart);
+    const end = toMinutes(nextEnd);
+    if (start == null || end == null) return "";
+    if (end <= start) return "End time must be later than start time.";
+
+    const nextRoomKey = normalizeRoomKey(nextRoom);
+    if (!nextRoomKey || !nextDay || !Array.isArray(allClasses)) return "";
+
+    const conflict = allClasses.find((c) => {
       if (!c || c.id === clazz?.id) return false;
       const classRoom = normalizeRoomKey(c.room);
       const classDay = dayName(c.day_of_week);
-      return classRoom === roomKey && classDay === dayOfWeek;
+      if (classRoom !== nextRoomKey || classDay !== nextDay) return false;
+
+      const currentStart = toMinutes(c.start_time);
+      const currentEnd = toMinutes(c.end_time);
+      if (currentStart == null || currentEnd == null) return false;
+
+      return start < currentEnd && end > currentStart;
     });
-  }, [allClasses, roomKey, dayOfWeek, clazz?.id]);
 
-  const hasInvalidRange = useMemo(() => {
-    if (!startTime || !endTime) return false;
-    const start = toMinutes(startTime);
-    const end = toMinutes(endTime);
-    if (start == null || end == null) return false;
-    return end <= start;
-  }, [startTime, endTime]);
+    if (!conflict) return "";
 
-  const conflictingClass = useMemo(() => {
-    if (!startTime || !endTime || !dayOfWeek || !sameRoomSameDay.length || hasInvalidRange) return null;
-    const nextStart = toMinutes(startTime);
-    const nextEnd = toMinutes(endTime);
-    if (nextStart == null || nextEnd == null) return null;
+    return `Schedule conflict: ${conflict.name || conflict.course || "Class"} is already scheduled on ${dayName(conflict.day_of_week)} (${formatTime12(conflict.start_time)} - ${formatTime12(conflict.end_time)}).`;
+  };
 
-    return (
-      sameRoomSameDay.find((c) => {
-        const currentStart = toMinutes(c.start_time);
-        const currentEnd = toMinutes(c.end_time);
-        if (currentStart == null || currentEnd == null) return false;
-        return nextStart < currentEnd && nextEnd > currentStart;
-      }) || null
-    );
-  }, [sameRoomSameDay, startTime, endTime, dayOfWeek, hasInvalidRange]);
-
-  const validationError = hasInvalidRange
-    ? "End time must be later than start time."
-    : conflictingClass
-      ? `Schedule conflict: ${conflictingClass.name || conflictingClass.course || "Class"} is already scheduled on ${dayName(conflictingClass.day_of_week)} (${formatTime12(conflictingClass.start_time)} - ${formatTime12(conflictingClass.end_time)}).`
-      : "";
-
-  const isScheduleSpanActive = useMemo(() => {
-    if (!clazz?.day_of_week || !clazz?.start_time || !clazz?.end_time) return false;
-
-    const now = new Date();
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const today = days[now.getDay()];
-    const classDay = dayName(clazz.day_of_week);
-    if (today !== classDay) return false;
-
-    const start = toMinutes(clazz.start_time);
-    const end = toMinutes(clazz.end_time);
-    if (start == null || end == null) return false;
-
-    const current = now.getHours() * 60 + now.getMinutes();
-    return current >= start && current < end;
-  }, [clazz]);
+  const isEditLocked = Boolean(editBlockedReason);
+  const hasTimeError = Boolean(liveValidationError);
 
   useEffect(() => {
     if (open && clazz) {
@@ -189,6 +166,7 @@ export default function EditClassModal({
       setStartTime(next.startTime);
       setEndTime(next.endTime);
       setWifi(next.wifi);
+      setLiveValidationError("");
 
       setOriginal(next);
     }
@@ -205,6 +183,10 @@ export default function EditClassModal({
     setWifi(formatApName('ClassroomWifi'));
   }, [room]);
 
+  useEffect(() => {
+    setLiveValidationError(getValidationError(room, dayOfWeek, startTime, endTime));
+  }, [room, dayOfWeek, startTime, endTime, allClasses, clazz?.id]);
+
   if (!open || !clazz) return null;
 
   return (
@@ -217,6 +199,9 @@ export default function EditClassModal({
             <div className="ecm-code">{clazz.code}</div>
           </div>
         </div>
+        {editBlockedReason && (
+          <div className="ecm-topError">{editBlockedReason}</div>
+        )}
 
         {/* ===== Fields ===== */}
         <div className="ecm-fields">
@@ -236,7 +221,7 @@ export default function EditClassModal({
                 className="ecm-select"
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
-                disabled={isScheduleSpanActive}
+                disabled={isEditLocked}
               >
                 <option value="">Select room</option>
                 {roomOptionsByFloor.map(({ floor, rooms }) => (
@@ -249,15 +234,6 @@ export default function EditClassModal({
                   </optgroup>
                 ))}
               </select>
-              {roomQuery && roomScheduleMatches.length > 0 && (
-                <div className="ecm-helpText">
-                  {roomScheduleMatches.map((c) => (
-                    <div key={c.id}>
-                      {(c.name || c.course || "Unknown Course")} - {dayName(c.day_of_week)} ({formatTime12(c.start_time)} - {formatTime12(c.end_time)})
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
@@ -269,7 +245,7 @@ export default function EditClassModal({
               className="ecm-select"
               value={dayOfWeek}
               onChange={(e) => setDayOfWeek(e.target.value)}
-              disabled={isScheduleSpanActive}
+              disabled={isEditLocked}
             >
               <option value="">Select day</option>
               {dayOptions.map((d) => (
@@ -287,25 +263,22 @@ export default function EditClassModal({
             <div className="ecm-fieldWrap">
               <div className="ecm-timeInputs">
               <input
-                className="ecm-input"
+                className={`ecm-input ${hasTimeError ? "ecm-input-error" : ""}`}
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                disabled={isScheduleSpanActive}
+                disabled={isEditLocked}
               />
               <span className="ecm-timeSep">to</span>
               <input
-                className="ecm-input"
+                className={`ecm-input ${hasTimeError ? "ecm-input-error" : ""}`}
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                disabled={isScheduleSpanActive}
+                disabled={isEditLocked}
               />
               </div>
-              {validationError && <div className="ecm-errorText">{validationError}</div>}
-              {isScheduleSpanActive && (
-                <div className="ecm-helpText">Edit is not allowed during the class schedule span.</div>
-              )}
+              {liveValidationError && <div className="ecm-errorText">{liveValidationError}</div>}
             </div>
           </div>
 
@@ -317,19 +290,33 @@ export default function EditClassModal({
           </div>
         </div>
 
-        {/* ✅ Buttons (CENTER like student modal) */}
+        {roomQuery && roomScheduleMatches.length > 0 && (
+          <div className="ecm-conflictWrap">
+            <div className="ecm-conflictLabel">Room Schedule Conflicts</div>
+            <div className="ecm-helpText ecm-conflictList">
+              {roomScheduleMatches.map((c) => (
+                <div className="ecm-conflictItem" key={c.id}>
+                  {(c.name || c.course || "Unknown Course")} - {dayName(c.day_of_week)} ({formatTime12(c.start_time)} - {formatTime12(c.end_time)})
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Buttons (CENTER like student modal) */}
         <div className="ecm-actions">
           <button className="ecm-cancel" type="button" onClick={onClose}>
             Cancel
           </button>
 
           <button
-            className={`ecm-save ${!changed || Boolean(validationError) ? "disabled" : ""}`}
+            className={`ecm-save ${!changed || Boolean(liveValidationError) || Boolean(editBlockedReason) ? "disabled" : ""}`}
             type="button"
-            disabled={!changed || Boolean(validationError)}
+            disabled={!changed || Boolean(liveValidationError) || Boolean(editBlockedReason)}
             title={
-              validationError
-                ? validationError
+              editBlockedReason
+                ? editBlockedReason
+                : liveValidationError
+                ? liveValidationError
                 : !changed
                   ? "Change something first"
                   : "Save changes"
@@ -355,3 +342,4 @@ export default function EditClassModal({
     </div>
   );
 }
+

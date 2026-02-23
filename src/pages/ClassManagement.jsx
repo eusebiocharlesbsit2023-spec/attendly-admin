@@ -17,6 +17,7 @@ import {
   faMagnifyingGlass,
   faDownload,
   faChevronLeft,
+  faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function ClassManagement() {
@@ -40,6 +41,7 @@ export default function ClassManagement() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [pendingEdit, setPendingEdit] = useState(null);
+  const [editValidationMsg, setEditValidationMsg] = useState("");
 
   // ✅ Delete confirm
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -56,6 +58,8 @@ export default function ClassManagement() {
   // Data states
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [entries, setEntries] = useState(4);
+  const [page, setPage] = useState(1);
 
   // ===== Fetch Logic =====
   const fetchClasses = async () => {
@@ -138,8 +142,34 @@ export default function ClassManagement() {
     );
   }
 
+  const getStartedSessionLock = async (classId) => {
+    if (!classId) return "";
+    const { count, error } = await supabase
+      .from("class_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("class_id", classId)
+      .eq("status", "started");
+
+    if (error) throw error;
+    if ((count ?? 0) > 0) {
+      return "This class has an ongoing session. Editing is disabled until the session is ended.";
+    }
+    return "";
+  };
+
   // ===== Handlers =====
-  const onEdit = (clazzObj) => { setEditingClass(clazzObj); setEditOpen(true); };
+  const onEdit = async (clazzObj) => {
+    setEditValidationMsg("");
+    setEditingClass(clazzObj);
+    setEditOpen(true);
+    try {
+      const lockMessage = await getStartedSessionLock(clazzObj?.id);
+      setEditValidationMsg(lockMessage);
+    } catch (err) {
+      console.error("Session lock check failed:", err.message);
+      setEditValidationMsg("Unable to validate class session status. Try again before editing.");
+    }
+  };
   const onEditSaveClick = (updatedClass) => { setPendingEdit(updatedClass); setApplyOpen(true); };
 
   const normalizeDay = (value) => {
@@ -182,21 +212,20 @@ export default function ClassManagement() {
 
   const applyYes = async () => {
     if (pendingEdit?.id) {
-      const currentClass = rows.find((c) => c.id === pendingEdit.id) || editingClass;
-
-      if (currentClass && isInScheduleSpan(currentClass)) {
-        const changedLockedFields =
-          pendingEdit.room !== currentClass.room ||
-          normalizeDay(pendingEdit.day_of_week) !== normalizeDay(currentClass.day_of_week) ||
-          pendingEdit.start_time !== currentClass.start_time ||
-          pendingEdit.end_time !== currentClass.end_time;
-
-        if (changedLockedFields) {
-          alert("Room, day, and time cannot be changed during the class schedule span.");
+      try {
+        const lockMessage = await getStartedSessionLock(pendingEdit.id);
+        if (lockMessage) {
+          setEditValidationMsg(lockMessage);
           setApplyOpen(false);
           setPendingEdit(null);
           return;
         }
+      } catch (err) {
+        console.error("Session lock check failed:", err.message);
+        setEditValidationMsg("Unable to validate class session status. Try again before editing.");
+        setApplyOpen(false);
+        setPendingEdit(null);
+        return;
       }
 
       try {
@@ -228,6 +257,7 @@ export default function ClassManagement() {
     setEditOpen(false); 
     setPendingEdit(null); 
     setEditingClass(null);
+    setEditValidationMsg("");
   };
 
   const onDeleteClick = (clazzObj) => { setPendingDelete(clazzObj); setDeleteOpen(true); };
@@ -280,6 +310,20 @@ export default function ClassManagement() {
       return matchesQuery && matchesClass && matchesProf;
     });
   }, [rows, q, clazz, prof]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / entries));
+  const safePage = Math.min(page, totalPages);
+  const paginatedClasses = useMemo(() => {
+    const start = (safePage - 1) * entries;
+    return filtered.slice(start, start + entries);
+  }, [filtered, safePage, entries]);
+
+  const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * entries + 1;
+  const showingTo = Math.min(filtered.length, (safePage - 1) * entries + paginatedClasses.length);
+
+  useEffect(() => {
+    setPage(1);
+  }, [q, clazz, prof, entries]);
 
 
   const stats = useMemo(() => ({
@@ -446,12 +490,21 @@ export default function ClassManagement() {
             </div>
             <button className="cm-exportBtn" onClick={exportToExcel}><FontAwesomeIcon icon={faDownload} /> Export XLSX</button>
           </div>
+          <div className="cm-entriesInline">
+            <span className="cm-entriesLabel">Show</span>
+            <select value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
+              <option value={4}>4</option>
+              <option value={8}>8</option>
+              <option value={12}>12</option>
+            </select>
+            <span className="cm-entriesLabel">entries</span>
+          </div>
         </section>
 
         <section className="cm-cards">
           {loading ? <div className="cm-empty">Loading classes...</div> : 
            filtered.length === 0 ? <div className="cm-empty">No classes found.</div> :
-           filtered.map((c) => (
+           paginatedClasses.map((c) => (
             <div className="cm-card" key={c.id}>
               <div className="cm-card-top">
                 <div><div className="cm-card-name">{c.name}</div><div className="cm-card-code">{c.code}</div></div>
@@ -472,9 +525,31 @@ export default function ClassManagement() {
             </div>
           ))}
         </section>
+        <div className="cm-footer">
+          <div className="cm-footerLeft">Showing {showingFrom} to {showingTo} of {filtered.length} entries</div>
+          <div className="cm-footerRight">
+            <button className="cm-pageBtn" disabled={safePage <= 1} onClick={() => setPage((p) => p - 1)}>
+              <FontAwesomeIcon icon={faChevronLeft} /> Previous
+            </button>
+            <button className="cm-pageNum active">{safePage}</button>
+            <button className="cm-pageBtn" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)}>
+              Next <FontAwesomeIcon icon={faChevronRight} />
+            </button>
+          </div>
+        </div>
       </main>
 
-      <EditClassModal open={editOpen} clazz={editingClass} allClasses={rows} onClose={() => setEditOpen(false)} onSaveClick={onEditSaveClick} />
+      <EditClassModal
+        open={editOpen}
+        clazz={editingClass}
+        allClasses={rows}
+        editBlockedReason={editValidationMsg}
+        onClose={() => {
+          setEditOpen(false);
+          setEditValidationMsg("");
+        }}
+        onSaveClick={onEditSaveClick}
+      />
       <SmallConfirmModal open={applyOpen} title="Apply Changes?" onYes={applyYes} onCancel={() => setApplyOpen(false)} />
       <SmallConfirmModal 
         open={deleteOpen} 
