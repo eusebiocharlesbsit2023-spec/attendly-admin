@@ -29,6 +29,28 @@ import {
   faChevronRight 
 } from "@fortawesome/free-solid-svg-icons";
 
+const ALLOWED_EMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "yahoo.com",
+  "yahoo.com.ph",
+  "outlook.com",
+  "hotmail.com",
+  "msn.com",
+]);
+
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+const validateInviteEmail = (value) => {
+  const email = String(value || "").trim().toLowerCase();
+  if (!email) return "Please enter an email address.";
+  if (!EMAIL_REGEX.test(email)) return "Please enter a valid email address.";
+  const domain = email.split("@")[1] || "";
+  if (!ALLOWED_EMAIL_DOMAINS.has(domain)) {
+    return "Only gmail.com, yahoo.com, yahoo.com.ph, outlook.com, hotmail.com, and msn.com are allowed.";
+  }
+  return "";
+};
+
 export default function StudentManagement() {
   const navigate = useNavigate();
 
@@ -626,8 +648,9 @@ function InviteStudentModal({ open, onClose, onSend }) {
   }, [open]);
 
   const handleSend = async () => {
-    if (!email || sending || !email.includes("@")) {
-      setFieldError("Please enter a valid email address.");
+    const clientError = validateInviteEmail(email);
+    if (sending || clientError) {
+      setFieldError(clientError || "Please enter a valid email address.");
       return;
     }
 
@@ -695,16 +718,17 @@ function InviteStudentModal({ open, onClose, onSend }) {
           placeholder="student.email@example.com"
           value={email}
           onChange={(e) => {
-            setEmail(e.target.value);
-            if (fieldError) setFieldError("");
+            const nextEmail = e.target.value;
+            setEmail(nextEmail);
+            setFieldError(validateInviteEmail(nextEmail));
           }}
           disabled={sending}
         />
         {fieldError && <div className="sm-modal-error">{fieldError}</div>}
         <button
-          className={`sm-modal-btn sm-modal-send ${!email || sending ? "disabled" : ""}`}
+          className={`sm-modal-btn sm-modal-send ${!email || sending || Boolean(validateInviteEmail(email)) ? "disabled" : ""}`}
           type="button"
-          disabled={!email || sending}
+          disabled={!email || sending || Boolean(validateInviteEmail(email))}
           onClick={handleSend}
         >
           {sending ? "Sending..." : "Send Invite"}
