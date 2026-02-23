@@ -474,12 +474,6 @@ export default function ManageAdmin() {
               </select>
               <span>entries</span>
             </div>
-            <div className="mam-miniPager">
-              <button className="mam-miniBtn" disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
-              <span className="mam-miniPage">{safePage}</span>
-              <button className="mam-miniBtn" disabled={safePage >= totalPages} onClick={() => setPage(p => p + 1)}>›</button>
-              <span className="mam-miniNext">Next ›</span>
-            </div>
           </div>
 
           <div className="mam-tableWrap">

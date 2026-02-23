@@ -1,7 +1,10 @@
 /* Uses AdminDashboard topbar + layout, we only style the page content */
 .mam-main {
   background: #eaf4ff;
-  /* min-height: calc(100vh - 72px); */ 
+  height: 82vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* White container like screenshot */
@@ -11,6 +14,10 @@
   border: 1px solid #dbe7f4;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* top-right create button */
@@ -137,9 +144,12 @@
 
 /* table */
 .mam-tableWrap {
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: auto;
   border-top: 1px solid #eef3f8;
   border-bottom: 1px solid #eef3f8;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .mam-table {
@@ -269,6 +279,7 @@ tr,td{
 .mam-footerLeft {
   color: #475569;
   font-size: 13px;
+  font-weight: 700;
 }
 
 .mam-footerRight {
@@ -327,6 +338,11 @@ tr,td{
 
 /* responsive */
 @media (max-width: 900px) {
+  .mam-main {
+    height: auto;
+    overflow: visible;
+  }
+
   .mam-filters {
     grid-template-columns: 1fr;
   }

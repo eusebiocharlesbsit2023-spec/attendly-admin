@@ -32,7 +32,7 @@
 /* ===== Top controls (like screenshot) ===== */
 .rep-dt-top {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 14px;
   padding: 6px 2px 10px;
@@ -45,8 +45,10 @@
   gap: 10px;
   border: 1.5px solid #d7e3f1;
   border-radius: 12px;
-  padding: 12px 14px;
+  height: 46px;
+  padding: 0 14px;
   background: #fff;
+  box-sizing: border-box;
 }
 
 .rep-dt-searchIcon {
@@ -64,26 +66,32 @@
 
 .rep-dt-right {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 12px;
 }
 
-.rep-dt-field label {
-  display: block;
+.rep-dt-inlineField {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rep-dt-inlineField span {
   font-size: 13px;
   font-weight: 800;
   color: #0f172a;
-  margin-bottom: 6px;
 }
 
-.rep-dt-field select {
+.rep-dt-inlineField select {
   width: 230px;
   border: 1.5px solid #d7e3f1;
   border-radius: 12px;
-  padding: 12px 14px;
+  height: 46px;
+  padding: 0 14px;
   outline: none;
   background: #fff;
   font-size: 14px;
+  box-sizing: border-box;
 }
 
 /* Buttons */
@@ -92,7 +100,8 @@
   background: #fff;
   color: #0a4e86;
   border-radius: 12px;
-  padding: 12px 14px;
+  height: 46px;
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -121,7 +130,7 @@
 .rep-dt-sub {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   padding: 6px 2px 12px;
 }
@@ -205,7 +214,8 @@
 }
 
 .rep-dt-tbody {
-  max-height: 400px;
+  max-height: 610px;
+  min-height: 490px;
   overflow-y: auto;
 }
 
@@ -318,11 +328,18 @@
 }
 
 /* Pagination bottom-right */
+.rep-dt-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 2px 6px;
+}
+
 .rep-dt-pagination {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 14px 2px 6px;
 }
 
 .rep-dt-pageBtn {
@@ -370,6 +387,15 @@
     width: 100%;
   }
 
+  .rep-dt-inlineField {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .rep-dt-inlineField select {
+    width: 100%;
+  }
+
   .rep-dt-filters {
     grid-template-columns: 1fr 1fr;
   }
@@ -381,6 +407,16 @@
   .rep-dt-thead,
   .rep-dt-row {
     min-width: 980px;
+  }
+
+  .rep-dt-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rep-dt-pagination {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 

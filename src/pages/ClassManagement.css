@@ -428,7 +428,7 @@
 
 
 .cm-main{
-  height: calc(100vh - 82px); 
+  height: calc(100vh - 62px); 
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -451,6 +451,11 @@ html, body {
 .cm,
 .cm-main {
   overflow: hidden !important;
+}
+
+.cm-main {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 /* button same size */

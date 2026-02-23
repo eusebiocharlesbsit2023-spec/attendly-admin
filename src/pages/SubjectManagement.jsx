@@ -519,13 +519,6 @@ export default function SubjectManagement() {
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
                 <span className="subj-searchIcon"><FontAwesomeIcon icon={faMagnifyingGlass} /></span>
               </div>
-              <div className="subj-entriesInline">
-                <span className="subj-entriesLabel">Show</span>
-                <select value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
-                  <option value={5}>5</option><option value={10}>10</option><option value={25}>25</option>
-                </select>
-                <span className="subj-entriesLabel">entries</span>
-              </div>
             </div>
             <div className="subj-controls-right">
               <div className="subj-viewToggle">
@@ -560,6 +553,15 @@ export default function SubjectManagement() {
               <button className="subj-exportBtn" onClick={exportToExcel}>
                 <FontAwesomeIcon icon={faDownload} /> Export XLSX
               </button>
+            </div>
+          </div>
+          <div className="subj-entriesRow">
+            <div className="subj-entriesInline">
+              <span className="subj-entriesLabel">Show</span>
+              <select value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
+                <option value={5}>5</option><option value={10}>10</option><option value={25}>25</option>
+              </select>
+              <span className="subj-entriesLabel">entries</span>
             </div>
           </div>
 

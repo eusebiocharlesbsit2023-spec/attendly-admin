@@ -734,28 +734,17 @@ export default function Reports() {
 
               <div className="rep-dt-right">
                 {tab === "feedback" ? (
-                  <div className="rep-dt-field">
-                    <label>Status</label>
+                  <div className="rep-dt-inlineField">
+                    <span>Status</span>
                     <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                      <option>All</option>
-                      {STATUS_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}
+                      <option value="All">All Status</option>
+                      {STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
                 ) : null}
                 <button className="rep-dt-btn primary" onClick={exportToExcel}>
                   <span className="rep-dt-btnIco"><FontAwesomeIcon icon={faDownload} /></span> Export XLSX
                 </button>
-              </div>
-            </div>
-
-            <div className="rep-dt-sub">
-              <div className="rep-dt-showing">Showing {showingFrom} to {showingTo} of {activeRows.length} entries</div>
-              <div className="rep-dt-entries">
-                <span>Show</span>
-                <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
-                  <option value={5}>5</option><option value={10}>10</option><option value={25}>25</option>
-                </select>
-                <span>entries</span>
               </div>
             </div>
 
@@ -770,6 +759,16 @@ export default function Reports() {
                   </select>
                 </div>
               )}
+            </div>
+
+            <div className="rep-dt-sub">
+              <div className="rep-dt-entries">
+                <span>Show</span>
+                <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                  <option value={5}>5</option><option value={10}>10</option><option value={25}>25</option>
+                </select>
+                <span>entries</span>
+              </div>
             </div>
 
             <div className="rep-dt-table">
@@ -888,14 +887,17 @@ export default function Reports() {
               )}
             </div>
 
-            <div className="rep-dt-pagination">
-              <button className="rep-dt-pageBtn" disabled={safePage === 1} onClick={() => setPage(p => p - 1)}>
-                <FontAwesomeIcon icon={faChevronLeft} /> Previous
-              </button>
-              <button className="rep-dt-pageNum active">{safePage}</button>
-              <button className="rep-dt-pageBtn" disabled={safePage === totalPages} onClick={() => setPage(p => p + 1)}>
-                Next <FontAwesomeIcon icon={faChevronRight} />
-              </button>
+            <div className="rep-dt-footer">
+              <div className="rep-dt-showing">Showing {showingFrom} to {showingTo} of {activeRows.length} entries</div>
+              <div className="rep-dt-pagination">
+                <button className="rep-dt-pageBtn" disabled={safePage === 1} onClick={() => setPage(p => p - 1)}>
+                  <FontAwesomeIcon icon={faChevronLeft} /> Previous
+                </button>
+                <button className="rep-dt-pageNum active">{safePage}</button>
+                <button className="rep-dt-pageBtn" disabled={safePage === totalPages} onClick={() => setPage(p => p + 1)}>
+                  Next <FontAwesomeIcon icon={faChevronRight} />
+                </button>
+              </div>
             </div>
           </div>
         </div>

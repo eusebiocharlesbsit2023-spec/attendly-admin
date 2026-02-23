@@ -462,31 +462,31 @@ export default function StudentManagement() {
         </section>
 
         <section className="sm-card">
-          <div className="sm-cardTop">
-            <button className="sm-addTopBtn" onClick={onAdd}>
-              <FontAwesomeIcon icon={faPlus} /> Add Student
-            </button>
-            <button className="sm-exportTopBtn" onClick={exportToExcel}>
-              <FontAwesomeIcon icon={faDownload} /> Export XLSX
-            </button>
-          </div>
-
           <div className="sm-filters">
-            <div className="sm-filterRow">
-              <div className="sm-searchBox">
-                <span className="sm-searchIcon"><FontAwesomeIcon icon={faMagnifyingGlass} /></span>
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
+            <div className="sm-controls">
+              <div className="sm-controls-left">
+                <div className="sm-searchBox">
+                  <span className="sm-searchIcon"><FontAwesomeIcon icon={faMagnifyingGlass} /></span>
+                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
+                </div>
+                <div className="sm-statusFilter">
+                  <div className="sm-statusLabel">Status</div>
+                  <select className="sm-statusSelect" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                    <option>All Status</option><option>Active</option><option>Inactive</option>
+                  </select>
+                </div>
               </div>
-              <div className="sm-filterRight">
-                <div className="sm-filterLabel">Status</div>
-                <select className="sm-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option>All Status</option><option>Active</option><option>Inactive</option>
-                </select>
+              <div className="sm-controls-right">
+                <button className="sm-addTopBtn" onClick={onAdd}>
+                  <FontAwesomeIcon icon={faPlus} /> Add Student
+                </button>
+                <button className="sm-exportTopBtn" onClick={exportToExcel}>
+                  <FontAwesomeIcon icon={faDownload} /> Export XLSX
+                </button>
               </div>
             </div>
             <div className="sm-strip">
               <div className="sm-stripLeft">
-                <div className="sm-stripText">Showing {showingFrom} to {showingTo} of {filtered.length} entries</div>
                 <div className="sm-entries">
                   <span>Show</span>
                   <select value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
@@ -537,6 +537,7 @@ export default function StudentManagement() {
           </div>
 
           <div className="sm-footer">
+            <div className="sm-footerLeft">Showing {showingFrom} to {showingTo} of {filtered.length} entries</div>
             <div className="sm-footerRight">
               <button className="sm-footerBtn" disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}><FontAwesomeIcon icon={faChevronLeft} /> Previous</button>
               <span className="sm-footerPage">{safePage}</span>

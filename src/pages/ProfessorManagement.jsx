@@ -66,6 +66,7 @@ export default function ProfessorManagement() {
 
   // Search + pagination states
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
   const [entries, setEntries] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -229,11 +230,14 @@ export default function ProfessorManagement() {
   // Logic: Filtering & Pagination
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return rows;
-    return rows.filter((p) => p.name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query));
-  }, [rows, q]);
+    return rows.filter((p) => {
+      const matchesQuery = !query || p.name.toLowerCase().includes(query) || p.email.toLowerCase().includes(query);
+      const matchesStatus = statusFilter === "All Status" || p.status === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [rows, q, statusFilter]);
 
-  useEffect(() => { setPage(1); }, [q, entries]);
+  useEffect(() => { setPage(1); }, [q, statusFilter, entries]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / entries));
   const safePage = Math.min(page, totalPages);
@@ -406,17 +410,27 @@ export default function ProfessorManagement() {
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
                 <span className="pm-searchIcon"><FontAwesomeIcon icon={faMagnifyingGlass} /></span>
               </div>
-              <div className="pm-entriesInline">
-                <span className="pm-entriesLabel">Show</span>
-                <select value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
-                  <option value={5}>5</option><option value={10}>10</option><option value={25}>25</option>
+              <div className="pm-statusFilter">
+                <span className="pm-statusLabel">Status</span>
+                <select className="pm-statusSelect" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                  <option>All Status</option>
+                  <option>Active</option>
+                  <option>Inactive</option>
                 </select>
-                <span className="pm-entriesLabel">entries</span>
               </div>
             </div>
             <div className="pm-controls-right">
               <button className="pm-addBtn" onClick={onAdd}><FontAwesomeIcon icon={faPlus} /> Add Professor</button>
               <button className="pm-exportBtn" onClick={exportToExcel}><FontAwesomeIcon icon={faDownload} /> Export XLSX</button>
+            </div>
+          </div>
+          <div className="pm-strip">
+            <div className="pm-entriesInline">
+              <span className="pm-entriesLabel">Show</span>
+              <select value={entries} onChange={(e) => setEntries(Number(e.target.value))}>
+                <option value={5}>5</option><option value={10}>10</option><option value={25}>25</option>
+              </select>
+              <span className="pm-entriesLabel">entries</span>
             </div>
           </div>
 
@@ -455,13 +469,13 @@ export default function ProfessorManagement() {
                 )}
               </tbody>
             </table>
-            <div className="pm-footer">
-              <div className="pm-footerLeft">Showing {showingFrom} to {showingTo} of {filtered.length} entries</div>
-              <div className="pm-footerRight">
-                <button className="pm-pageBtn" disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}><FontAwesomeIcon icon={faChevronLeft} /> Previous</button>
-                <button className="pm-pageNum active">{safePage}</button>
-                <button className="pm-pageBtn" disabled={safePage >= totalPages} onClick={() => setPage(p => p + 1)}>Next <FontAwesomeIcon icon={faChevronRight} /></button>
-              </div>
+          </div>
+          <div className="pm-footer">
+            <div className="pm-footerLeft">Showing {showingFrom} to {showingTo} of {filtered.length} entries</div>
+            <div className="pm-footerRight">
+              <button className="pm-pageBtn" disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}><FontAwesomeIcon icon={faChevronLeft} /> Previous</button>
+              <button className="pm-pageNum active">{safePage}</button>
+              <button className="pm-pageBtn" disabled={safePage >= totalPages} onClick={() => setPage(p => p + 1)}>Next <FontAwesomeIcon icon={faChevronRight} /></button>
             </div>
           </div>
         </section>
